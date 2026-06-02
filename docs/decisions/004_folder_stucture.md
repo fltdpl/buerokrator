@@ -3,7 +3,7 @@
 
 ## Thema
 
-Auswahl Ordnerstruktur, diskutiert mit Chatti
+Monolithische Python-Anwendung
 
 Buerokrator/  
 │  
@@ -43,8 +43,10 @@ Buerokrator/
 
 ## Begründung
 
-- Recherche zur Vollständigkeit
-- Übersichtlich
+- Einzelplatzsystem  
+- geringe Komplexität  
+- lokale Verarbeitung  
+- einfache Wartung
 
 ## Status
 

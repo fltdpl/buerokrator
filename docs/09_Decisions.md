@@ -13,3 +13,7 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 ## Benutzeroberfläche  
   
 - [[003_streamlit]]
+
+## Ordnerstruktur
+
+- [[004_folder_stucture]]

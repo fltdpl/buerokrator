@@ -4,11 +4,11 @@
 
 - [x] Projektstruktur erstellen ✅ 2026-06-02
     
-- [ ] Git Repository anlegen
+- [x] Git Repository anlegen ✅ 2026-06-02
     
-- [ ] Folder Watcher implementieren
+- [x] Folder Watcher implementieren ✅ 2026-06-02
     
-- [ ] Logging einführen
+- [x] Logging einführen ✅ 2026-06-02
     
 
 ## Phase 2 - OCR
