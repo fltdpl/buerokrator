@@ -1,0 +1,35 @@
+# Virtual Environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+logs/
+*.log
+
+# Datenbanken
+database/
+*.db
+*.sqlite
+*.sqlite3
+
+# Verarbeitete Dokumente
+inbox/
+inbox_processed/
+archive/
+exports/
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+
+# Obsidian Cache
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

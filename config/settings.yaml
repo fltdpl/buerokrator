@@ -1,0 +1,13 @@
+paths:
+  inbox: "./inbox"
+  archive: "./archive"
+  database: "./database"
+
+ocr:
+  language: "deu"
+
+classifier:
+  model: "qwen3"
+
+logging:
+  level: "INFO"
