@@ -11,66 +11,90 @@
 - [x] Logging einführen ✅ 2026-06-02
     
 
-## Phase 2 - OCR
+## Phase 2 – Dokumentverarbeitung
 
-- [ ] Tesseract integrieren
+- [x] Document Processor erstellen ✅ 2026-06-02
     
-- [ ] PDF Verarbeitung
+- [x] Pipeline integrieren ✅ 2026-06-02
     
-- [ ] Bildverarbeitung
+- [x] Fehlerbehandlung einführen ✅ 2026-06-02
     
-- [ ] OCR Tests
+- [x] Testdokument verarbeiten ✅ 2026-06-02
+    
+- [x] Verarbeitung protokollieren ✅ 2026-06-02
     
 
-## Phase 3 - Dokumentklassifikation
+## Phase 3 – OCR
+
+- [ ] Tesseract installieren
+    
+- [ ] OCR-Service erstellen
+    
+- [ ] Text aus PDFs extrahieren
+    
+- [ ] Bild-PDFs erkennen
+    
+- [ ] OCR auf Bild-PDFs anwenden
+     
+- [ ] Bereits vorhandenen PDF-Text bevorzugen
+     
+- [ ] OCR-Ergebnisse protokollieren
+    
+- [ ] Testdokumente auswerten
+
+## Phase 4 – Dokumentanalyse
 
 - [ ] Dokumenttypen definieren
     
-- [ ] LLM Anbindung
+- [ ] Klassifizierungslogik erstellen
     
-- [ ] JSON-Ausgabe standardisieren
+- [ ] Dokumentdatum erkennen
     
+- [ ] Absender erkennen
+    
+- [ ] Beträge erkennen
+    
+- [ ] Steuerrelevanz bestimmen
+    
+- [ ] Standardisierte JSON-Ausgabe definieren
 
-## Phase 4 - Archivierung
+## Phase 5 – Ablage
 
-- [ ] Dateibenennung
+- [ ] Dateinamensschema finalisieren
+    
+- [ ] Dateinamen automatisch erzeugen
     
 - [ ] Zielordner bestimmen
     
-- [ ] Archivierungslogik
+- [ ] Dokumente verschieben
     
+- [ ] Archivierung protokollieren
 
-## Phase 5 - Datenbank
+## Phase 6 – Datenbank & Steuerexport
 
-- [ ] SQLite Schema
+- [ ] SQLite integrieren
     
-- [ ] Dokumenttabelle
+- [ ] Dokumentdaten speichern
     
-- [ ] Steuerdaten
+- [ ] Archivpfade speichern
     
+- [ ] Rentenversicherung erfassen
+    
+- [ ] Chancenorientierte Rentenversicherung erfassen
+    
+- [ ] Bausparvertrag erfassen
+    
+- [ ] Jahresübersicht erzeugen
+    
+- [ ] CSV-Export
+    
+- [ ] Excel-Export
 
-## Phase 6 - Lernsystem
 
-- [ ] Feedbackmechanismus
-    
-- [ ] Regelwerk
-    
-- [ ] Kategorielernen
-    
+### Release
 
-## Phase 7 - Steuerexport
-
-- [ ] CSV Export
+- [ ] Version 1.0 taggen
     
-- [ ] Excel Export
+- [ ] Release Notes erstellen
     
-- [ ] Jahresberichte
-    
-
-## Phase 8 - Benutzeroberfläche
-
-- [ ] Streamlit Dashboard
-    
-- [ ] Dokumentensuche
-    
-- [ ] Korrekturansicht
+- [ ] Produktivbetrieb starten

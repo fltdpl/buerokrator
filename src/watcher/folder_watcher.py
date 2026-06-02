@@ -15,14 +15,6 @@ class Handler(FileSystemEventHandler):
         logger.info(f"Neue Datei erkannt: {event.src_path}")
         process(event.src_path)
 
-        # Phase 2:
-        # OCR aufrufen
-
-        # Phase 3:
-        # Klassifikation
-
-        # Phase 4:
-        # Archivierung
 
 
 def start_watcher(path):

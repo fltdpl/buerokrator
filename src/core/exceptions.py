@@ -1,0 +1,2 @@
+class BuerokratorError(Exception):
+    pass
