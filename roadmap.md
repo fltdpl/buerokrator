@@ -30,13 +30,13 @@
     
 - [ ] OCR-Service erstellen
     
-- [ ] Text aus PDFs extrahieren
+- [x] Text aus PDFs extrahieren ✅ 2026-06-03
     
-- [ ] Bild-PDFs erkennen
+- [x] Bild-PDFs erkennen ✅ 2026-06-03
     
 - [ ] OCR auf Bild-PDFs anwenden
      
-- [ ] Bereits vorhandenen PDF-Text bevorzugen
+- [x] Bereits vorhandenen PDF-Text bevorzugen ✅ 2026-06-03
      
 - [ ] OCR-Ergebnisse protokollieren
     
