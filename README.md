@@ -57,6 +57,10 @@ Wird für die Umwandlung von PDF-Seiten in Bilder verwendet.
 Benötigt für OCR von gescannten PDFs.
 
 
+### Ollama
+
+Lokales LLM zur Inhaltserkennung
+
 ## Datenschutz
 
 Persönliche Dokumente werden nicht versioniert.

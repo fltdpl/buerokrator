@@ -9,6 +9,8 @@ from src.ocr.ocr_service import (
     extract_text_from_image_pdf,
     extract_text_from_image
 )
+from src.classifier.document_classifier import classify
+
 
 
 def get_file_type(file_path):
@@ -56,9 +58,13 @@ def extract_text(file_path):
 
 
 def classify_document(file_path, document_text):
+
     logger.info(f"Klassifikation gestartet: {file_path}")
-    print(f"Klassifikation ({len(document_text)} Zeichen)")
-    return {"document_type": "unknown"}
+    classification = classify(document_text)
+    print(f"Dokumenttyp: {classification['document_type']}")
+    logger.info(f"Dokumenttyp erkannt: {classification['document_type']}")
+
+    return classification
 
 
 def archive_document(file_path, classification):
@@ -93,7 +99,10 @@ def process(file_path):
         print(
             f"Textlänge: {len(document_text)}"
         )
-        classification = classify_document(file_path, document_text)
+        classification = classify_document(
+            file_path,
+            document_text
+        )
         archive_document(file_path, classification)
         logger.info(
             f"Verarbeitung abgeschlossen: {file_path}"

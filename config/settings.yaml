@@ -1,13 +1,32 @@
 paths:
   inbox: "./inbox"
+  inbox_processed: "./inbox_processed"
   archive: "./archive"
-  database: "./database"
+  exports: "./exports"
+
+database:
+  path: "./database/buerokrator.db"
 
 ocr:
-  language: "deu"
+  language: "deu+eng"
+  tesseract_path: "C:/Program Files/Tesseract-OCR/tesseract.exe"
+  poppler_path: "C:/Program Files/poppler/poppler-26.02.0/Library/bin"
 
 classifier:
-  model: "qwen3"
+  model: "qwen3:1.7b"
+  max_input_chars: 3000
 
 logging:
   level: "INFO"
+
+supported_file_types:
+  - ".pdf"
+  - ".png"
+  - ".jpg"
+  - ".jpeg"
+
+supported_document_types:
+  - insurance
+  - invoice
+  - building_savings
+  - pension

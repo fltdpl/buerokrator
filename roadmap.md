@@ -38,25 +38,23 @@
      
 - [x] Bereits vorhandenen PDF-Text bevorzugen ✅ 2026-06-03
      
-- [ ] OCR-Ergebnisse protokollieren
+- [x] OCR-Ergebnisse protokollieren ✅ 2026-06-04
     
-- [ ] Testdokumente auswerten
+- [x] Testdokumente auswerten ✅ 2026-06-04
 
 ## Phase 4 – Dokumentanalyse
 
-- [ ] Dokumenttypen definieren
+## Phase 4 – Dokumentanalyse  
+  
+- [ ] Ollama anbinden
     
-- [ ] Klassifizierungslogik erstellen
+- [ ] Qwen3 integrieren
     
-- [ ] Dokumentdatum erkennen
+- [ ] Klassifikations-Prompt erstellen
     
-- [ ] Absender erkennen
+- [ ] JSON-Ausgabe definieren
     
-- [ ] Beträge erkennen
-    
-- [ ] Steuerrelevanz bestimmen
-    
-- [ ] Standardisierte JSON-Ausgabe definieren
+- [ ] Erste Dokumentklassifikation testen
 
 ## Phase 5 – Ablage
 

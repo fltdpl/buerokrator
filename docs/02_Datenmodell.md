@@ -38,6 +38,23 @@
 - category
 - confidence
 
+## Dokumentenschema
+
+json:
+
+```json
+{
+	"document_type": "",
+	"issuer": "",
+	"document_date": "",
+	"amount": null,
+	"tax_relevant": false,
+	"tags": []
+}
+```
+
+
+
 ### Relevante Entscheidungen  
   
 - [[001_sqlite]]
