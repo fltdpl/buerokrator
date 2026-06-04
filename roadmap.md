@@ -28,13 +28,13 @@
 
 - [x] Tesseract installieren ✅ 2026-06-04
     
-- [ ] OCR-Service erstellen
+- [x] OCR-Service erstellen ✅ 2026-06-04
     
 - [x] Text aus PDFs extrahieren ✅ 2026-06-03
     
 - [x] Bild-PDFs erkennen ✅ 2026-06-03
     
-- [ ] OCR auf Bild-PDFs anwenden
+- [x] OCR auf Bild-PDFs anwenden ✅ 2026-06-04
      
 - [x] Bereits vorhandenen PDF-Text bevorzugen ✅ 2026-06-03
      

@@ -1,14 +1,18 @@
 import time
+from pathlib import Path
 from src.core.logger import logger
 from src.ocr.pdf_reader import (
     extract_text as pdf_extract_text,
     has_text
 )
 from src.ocr.ocr_service import (
-    extract_text_from_image_pdf
+    extract_text_from_image_pdf,
+    extract_text_from_image
 )
 
 
+def get_file_type(file_path):
+    return Path(file_path).suffix.lower()
 
 def validate_document(file_path):
     logger.info(f"Validierung gestartet: {file_path}")
@@ -26,15 +30,25 @@ def wait_for_file(file_path):
 
 def extract_text(file_path):
     logger.info(f"Textextraktion gestartet: {file_path}")
-    if has_text(file_path):
-        logger.info("PDF enthält bereits Text")
-        text = pdf_extract_text(file_path)
+    file_type = get_file_type(file_path)
+    if file_type == ".pdf":
+        if has_text(file_path):
+            logger.info("PDF enthält bereits Text")
+            text = pdf_extract_text(file_path)
+
+        else:
+            logger.info("PDF enthält keinen Text - OCR erforderlich")
+            print("OCR erforderlich")
+
+            text = extract_text_from_image_pdf(file_path)
+    
+    elif file_type in [".png", ".jpg", ".jpeg"]:
+        logger.info("PNG, JPG, JPEG enthält keinen Text - OCR erforderlich")
+        print("OCR erforderlich")
+        text = extract_text_from_image(file_path)
 
     else:
-        logger.info("PDF enthält keinen Text - OCR erforderlich")
-        print("OCR erforderlich")
-
-        text = extract_text_from_image_pdf(file_path)
+        raise ValueError(f"Dateityp nicht unterstützt: {file_type}")
 
     logger.info(f"{len(text)} Zeichen extrahiert")
     print(f"{len(text)} Zeichen extrahiert")
@@ -71,13 +85,7 @@ def process(file_path):
         
         validate_document(file_path)
         
-        if has_text(file_path):
-            document_text = extract_text(file_path)
-        else:
-            logger.info(
-                "OCR erforderlich"
-            )
-            document_text = ""
+        document_text = extract_text(file_path)
 
         logger.info(
             f"Textlänge: {len(document_text)}"

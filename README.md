@@ -45,17 +45,25 @@ Aktuelle Phase: OCR und Bilddatenverarbeitung
   
 ### Tesseract OCR  
   
-Pfad:  
-  
-C:\Program Files\Tesseract-OCR  
+Pfad:  C:\Program Files\Tesseract-OCR  
   
 Benötigte Sprachen:  
-  
 - deu  
 - eng  
   
 ### Poppler  
   
 Wird für die Umwandlung von PDF-Seiten in Bilder verwendet.  
-  
 Benötigt für OCR von gescannten PDFs.
+
+
+## Datenschutz
+
+Persönliche Dokumente werden nicht versioniert.
+Folgende Ordner sind von Git ausgeschlossen:
+
+- inbox
+- inbox_processed
+- archive
+- exports
+- examples
