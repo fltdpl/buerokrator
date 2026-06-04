@@ -6,6 +6,9 @@ kanban-plugin: board
 
 ## Ideen
 
+- [ ] Anbindung Konteneingang
+- [ ] Anbinung Mail --> IMAP
+- [ ] Backupsystem
 
 
 ## Geplant
