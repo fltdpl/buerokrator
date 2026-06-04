@@ -21,6 +21,7 @@ inbox/
 inbox_processed/
 archive/
 exports/
+examples/
 
 # Betriebssystem
 .DS_Store

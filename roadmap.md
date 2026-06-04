@@ -26,7 +26,7 @@
 
 ## Phase 3 – OCR
 
-- [ ] Tesseract installieren
+- [x] Tesseract installieren ✅ 2026-06-04
     
 - [ ] OCR-Service erstellen
     

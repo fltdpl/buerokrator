@@ -1,11 +1,19 @@
+import pytesseract
 from src.core.logger import logger
 
+pytesseract.pytesseract.tesseract_cmd = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
 
-def extract_text_from_image_pdf(pdf_path):
+def extract_text_from_image(image_path):
     logger.info(
-        f"OCR gestartet: {pdf_path}"
+        f"OCR gestartet: {image_path}"
     )
-    print(
-        "OCR wird später implementiert"
+    text = pytesseract.image_to_string(
+        image_path,
+        lang="deu+eng"
     )
-    return ""
+    logger.info(
+        f"OCR abgeschlossen: {image_path}"
+    )
+    return text

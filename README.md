@@ -21,7 +21,7 @@ Das System überwacht einen Eingangsordner, analysiert neue Dokumente, benennt d
 
 ## Projektstatus
 
-Aktuelle Phase: Architektur und Grundgerüst
+Aktuelle Phase: OCR und Bilddatenverarbeitung
 
 ## Dokumentation
 
@@ -39,3 +39,23 @@ Aktuelle Phase: Architektur und Grundgerüst
 ## Roadmap
 
 [[roadmap]]
+
+
+## Externe Abhängigkeiten  
+  
+### Tesseract OCR  
+  
+Pfad:  
+  
+C:\Program Files\Tesseract-OCR  
+  
+Benötigte Sprachen:  
+  
+- deu  
+- eng  
+  
+### Poppler  
+  
+Wird für die Umwandlung von PDF-Seiten in Bilder verwendet.  
+  
+Benötigt für OCR von gescannten PDFs.
