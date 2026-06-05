@@ -1,4 +1,18 @@
-# Dokumenttypen
+
+# Gewählte Kategorien
+
+- invoice  
+- insurance  
+- pension  
+- building_savings  
+- tax  
+- housing  
+- unknown
+
+
+
+
+# Möglich Dokumenttypen
 
 ## Steuer
 
