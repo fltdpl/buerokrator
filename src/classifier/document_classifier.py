@@ -4,13 +4,12 @@ from src.core.config import load_config
 
 
 config = load_config()
-max_input_chars = (
-    config["classifier"]
-    ["max_input_chars"]
-)
+
 
 def classify(text):
     model = config["classifier"]["model"]
+    max_input_chars = config["classifier"]["max_input_chars"]
+    temperature = config["classifier"]["temperature"]
     prompt = f"""
 Antworte ausschließlich mit JSON.
 Schema:
@@ -39,13 +38,16 @@ Dokument:
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        options={
+            "temperature": temperature
+        }
     )
 
     try:
-        print("=== LLM Antwort ===")
-        print(response.message.content)
-        print("===================")
+        #print("=== LLM Antwort ===")
+        #print(response.message.content)
+        #print("===================")
 
         return json.loads(
             response.message.content
