@@ -42,8 +42,6 @@
     
 - [x] Testdokumente auswerten ✅ 2026-06-04
 
-## Phase 4 – Dokumentanalyse
-
 ## Phase 4 – Dokumentanalyse  
   
 - [ ] Ollama anbinden
