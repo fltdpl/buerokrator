@@ -1,4 +1,6 @@
+from pathlib import Path
 import yaml
+import platform
 
 
 def load_config():
@@ -9,4 +11,17 @@ def load_config():
     ) as f:
         return yaml.safe_load(f)
     
-import yaml
+
+def get_platform():
+
+    system = platform.system()
+
+    if system == "Windows":
+        return "windows"
+
+    if system == "Linux":
+        return "linux"
+
+    raise RuntimeError(
+        f"Nicht unterstütztes System: {system}"
+    )

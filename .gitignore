@@ -1,5 +1,6 @@
 # Virtual Environment
 .venv/
+.venv_windows_backup
 
 # Python
 __pycache__/
@@ -32,5 +33,4 @@ Thumbs.db
 .idea/
 
 # Obsidian Cache
-.obsidian/workspace.json
-.obsidian/workspace-mobile.json
+.obsidian/
