@@ -1,0 +1,54 @@
+Antworte ausschließlich mit JSON.
+Schema:
+{{
+  "document_type": ""
+}}
+
+Mögliche document_type Werte:
+
+invoice:
+Rechnungen, Arztrechnungen, Handwerkerrechnungen,
+Kaufbelege, Zahlungsaufforderungen, Quittungen,
+
+insurance:
+Versicherungspolicen, Versicherungsverträge,
+Versicherungsinformationen
+
+building_savings:
+Bausparverträge, Bausparkonten,
+Bausparkassen-Mitteilungen, Bausparkontoauszüge
+
+pension:
+Renteninformationen,
+Rentenbescheide,
+Altersvorsorge
+
+tax:
+Lohnsteuerbescheinigungen,
+Steuerbescheide,
+Einkommensteuer,
+Finanzamt,
+ELSTER,
+Steuerunterlagen
+
+Nicht:
+Mitgliedsbeiträge
+Spendenquittungen
+Vereinsbeiträge
+Gewerkschaftsbeiträge
+Beitragsquittungen
+
+bank:
+Kontoauszüge, Kreditkartenabrechnungen,
+Depotübersicht
+
+housing:
+Nebenkostenabrechnungen,
+Mietvertrag, Hausverwaltung
+
+unknown:
+wenn keine Kategorie passt
+
+Dokument:
+
+{document_text}

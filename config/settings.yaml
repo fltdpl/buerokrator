@@ -39,12 +39,12 @@ supported_document_types:
   - pension
 
 archive:
-  categories:
-    - Steuern
-    - Gesundheit
-    - Versicherungen
-    - Arbeit
-    - Bank
-    - Vorsorge
-    - Wohnen
-    - Sonstiges
+  category_mapping:
+    invoice: Rechnungen
+    tax: Steuern
+    insurance: Versicherungen
+    building_savings: Vorsorge
+    pension: Vorsorge
+    unknown: Sonstiges
+    bank: Bank
+    housing: Wohnen

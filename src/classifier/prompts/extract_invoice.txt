@@ -1,0 +1,44 @@
+Antworte ausschließlich mit JSON.
+
+Schema:
+
+{{
+  "issuer": "",
+  "document_date": "",
+  "invoice_number": "",
+  "amount": null
+}}
+
+Extrahiere:
+
+- issuer = Rechnungssteller oder Verkäufer
+
+- document_date = Rechnungsdatum
+
+Format:
+DD.MM.YYYY
+
+Beispiel:
+05.12.2025
+
+- invoice_number = Rechnungsnummer
+
+- amount = Rechnungsbetrag
+
+amount muss eine Zahl sein.
+
+Beispiele:
+
+199.99
+60.00
+145.80
+
+Keine Währungszeichen.
+Keine Anführungszeichen.
+
+Wenn ein Wert nicht gefunden wird,
+verwende "" bzw. null.
+
+Dokument:
+
+{document_text}
