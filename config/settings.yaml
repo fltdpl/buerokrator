@@ -17,9 +17,11 @@ ocr:
     linux: ""
 
 classifier:
-  model: "qwen3:1.7b"
+  mode: "llm"
+  #model: "qwen3:1.7b"
+  model: "gemma3:4b"
   max_input_chars: 3000
-  temperature: 0.8
+  temperature: 0
 
 logging:
   level: "INFO"

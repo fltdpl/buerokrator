@@ -45,16 +45,28 @@ Dokument:
     )
 
     try:
-        #print("=== LLM Antwort ===")
-        #print(response.message.content)
-        #print("===================")
+
+        content = (
+            response.message.content
+            .replace("```json", "")
+            .replace("```", "")
+            .strip()
+        )
+
+        print("=== LLM Antwort ===")
+        print(content)
+        print("===================")
 
         return json.loads(
-            response.message.content
+            content
         )
 
     except Exception as e:
-        print(f"JSON Fehler: {e}")
+
+        print(
+            f"JSON Fehler: {e}"
+        )
+
         return {
             "document_type": "unknown"
         }
