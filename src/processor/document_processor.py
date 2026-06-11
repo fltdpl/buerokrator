@@ -4,9 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 from src.classifier.document_classifier import classify
-
-# from src.classifier.rule_classifier import classify
-from src.classifier.document_extractor import extract_invoice
+from src.classifier.document_extractor import extract_document
 from src.core.logger import logger
 from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image_pdf
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
@@ -75,13 +73,9 @@ def classify_document(file_path, document_text):
 
 def extract_document_data(classification, document_text):
     document_type = classification["document_type"]
-    if document_type == "invoice":
-        print("Rechnungsdaten extrahieren...")
-        extracted_data = extract_invoice(document_text)
+    print(f"{document_type} Daten extrahieren...")
 
-        return extracted_data
-
-    return {}
+    return extract_document(document_type, document_text)
 
 
 def archive_document(file_path, classification, extracted_data):
@@ -123,7 +117,7 @@ def process(file_path):
         validate_document(file_path)
 
         document_text = extract_text(file_path)
-
+        # print(document_text)
         logger.info(f"Textlänge: {len(document_text)}")
 
         print(f"Textlänge: {len(document_text)}")

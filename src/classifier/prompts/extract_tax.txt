@@ -1,0 +1,26 @@
+Antworte ausschließlich mit JSON.
+
+Schema:
+
+{{
+  "employer": "",
+  "tax_year": ""
+}}
+
+Extrahiere:
+
+- employer = Arbeitgeber
+- tax_year = Steuerjahr
+
+Beispiele:
+
+2024
+2025
+2026
+
+Wenn ein Wert nicht gefunden wird,
+verwende "".
+
+Dokument:
+
+{document_text}
