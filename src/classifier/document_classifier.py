@@ -1,4 +1,6 @@
-import json
+from src.core.json_utils import (
+    parse_llm_json
+)
 from ollama import chat
 from src.core.config import load_config
 
@@ -46,19 +48,12 @@ Dokument:
 
     try:
 
-        content = (
+        print("=== RESPONSE ANTWORT ===")
+        print(response.message.content)
+        print("========================")
+
+        return parse_llm_json(
             response.message.content
-            .replace("```json", "")
-            .replace("```", "")
-            .strip()
-        )
-
-        print("=== LLM Antwort ===")
-        print(content)
-        print("===================")
-
-        return json.loads(
-            content
         )
 
     except Exception as e:

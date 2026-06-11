@@ -1,4 +1,6 @@
-import json
+from src.core.json_utils import (
+    parse_llm_json
+)
 from urllib import response
 from ollama import chat
 from src.core.config import load_config
@@ -42,10 +44,10 @@ Dokument:
 
     try:
         print("=== EXTRACTOR ANTWORT ===")
-        #print(response.message.content)
-        #print("=========================")
+        print(response.message.content)
+        print("=========================")
         
-        return json.loads(
+        return parse_llm_json(
             response.message.content
         )
 
