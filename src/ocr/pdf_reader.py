@@ -1,4 +1,5 @@
 from pypdf import PdfReader
+
 from src.core.logger import logger
 
 
@@ -23,10 +24,6 @@ def extract_text(pdf_path):
         if page_text:
             text += page_text + "\n"
 
-    logger.info(
-        f"Textextraktion abgeschlossen: {pdf_path}"
-    )
+    logger.info(f"Textextraktion abgeschlossen: {pdf_path}")
 
     return text
-
-
