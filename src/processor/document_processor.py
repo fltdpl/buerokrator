@@ -117,28 +117,27 @@ def classify_document(
     return classification
 
 
-# def extract_document_data(
-#     classification,
-#     document_text
-# ):
+def extract_document_data(
+    classification,
+    document_text
+):
+    document_type = (
+        classification["document_type"]
+    )
+    if document_type == "invoice":
+        print(
+            "Rechnungsdaten extrahieren..."
+        )
+        extracted_data = extract_invoice(
+            document_text
+        )
+        print(
+            f"Extrahierte Daten: {extracted_data}"
+        )
 
-#     document_type = (
-#         classification["document_type"]
-#     )
-#     if document_type == "invoice":
-#         print(
-#             "Rechnungsdaten extrahieren..."
-#         )
-#         extracted_data = extract_invoice(
-#             document_text
-#         )
-#         print(
-#             f"Extrahierte Daten: {extracted_data}"
-#         )
+        return extracted_data
 
-#         return extracted_data
-
-#     return {}
+    return {}
 
 
 def archive_document(
