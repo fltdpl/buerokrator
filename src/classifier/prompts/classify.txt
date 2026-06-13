@@ -12,7 +12,10 @@ Kaufbelege, Zahlungsaufforderungen, Quittungen,
 
 insurance:
 Versicherungspolicen, Versicherungsverträge,
-Versicherungsinformationen
+Versicherungsinformationen,
+Kapitalbildende Lebensversicherung,
+Rückkaufswert,
+Kapitalwahlrecht,
 
 building_savings:
 Bausparverträge, Bausparkonten,
@@ -21,7 +24,8 @@ Bausparkassen-Mitteilungen, Bausparkontoauszüge
 pension:
 Renteninformationen,
 Rentenbescheide,
-Altersvorsorge
+Altersvorsorge,
+Private Rentenversicherung
 
 tax:
 Lohnsteuerbescheinigungen,

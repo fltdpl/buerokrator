@@ -1,0 +1,64 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Verwende keine Listen.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "insurer": "",
+  "insurance_type": "",
+  "policy_number": "",
+  "document_date": ""
+}}
+
+Extrahiere:
+
+- insurer = Name der Versicherungsgesellschaft
+
+- insurance_type =
+  Haftpflichtversicherung,
+  Hausratversicherung,
+  Rechtsschutzversicherung,
+  Unfallversicherung,
+  Lebensversicherung,
+  Berufsunfähigkeitsversicherung,
+  Kfz-Versicherung,
+  Krankenversicherung
+
+  Beispiel:
+  "Unfallversicherung"
+  Nicht:
+  ["Unfallversicherung"]
+
+- policy_number = Versicherungsnummer
+
+- document_date
+
+Verwende bevorzugt:
+
+1. Dokumentdatum
+
+Falls nicht vorhanden:
+
+2. Versicherungsbeginn
+
+Falls nicht vorhanden:
+
+3. Vertragsbeginn
+
+Format:
+
+DD.MM.YYYY
+
+Beispiel:
+
+05.12.2025
+
+Wenn ein Wert nicht gefunden wird,
+verwende "".
+
+Dokument:
+
+{document_text}

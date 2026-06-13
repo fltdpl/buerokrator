@@ -23,6 +23,7 @@ inbox_processed/
 archive/
 exports/
 examples/
+temp/
 
 # Betriebssystem
 .DS_Store

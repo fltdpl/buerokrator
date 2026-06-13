@@ -8,6 +8,13 @@ KNOWN_ISSUERS = {
     "Mustermiete Automietung KG": "Mustermiete",
     "Musterfunk Deutschland GmbH": "Musterfunk",
     "Zweitfunk Germany GmbH & Co. OHG": "Zweitfunk",
+    "Musterbau Versichern und Bausparen Allgemeine Versicherung AG": "Musterbau",
+    "Versichern und Bausparen Allgemeine Versicherung AG": "Musterbau",
+    "Allgemeine Versicherung AG": "Musterbau",
+    "Musterbau Lebensversicherungsverein a. G.": "Musterbau",
+    "Musterbau Versichern und Bausparen Lebensversicherungsverein a. G.": "Musterbau",
+    "Musterbau Krankenversicherungsverein a G.": "Musterbau",
+    "Lebensversicherungsverein a. G.": "Musterbau",
 }
 
 
