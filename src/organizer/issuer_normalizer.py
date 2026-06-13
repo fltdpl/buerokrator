@@ -8,6 +8,13 @@ KNOWN_ISSUERS = {
     "Sixt Automietung KG": "Sixt",
     "Telekom Deutschland GmbH": "Telekom",
     "Telefónica Germany GmbH & Co. OHG": "Telefonica",
+    "Debeka Versichern und Bausparen Allgemeine Versicherung AG": "Debeka",
+    "Versichern und Bausparen Allgemeine Versicherung AG": "Debeka",
+    "Allgemeine Versicherung AG": "Debeka",
+    "Debeka Lebensversicherungsverein a. G.": "Debeka",
+    "Debeka Versichern und Bausparen Lebensversicherungsverein a. G.": "Debeka",
+    "Debeka Krankenversicherungsverein a G.": "Debeka",
+    "Lebensversicherungsverein a. G.": "Debeka",
 }
 
 

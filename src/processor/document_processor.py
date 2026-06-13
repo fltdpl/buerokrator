@@ -21,7 +21,6 @@ def get_file_type(file_path):
 
 def validate_document(file_path):
     logger.info(f"Validierung gestartet: {file_path}")
-    print("Validierung")
 
 
 def wait_for_file(file_path):
@@ -120,13 +119,9 @@ def process(file_path):
         # print(document_text)
         logger.info(f"Textlänge: {len(document_text)}")
 
-        print(f"Textlänge: {len(document_text)}")
-
         classification = classify_document(file_path, document_text)
 
         extracted_data = extract_document_data(classification, document_text)
-
-        print(f"Extrahierte Daten: {extracted_data}")
 
         if extracted_data is None:
             extracted_data = {}

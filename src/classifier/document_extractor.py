@@ -73,6 +73,33 @@ def extract_tax(text):
         return {}
 
 
+def extract_insurance(text):
+
+    model = config["classifier"]["model"]
+    max_input_chars = config["classifier"]["max_input_chars"]
+    temperature = config["classifier"]["temperature"]
+
+    prompt = load_prompt("extract_insurance.txt")
+    prompt = prompt.format(document_text=text[:max_input_chars])
+    response = chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        options={"temperature": temperature},
+    )
+
+    try:
+        print("=== EXTRACTOR ANTWORT ===")
+        print(response.message.content)
+        print("=========================")
+
+        return parse_llm_json(response.message.content)
+
+    except Exception as e:
+        print(f"JSON Fehler: {e}")
+
+        return {}
+
+
 def extract_document(document_type, text):
 
     if document_type == "invoice":
@@ -80,5 +107,8 @@ def extract_document(document_type, text):
 
     if document_type == "tax":
         return extract_tax(text)
+
+    if document_type == "insurance":
+        return extract_insurance(text)
 
     return {}

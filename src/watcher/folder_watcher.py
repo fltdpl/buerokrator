@@ -1,9 +1,10 @@
-from watchdog.observers import Observer
+import time
+
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
 from src.core.logger import logger
 from src.processor.document_processor import process
-
-import time
 
 
 class Handler(FileSystemEventHandler):
@@ -11,20 +12,16 @@ class Handler(FileSystemEventHandler):
         if event.is_directory:
             return
 
+        print("============")
         print(f"Neue Datei erkannt: {event.src_path}")
         logger.info(f"Neue Datei erkannt: {event.src_path}")
         process(event.src_path)
 
 
-
 def start_watcher(path):
     event_handler = Handler()
     observer = Observer()
-    observer.schedule(
-        event_handler,
-        path,
-        recursive=False
-    )
+    observer.schedule(event_handler, path, recursive=False)
 
     observer.start()
     logger.info(f"Watcher gestartet für: {path}")
