@@ -44,31 +44,31 @@
 
 ## Phase 4 – Dokumentanalyse  
   
-- [ ] Ollama anbinden
+- [x] Ollama anbinden
     
-- [ ] Qwen3 integrieren
+- [x] Model integrieren
     
-- [ ] Klassifikations-Prompt erstellen
+- [x] Klassifikations-Prompt erstellen
     
-- [ ] JSON-Ausgabe definieren
+- [x] JSON-Ausgabe definieren
     
-- [ ] Erste Dokumentklassifikation testen
+- [x] Erste Dokumentklassifikation testen
 
 ## Phase 5 – Ablage
 
-- [ ] Dateinamensschema finalisieren
+- [x] Dateinamensschema finalisieren
     
-- [ ] Dateinamen automatisch erzeugen
+- [x] Dateinamen automatisch erzeugen
     
-- [ ] Zielordner bestimmen
+- [x] Zielordner bestimmen
     
-- [ ] Dokumente verschieben
+- [x] Dokumente verschieben
     
-- [ ] Archivierung protokollieren
+- [x] Archivierung protokollieren
 
 ## Phase 6 – Datenbank & Steuerexport
 
-- [ ] SQLite integrieren
+- [x] SQLite integrieren
     
 - [ ] Dokumentdaten speichern
     

@@ -7,7 +7,7 @@ Keine zusätzlichen Felder.
 Schema:
 
 {{
-  "insurer": "",
+  "issuer": "",
   "insurance_type": "",
   "policy_number": "",
   "document_date": ""
@@ -15,7 +15,7 @@ Schema:
 
 Extrahiere:
 
-- insurer = Name der Versicherungsgesellschaft
+- issuer = Name der Versicherungsgesellschaft
 
 - insurance_type =
   Haftpflichtversicherung,

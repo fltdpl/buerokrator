@@ -1,15 +1,6 @@
 import streamlit as st
 
 from src.database.recent_documents import get_recent_documents
-from src.database.statistics import get_statistics
-
-DISPLAY_NAMES = {
-    "invoice": "🧾 Rechnungen",
-    "insurance": "🛡 Versicherungen",
-    "pension": "👴 Vorsorge",
-    "tax": "🏛 Steuern",
-    "unknown": "❓ Sonstiges",
-}
 
 
 def render_dashboard(
@@ -18,7 +9,7 @@ def render_dashboard(
     display_names,
 ):
 
-    st.title("Buerokrator")
+    st.title("📄 Buerokrator")
 
     st.caption(f"{total} Dokumente archiviert")
 
@@ -50,19 +41,3 @@ def render_dashboard(
 
     for row in recent:
         st.write(f"{display_names.get(row[1], row[1])} - {row[0]}")
-
-
-st.set_page_config(
-    page_title="Buerokrator",
-    layout="wide",
-)
-
-total, by_type = get_statistics()
-
-counts = dict(by_type)
-
-render_dashboard(
-    counts,
-    total,
-    DISPLAY_NAMES,
-)

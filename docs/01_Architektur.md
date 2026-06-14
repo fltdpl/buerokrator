@@ -42,5 +42,3 @@ OCR
 Klassifikation  
 ↓  
 Archiv  
-↓  
-inbox_processed
