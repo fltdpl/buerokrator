@@ -6,6 +6,7 @@ from pathlib import Path
 from src.classifier.document_classifier import classify
 from src.classifier.document_extractor import extract_document
 from src.core.logger import logger
+from src.database.document_repository import insert_document
 from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image_pdf
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
@@ -88,8 +89,11 @@ def archive_document(file_path, classification, extracted_data):
     target = target_folder / new_filename
     target = get_unique_target_path(target)
     shutil.move(str(source), str(target))
+
     logger.info(f"Datei archiviert: {target}")
     print(f"Datei archiviert: {target}")
+
+    return target
 
 
 def get_unique_target_path(target):
@@ -125,7 +129,14 @@ def process(file_path):
 
         if extracted_data is None:
             extracted_data = {}
-        archive_document(file_path, classification, extracted_data)
+
+        archive_path = archive_document(file_path, classification, extracted_data)
+        insert_document(
+            filename=archive_path.name,
+            archive_path=str(archive_path),
+            document_type=classification["document_type"],
+            extracted_data=extracted_data,
+        )
 
         logger.info(f"Verarbeitung abgeschlossen: {file_path}")
 
