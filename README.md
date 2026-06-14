@@ -60,6 +60,11 @@ Benötigt für OCR von gescannten PDFs.
 
 Lokales LLM zur Inhaltserkennung
 
+
+### SQLite
+
+Lokale Datenbank
+
 ## Datenschutz
 
 Persönliche Dokumente werden nicht versioniert.
