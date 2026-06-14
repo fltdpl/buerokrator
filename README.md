@@ -71,7 +71,7 @@ Persönliche Dokumente werden nicht versioniert.
 Folgende Ordner sind von Git ausgeschlossen:
 
 - inbox
-- inbox_processed
+- inbox_processed (vorerst gelöscht)
 - archive
 - exports
 - examples

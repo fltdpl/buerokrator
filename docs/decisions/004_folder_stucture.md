@@ -33,7 +33,6 @@ Buerokrator/
 ├── tests/  
 │  
 ├── inbox/  
-├── inbox_processed/  
 ├── archive/  
 ├── exports/  
 ├── database/  
