@@ -3,6 +3,9 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.database.mark_document_verified import (
+    mark_document_verified,
+)
 from src.gui.document_view import display_metadata
 
 DISPLAY_NAMES = {
@@ -16,10 +19,12 @@ DISPLAY_NAMES = {
 
 def display_document(row):
 
-    filename = row[0]
-    archive_path = row[1]
-    document_type = row[2]
-    extracted_data = row[3]
+    document_id = row[0]
+    filename = row[1]
+    archive_path = row[2]
+    document_type = row[3]
+    extracted_data = row[4]
+    verified = row[5]
 
     title = f"{DISPLAY_NAMES.get(document_type, document_type)} - {filename}"
 
@@ -45,6 +50,12 @@ def display_document(row):
                         file_name=filename,
                         key=f"download_{filename}",
                     )
+
+            if verified == 0:
+                if st.button("✅ Freigeben", key=f"verify_{document_id}"):
+                    mark_document_verified(document_id)
+                    st.success("Dokument freigegeben")
+                    st.rerun()
 
         with right_col:
             if pdf_path.exists():
