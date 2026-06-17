@@ -110,6 +110,50 @@ def get_unique_target_path(target):
     return target
 
 
+def analyze_document(file_path):
+    if not wait_for_file(file_path):
+        raise Exception(f"Datei konnte nicht geöffnet werden: {file_path}")
+
+    validate_document(file_path)
+
+    document_text = extract_text(file_path)
+    logger.info(f"Textlänge: {len(document_text)}")
+
+    classification = classify_document(file_path, document_text)
+    extracted_data = extract_document_data(classification, document_text)
+
+    if extracted_data is None:
+        extracted_data = {}
+
+    return {
+        "classification": classification,
+        "extracted_data": extracted_data,
+        "document_text": document_text,
+    }
+
+
+def archive_analyzed_document(
+    file_path,
+    classification,
+    extracted_data,
+):
+
+    archive_path = archive_document(
+        file_path,
+        classification,
+        extracted_data,
+    )
+
+    insert_document(
+        filename=archive_path.name,
+        archive_path=str(archive_path),
+        document_type=classification["document_type"],
+        extracted_data=extracted_data,
+    )
+
+    return archive_path
+
+
 def process(file_path):
     logger.info(f"Verarbeitung gestartet: {file_path}")
     print(f"Verarbeite Dokument: {file_path}")
@@ -119,13 +163,11 @@ def process(file_path):
 
         validate_document(file_path)
 
-        document_text = extract_text(file_path)
-        # print(document_text)
-        logger.info(f"Textlänge: {len(document_text)}")
+        result = analyze_document(file_path)
 
-        classification = classify_document(file_path, document_text)
+        classification = result["classification"]
 
-        extracted_data = extract_document_data(classification, document_text)
+        extracted_data = result["extracted_data"]
 
         if extracted_data is None:
             extracted_data = {}

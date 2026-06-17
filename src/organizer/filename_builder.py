@@ -37,16 +37,50 @@ def build_insurance_filename(extracted_data, suffix):
 
     document_date = extracted_data.get("document_date", "unknown_date")
     document_date = normalize_date(document_date)
-    insurer = extracted_data.get("insurer", "unknown_insurer")
-    insurer = normalize_issuer(insurer)
-    insurer = insurer.replace(" ", "_").replace("/", "_")
+    issuer = (
+        extracted_data.get("issuer")
+        or extracted_data.get("insurer")
+        or "unknown_issuer"
+    )
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_").replace("/", "_")
 
     insurance_type = extracted_data.get("insurance_type", "unknown_insurance")
     insurance_type = insurance_type.replace(" ", "_").replace("/", "_")
     policy_number = extracted_data.get("policy_number", "unknown_policy")
     policy_number = policy_number.replace(" ", "-").replace("/", "-").replace(".", "-")
 
-    return f"{document_date}_{insurer}_{insurance_type}_{policy_number}{suffix}"
+    return f"{document_date}_{issuer}_{insurance_type}_{policy_number}{suffix}"
+
+
+def build_pension_filename(
+    extracted_data,
+    suffix,
+):
+
+    document_date = extracted_data.get(
+        "document_date",
+        "unknown_date",
+    )
+    document_date = normalize_date(document_date)
+
+    issuer = extracted_data.get("issuer") or "unknown_issuer"
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_").replace("/", "_")
+
+    document_subtype = extracted_data.get(
+        "document_subtype",
+        "unknown",
+    )
+
+    policy_number = extracted_data.get(
+        "policy_number",
+        "unknown_policy",
+    )
+
+    policy_number = policy_number.replace(" ", "-").replace("/", "-").replace(".", "-")
+
+    return f"{document_date}_{issuer}_{document_subtype}_{policy_number}{suffix}"
 
 
 def build_filename(classification, extracted_data, original_file_path):
@@ -62,5 +96,8 @@ def build_filename(classification, extracted_data, original_file_path):
 
     if document_type == "insurance":
         return build_insurance_filename(extracted_data, suffix)
+
+    if document_type == "pension":
+        return build_pension_filename(extracted_data, suffix)
 
     return f"{document_type}{suffix}"

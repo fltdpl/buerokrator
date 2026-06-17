@@ -7,30 +7,45 @@ from src.core.json_utils import parse_llm_json
 config = load_config()
 
 
-def extract_invoice(text):
+def run_extractor(prompt_file, text):
+
     model = config["classifier"]["model"]
     max_input_chars = config["classifier"]["max_input_chars"]
     temperature = config["classifier"]["temperature"]
 
-    prompt = load_prompt("extract_invoice.txt")
+    prompt = load_prompt(prompt_file)
     prompt = prompt.format(document_text=text[:max_input_chars])
+
     response = chat(
         model=model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": temperature},
+        messages=[
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        options={
+            "temperature": temperature,
+        },
     )
 
+    print("=== EXTRACTOR ANTWORT ===")
+    print(response.message.content)
+    print("=========================")
+
+    return parse_llm_json(response.message.content)
+
+
+def extract_invoice(text):
     try:
-        print("=== EXTRACTOR ANTWORT ===")
-        print(response.message.content)
-        print("=========================")
+        data = run_extractor(
+            "extract_invoice.txt",
+            text,
+        )
 
-        data = parse_llm_json(response.message.content)
         amount = data.get("amount")
-
         if isinstance(amount, str):
             amount = amount.replace("€", "").replace(",", ".").strip()
-
             try:
                 amount = float(amount)
 
@@ -48,24 +63,11 @@ def extract_invoice(text):
 
 
 def extract_tax(text):
-    model = config["classifier"]["model"]
-    max_input_chars = config["classifier"]["max_input_chars"]
-    temperature = config["classifier"]["temperature"]
-
-    prompt = load_prompt("extract_tax.txt")
-    prompt = prompt.format(document_text=text[:max_input_chars])
-    response = chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": temperature},
-    )
-
     try:
-        print("=== EXTRACTOR ANTWORT ===")
-        print(response.message.content)
-        print("=========================")
-
-        return parse_llm_json(response.message.content)
+        return run_extractor(
+            "extract_tax.txt",
+            text,
+        )
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
@@ -74,25 +76,11 @@ def extract_tax(text):
 
 
 def extract_insurance(text):
-
-    model = config["classifier"]["model"]
-    max_input_chars = config["classifier"]["max_input_chars"]
-    temperature = config["classifier"]["temperature"]
-
-    prompt = load_prompt("extract_insurance.txt")
-    prompt = prompt.format(document_text=text[:max_input_chars])
-    response = chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": temperature},
-    )
-
     try:
-        print("=== EXTRACTOR ANTWORT ===")
-        print(response.message.content)
-        print("=========================")
-
-        return parse_llm_json(response.message.content)
+        return run_extractor(
+            "extract_insurance.txt",
+            text,
+        )
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
@@ -100,7 +88,23 @@ def extract_insurance(text):
         return {}
 
 
-def extract_document(document_type, text):
+def extract_pension(text):
+    try:
+        return run_extractor(
+            "extract_pension.txt",
+            text,
+        )
+
+    except Exception as e:
+        print(f"JSON Fehler: {e}")
+
+        return {}
+
+
+def extract_document(
+    document_type,
+    text,
+):
 
     if document_type == "invoice":
         return extract_invoice(text)
@@ -110,5 +114,8 @@ def extract_document(document_type, text):
 
     if document_type == "insurance":
         return extract_insurance(text)
+
+    if document_type == "pension":
+        return extract_pension(text)
 
     return {}

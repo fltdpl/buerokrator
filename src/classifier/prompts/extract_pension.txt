@@ -1,0 +1,48 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Verwende keine Listen.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "issuer": "",
+  "product_name": "",
+  "policy_number": "",
+  "document_date": "",
+  "document_subtype": ""
+}}
+
+Extrahiere:
+
+- issuer = Anbieter der Rentenversicherung
+- product_name = Produktbezeichnung
+- policy_number = Vertragsnummer / Versicherungsscheinnummer
+- document_date = Dokumentdatum
+
+Format:
+DD.MM.YYYY
+
+document_subtype:
+
+contract:
+Versicherungsschein, Nachtrag, Antrag, Vertragsunterlagen
+
+annual_statement:
+jährliche Mitteilung zum Stand der Rentenversicherung
+
+cost_statement:
+jährliche Kostenmitteilung
+
+surrender_value_table:
+Rückkaufswerte, beitragsfreie Werte
+
+pension_information:
+allgemeine Renteninformation
+
+Wenn ein Wert nicht gefunden wird, verwende "".
+
+Dokument:
+
+{document_text}
