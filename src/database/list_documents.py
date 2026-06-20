@@ -2,9 +2,7 @@ from src.database.database import get_connection
 
 
 def list_documents(document_type=None):
-
     conn = get_connection()
-
     cursor = conn.cursor()
 
     if document_type:

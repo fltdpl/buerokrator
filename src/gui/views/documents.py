@@ -5,6 +5,7 @@ import streamlit as st
 from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import search_documents
+from src.database.statistics import get_verification_statistics
 
 
 def render_documents_page(display_document):
@@ -12,6 +13,11 @@ def render_documents_page(display_document):
     st.title("📂 Dokumente")
 
     st.sidebar.subheader("Filter")
+
+    stats = get_verification_statistics()
+    st.sidebar.caption(f"🟡 {stats[0]} ungeprüft")
+    st.sidebar.caption(f"🟢 {stats[1]} geprüft")
+    st.sidebar.markdown("---")
 
     search_term = st.sidebar.text_input("Volltext")
 
@@ -61,17 +67,17 @@ def render_documents_page(display_document):
 
     # Kategorie filtern
     if selected_type != "Alle":
-        documents = [row for row in documents if row[2] == selected_type]
+        documents = [row for row in documents if row[3] == selected_type]
 
     # Status filtern
     if selected_status != "Alle":
         verified_value = 0 if selected_status == "Ungeprüft" else 1
 
-        documents = [row for row in documents if row[4] == verified_value]
+        documents = [row for row in documents if row[5] == verified_value]
 
     # Jahr filtern
     if selected_year != "Alle":
-        documents = [row for row in documents if selected_year in row[1]]
+        documents = [row for row in documents if selected_year in row[2]]
 
     # Anbieter filtern
     if issuer_filter:
@@ -81,7 +87,7 @@ def render_documents_page(display_document):
 
         for row in documents:
             try:
-                data = json.loads(row[3])
+                data = json.loads(row[4])
 
                 issuer = data.get("issuer") or data.get("insurer") or ""
 
@@ -97,7 +103,7 @@ def render_documents_page(display_document):
     if filename_filter:
         filename_filter = filename_filter.lower().strip()
 
-        documents = [row for row in documents if filename_filter in row[0].lower()]
+        documents = [row for row in documents if filename_filter in row[1].lower()]
 
     st.caption(f"{len(documents)} Dokumente gefunden")
 
