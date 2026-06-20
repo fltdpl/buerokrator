@@ -25,3 +25,30 @@ def get_statistics():
     conn.close()
 
     return total, by_type
+
+
+def get_verification_statistics():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    rows = cursor.execute(
+        """
+        SELECT
+            verified,
+            COUNT(*)
+        FROM documents
+        GROUP BY verified
+        """
+    ).fetchall()
+
+    conn.close()
+
+    stats = {
+        0: 0,
+        1: 0,
+    }
+
+    for verified, count in rows:
+        stats[verified] = count
+
+    return stats
