@@ -11,7 +11,10 @@ from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
 from src.organizer.category_mapper import get_archive_category
-from src.organizer.filename_builder import build_filename
+from src.organizer.filename_builder import (
+    build_filename,
+    get_unique_target_path,
+)
 
 year = str(datetime.now().year)
 
@@ -92,20 +95,6 @@ def archive_document(file_path, classification, extracted_data):
 
     logger.info(f"Datei archiviert: {target}")
     print(f"Datei archiviert: {target}")
-
-    return target
-
-
-def get_unique_target_path(target):
-
-    original_stem = target.stem
-    suffix = target.suffix
-    counter = 1
-
-    while target.exists():
-        target = target.parent / f"{original_stem}_{counter}{suffix}"
-
-        counter += 1
 
     return target
 

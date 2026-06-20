@@ -4,14 +4,14 @@ from pathlib import Path
 
 import streamlit as st
 
-from src.database.rename_document import (
-    rename_document,
-)
 from src.database.set_document_verified import (
     set_document_verified,
 )
 from src.database.update_document import (
     update_document,
+)
+from src.organizer.filename_builder import (
+    rename_document,
 )
 
 DISPLAY_NAMES = {
