@@ -9,6 +9,7 @@ def update_document(
     archive_path,
     document_type,
     extracted_data,
+    notes="",
 ):
 
     conn = get_connection()
@@ -23,7 +24,8 @@ def update_document(
             archive_path = ?,
             document_type = ?,
             extracted_data = ?,
-            verified = 1
+            notes = ?,
+            verified = ?
         WHERE id = ?
         """,
         (
@@ -34,6 +36,7 @@ def update_document(
                 extracted_data,
                 ensure_ascii=False,
             ),
+            notes,
             document_id,
         ),
     )

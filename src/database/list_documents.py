@@ -14,7 +14,10 @@ def list_documents(document_type=None):
                 archive_path,
                 document_type,
                 extracted_data,
-                verified
+                verified,
+                created_at,
+                document_text,
+                notes
             FROM documents
             WHERE document_type = ?
             ORDER BY id DESC
@@ -31,7 +34,10 @@ def list_documents(document_type=None):
                 archive_path,
                 document_type,
                 extracted_data,
-                verified
+                verified,
+                created_at,
+                document_text,
+                notes
             FROM documents
             ORDER BY id DESC
             """

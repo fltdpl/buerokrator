@@ -203,6 +203,7 @@ def render_import_page():
                     str(Path("inbox") / uploaded_file.name),
                     classification,
                     edited_data,
+                    result["document_text"],
                 )
                 st.success("Dokument archiviert")
                 del st.session_state["analysis_result"]
