@@ -1,0 +1,25 @@
+Antworte ausschließlich mit JSON.
+
+Schema:
+
+{{
+  "issuer": "",
+  "document_date": "",
+  "document_subtype": ""
+}}
+
+issuer:
+Name der Bank oder des Herausgebers
+
+document_date:
+Dokumentdatum im Format YYYY-MM-DD falls erkennbar
+
+document_subtype:
+z.B.
+Kontoauszug
+Kreditkartenabrechnung
+Depotübersicht
+
+Dokument:
+
+{document_text}

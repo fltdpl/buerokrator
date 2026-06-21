@@ -101,6 +101,32 @@ def extract_pension(text):
         return {}
 
 
+def extract_bank(text):
+    try:
+        return run_extractor(
+            "extract_bank.txt",
+            text,
+        )
+
+    except Exception as e:
+        print(f"JSON Fehler: {e}")
+
+        return {}
+
+
+def extract_housing(text):
+    try:
+        return run_extractor(
+            "extract_housing.txt",
+            text,
+        )
+
+    except Exception as e:
+        print(f"JSON Fehler: {e}")
+
+        return {}
+
+
 def extract_document(
     document_type,
     text,
@@ -117,5 +143,11 @@ def extract_document(
 
     if document_type == "pension":
         return extract_pension(text)
+
+    if document_type == "bank":
+        return extract_bank(text)
+
+    if document_type == "housing":
+        return extract_housing(text)
 
     return {}

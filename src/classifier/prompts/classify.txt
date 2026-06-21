@@ -1,57 +1,87 @@
 Antworte ausschließlich mit JSON.
+
 Schema:
+
 {{
   "document_type": ""
 }}
 
-Mögliche document_type Werte:
+Wähle exakt einen dieser Werte:
+
+invoice
+insurance
+pension
+tax
+bank
+housing
+unknown
+
+Verwende ausschließlich einen dieser Werte.
+Erfinde keine neuen Kategorien.
+
+Kategorien:
 
 invoice:
-Rechnungen, Arztrechnungen, Handwerkerrechnungen,
-Kaufbelege, Zahlungsaufforderungen, Quittungen,
+- Rechnungen
+- Arztrechnungen
+- Zahnarztrechnungen
+- Handwerkerrechnungen
+- Kaufbelege
+- Zahlungsaufforderungen
+- Quittungen
+- Nebenkostenabrechnungen
 
 insurance:
-Versicherungspolicen, Versicherungsverträge,
-Versicherungsinformationen,
-Kapitalbildende Lebensversicherung,
-Rückkaufswert,
-Kapitalwahlrecht,
-
-building_savings:
-Bausparverträge, Bausparkonten,
-Bausparkassen-Mitteilungen, Bausparkontoauszüge
+- Versicherungspolicen
+- Versicherungsverträge
+- Versicherungsinformationen
+- Versicherungsnachträge
+- Versicherungsscheine
+- Kapitalbildende Lebensversicherungen
+- Rückkaufswertmitteilungen
+- Kapitalwahlrecht
+- Beitragsrechnungen von Versicherungen
 
 pension:
-Renteninformationen,
-Rentenbescheide,
-Altersvorsorge,
-Private Rentenversicherung
+- Renteninformationen
+- Rentenbescheide
+- Altersvorsorge
+- Private Rentenversicherung
+- Bausparverträge
+- Bausparkonten
+- Bausparkassen-Mitteilungen
+- Bausparkontoauszüge
+- Riester-Verträge
+- Rürup-Verträge
 
 tax:
-Lohnsteuerbescheinigungen,
-Steuerbescheide,
-Einkommensteuer,
-Finanzamt,
-ELSTER,
-Steuerunterlagen
-
-Nicht:
-Mitgliedsbeiträge
-Spendenquittungen
-Vereinsbeiträge
-Gewerkschaftsbeiträge
-Beitragsquittungen
+- Lohnsteuerbescheinigungen
+- Steuerbescheide
+- Einkommensteuerunterlagen
+- Schreiben vom Finanzamt
+- ELSTER-Unterlagen
+- Steuerliche Nachweise
 
 bank:
-Kontoauszüge, Kreditkartenabrechnungen,
-Depotübersicht
+- Kontoauszüge
+- Kreditkartenabrechnungen
+- Depotübersicht
 
 housing:
-Nebenkostenabrechnungen,
-Mietvertrag, Hausverwaltung
+- Nebenkostenabrechnungen
+- Mietvertrag
+- Hausverwaltung
 
 unknown:
-wenn keine Kategorie passt
+- Kontoauszüge
+- Kreditkartenabrechnungen
+- Depotübersichten
+- Mitgliedsbeiträge
+- Spendenquittungen
+- Vereinsbeiträge
+- Gewerkschaftsbeiträge
+- Beitragsquittungen
+- Dokumente, die keiner der Kategorien eindeutig zugeordnet werden können
 
 Dokument:
 

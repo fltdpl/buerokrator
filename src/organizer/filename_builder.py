@@ -36,6 +36,12 @@ def build_filename(classification, extracted_data, original_file_path):
     if document_type == "pension":
         return build_pension_filename(extracted_data, suffix)
 
+    if document_type == "bank":
+        return build_bank_filename(extracted_data, suffix)
+
+    if document_type == "housing":
+        return build_housing_filename(extracted_data, suffix)
+
     return f"{document_type}{suffix}"
 
 
@@ -152,3 +158,59 @@ def build_pension_filename(
     policy_number = policy_number.replace(" ", "-").replace("/", "-").replace(".", "-")
 
     return f"{document_date}_{issuer}_{document_subtype}_{policy_number}{suffix}"
+
+
+def build_bank_filename(
+    extracted_data,
+    suffix,
+):
+
+    document_date = normalize_date(
+        extracted_data.get(
+            "document_date",
+            "unknown_date",
+        )
+    )
+
+    issuer = (
+        extracted_data.get("issuer") or extracted_data.get("bank") or "unknown_bank"
+    )
+
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_")
+
+    document_subtype = extracted_data.get(
+        "document_subtype",
+        "Kontoauszug",
+    )
+
+    return f"{document_date}_{issuer}_{document_subtype}{suffix}"
+
+
+def build_housing_filename(
+    extracted_data,
+    suffix,
+):
+
+    document_date = normalize_date(
+        extracted_data.get(
+            "document_date",
+            "unknown_date",
+        )
+    )
+
+    issuer = (
+        extracted_data.get("issuer")
+        or extracted_data.get("landlord")
+        or "unknown_housing"
+    )
+
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_")
+
+    document_subtype = extracted_data.get(
+        "document_subtype",
+        "Wohnen",
+    )
+
+    return f"{document_date}_{issuer}_{document_subtype}{suffix}"

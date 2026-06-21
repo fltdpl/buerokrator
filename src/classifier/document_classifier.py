@@ -25,7 +25,29 @@ def classify(text):
         # print(response.message.content)
         # print("========================")
 
-        return parse_llm_json(response.message.content)
+        result = parse_llm_json(response.message.content)
+
+        ALLOWED_TYPES = {
+            "invoice",
+            "insurance",
+            "pension",
+            "tax",
+            "bank",
+            "housing",
+            "unknown",
+        }
+
+        document_type = result.get(
+            "document_type",
+            "unknown",
+        )
+
+        if document_type not in ALLOWED_TYPES:
+            print(f"Ungültiger Dokumenttyp erkannt: {document_type}")
+
+            result["document_type"] = "unknown"
+
+        return result
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
