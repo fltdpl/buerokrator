@@ -1,0 +1,26 @@
+Antworte ausschließlich mit JSON.
+
+Schema:
+
+{
+  "issuer": "",
+  "document_date": "",
+  "document_subtype": ""
+}
+
+issuer:
+Hausverwaltung, Vermieter oder Unternehmen
+
+document_date:
+Dokumentdatum im Format YYYY-MM-DD falls erkennbar
+
+document_subtype:
+z.B.
+Nebenkostenabrechnung
+Mietvertrag
+Mieterhöhung
+Hausgeldabrechnung
+
+Dokument:
+
+{document_text}

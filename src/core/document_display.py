@@ -37,6 +37,12 @@ def get_document_display_name(
     elif document_type == "tax":
         document_label = "Lohnsteuer"
 
+    elif document_type == "bank":
+        document_label = data.get("document_subtype") or "Bank"
+
+    elif document_type == "housing":
+        document_label = data.get("document_subtype") or "Wohnen"
+
     else:
         document_label = "Dokument"
 

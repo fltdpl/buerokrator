@@ -52,3 +52,41 @@ def get_verification_statistics():
         stats[verified] = count
 
     return stats
+
+
+def get_unknown_document_count():
+
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    count = cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM documents
+        WHERE document_type = 'unknown'
+        """
+    ).fetchone()[0]
+
+    conn.close()
+
+    return count
+
+
+def get_unknown_document_count():
+
+    conn = get_connection()
+
+    cursor = conn.cursor()
+
+    count = cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM documents
+        WHERE document_type = 'unknown'
+        """
+    ).fetchone()[0]
+
+    conn.close()
+
+    return count

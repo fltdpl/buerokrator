@@ -25,10 +25,13 @@ supported_file_types:
   - .jpg
   - .jpeg
 supported_document_types:
-  - insurance
   - invoice
+  - tax
+  - insurance
   - building_savings
   - pension
+  - bank
+  - housing
 archive:
   category_mapping:
     invoice: Rechnungen
@@ -36,6 +39,6 @@ archive:
     insurance: Versicherungen
     building_savings: Vorsorge
     pension: Vorsorge
-    unknown: Sonstiges
     bank: Bank
     housing: Wohnen
+    unknown: Sonstiges

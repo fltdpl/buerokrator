@@ -15,6 +15,8 @@ DISPLAY_NAMES = {
     "insurance": "Versicherung",
     "pension": "Vorsorge",
     "tax": "Steuer",
+    "bank": "Bank",
+    "housing": "Wohnen",
     "unknown": "Sonstiges",
 }
 
@@ -45,6 +47,8 @@ def render_documents_page(display_document):
             "insurance",
             "pension",
             "tax",
+            "bank",
+            "housing",
             "unknown",
         ],
     )
