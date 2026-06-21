@@ -125,6 +125,7 @@ def archive_analyzed_document(
     file_path,
     classification,
     extracted_data,
+    document_text=None,
 ):
 
     archive_path = archive_document(
@@ -138,6 +139,7 @@ def archive_analyzed_document(
         archive_path=str(archive_path),
         document_type=classification["document_type"],
         extracted_data=extracted_data,
+        document_text=document_text,
     )
 
     return archive_path
@@ -155,7 +157,6 @@ def process(file_path):
         result = analyze_document(file_path)
 
         classification = result["classification"]
-
         extracted_data = result["extracted_data"]
 
         if extracted_data is None:
@@ -167,6 +168,7 @@ def process(file_path):
             archive_path=str(archive_path),
             document_type=classification["document_type"],
             extracted_data=extracted_data,
+            document_text=result["document_text"],
         )
 
         logger.info(f"Verarbeitung abgeschlossen: {file_path}")

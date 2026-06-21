@@ -70,9 +70,9 @@
 
 - [x] SQLite integrieren
     
-- [ ] Dokumentdaten speichern
+- [x] Dokumentdaten speichern
     
-- [ ] Archivpfade speichern
+- [x] Archivpfade speichern
     
 - [ ] Rentenversicherung erfassen
     
@@ -82,15 +82,235 @@
     
 - [ ] Jahresübersicht erzeugen
     
-- [ ] CSV-Export
+- [x] CSV-Export
     
 - [ ] Excel-Export
 
 
-### Release
 
-- [ ] Version 1.0 taggen
+
+
+## Dokumentenerkennung
+
+### Hoch
+
+- [ ] Volltextsuche über OCR-Inhalte (`document_text`)
     
-- [ ] Release Notes erstellen
+- [ ] Suchergebnisse nach Relevanz sortieren
     
-- [ ] Produktivbetrieb starten
+- [ ] OCR-Text dauerhaft für alle Importwege speichern
+    
+- [ ] OCR-Qualität bei Scans verbessern
+    
+- [ ] Erkennung von mehrseitigen Dokumenten testen
+    
+- [ ] Fehlerhafte OCR-Ergebnisse protokollieren
+    
+
+### Dokumentklassifikation
+
+- [ ] Klassifikationsgenauigkeit messen
+    
+- [ ] Testdatensatz mit echten Dokumenten aufbauen
+    
+- [ ] Klassifikation "unknown" analysieren
+    
+- [ ] Regelbasierte Erkennung vor LLM-Klassifikation prüfen
+    
+- [ ] Konfidenzscore für Dokumenttyp speichern
+    
+
+### Datenextraktion
+
+- [ ] Fehlende Felder erkennen und markieren
+    
+- [ ] Extraktionsqualität messen
+    
+- [ ] Validierung von Datumsangaben
+    
+- [ ] Validierung von Beträgen
+    
+- [ ] Validierung von Vertragsnummern
+    
+- [ ] Validierung von Versicherungsnummern
+    
+
+### Neue Dokumenttypen
+
+- [ ] Kontoauszüge
+    
+- [ ] Kreditkartenabrechnungen
+    
+- [ ] Nebenkostenabrechnungen
+    
+- [ ] Gehaltsabrechnungen
+    
+- [ ] Renteninformationen
+    
+- [ ] Depotauszüge
+    
+- [ ] Bescheide
+    
+- [ ] Energieverträge
+    
+- [ ] Telekommunikationsrechnungen
+    
+
+---
+
+## Dokumentenverwaltung
+
+### Hoch
+
+- [ ] Notizen vollständig integrieren
+    
+- [ ] Notizen unabhängig von Freigaben speichern
+    
+- [ ] Änderungsdatum (`updated_at`) speichern
+    
+- [ ] Dokument löschen vollständig testen
+    
+
+### Mittel
+
+- [ ] Papierkorb statt endgültigem Löschen
+    
+- [ ] Dokument wiederherstellen
+    
+- [ ] Dokumente zusammenführen
+    
+- [ ] Dokumente manuell verschieben
+    
+- [ ] Dokumente manuell umklassifizieren
+    
+
+### Niedrig
+
+- [ ] Tags für Dokumente
+    
+- [ ] Favoriten markieren
+    
+- [ ] Eigene Kategorien anlegen
+    
+
+---
+
+## Suche & Wissensbasis
+
+### Hoch
+
+- [ ] Suche in `document_text`
+    
+- [ ] Suche in Notizen
+    
+- [ ] Suche nach Vertragsnummern
+    
+- [ ] Suche nach Beträgen
+    
+- [ ] Suche nach Datumsbereichen
+    
+
+### Mittel
+
+- [ ] KI-Fragen über Dokumente
+    
+- [ ] Dokumentzusammenfassungen
+    
+- [ ] Dublettenerkennung
+    
+- [ ] Ähnliche Dokumente finden
+    
+
+### Später
+
+- [ ] Chat mit Dokumentenbestand
+    
+- [ ] Dokumentenübergreifende Analysen
+    
+
+---
+
+## Steuerfunktionen
+
+### Hoch
+
+- [ ] Steuerrelevante Dokumente kennzeichnen
+    
+- [ ] Steuerrelevante Informationen extrahieren
+    
+- [ ] Steuerjahr automatisch erkennen
+    
+- [ ] Steuerübersicht pro Jahr
+    
+
+### Mittel
+
+- [ ] Vorsorgeaufwendungen sammeln
+    
+- [ ] Versicherungsbeiträge sammeln
+    
+- [ ] Werbungskosten sammeln
+    
+- [ ] Gesundheitskosten sammeln
+    
+
+### Später
+
+- [ ] ELSTER-Export vorbereiten
+    
+- [ ] Steuerbericht erzeugen
+    
+- [ ] Steuercheckliste pro Jahr
+    
+
+---
+
+## Datenqualität
+
+### Hoch
+
+- [ ] Automatische Tests erweitern
+    
+- [ ] Regressionstests für Dokumenttypen
+    
+- [ ] Testdokumente sammeln
+    
+- [ ] Fehlerhafte Dokumente kennzeichnen
+    
+
+### Mittel
+
+- [ ] Statistiken zur Erkennungsqualität
+    
+- [ ] Dashboard für Erkennungsfehler
+    
+- [ ] Qualitätskennzahlen pro Dokumenttyp
+    
+
+---
+
+## Architektur
+
+### Hoch
+
+- [ ] Repository-Struktur aufräumen
+    
+- [ ] Doppelte Funktionen entfernen
+    
+- [ ] Datenbankzugriffe vereinheitlichen
+    
+
+### Mittel
+
+- [ ] Änderungsverlauf für Dokumente
+    
+- [ ] Hintergrundjobs für Analyse
+    
+- [ ] Konfigurierbare Kategorien
+    
+
+### Niedrig
+
+- [ ] Plugin-System für neue Dokumenttypen
+    
+- [ ] API für externe Anwendungen
