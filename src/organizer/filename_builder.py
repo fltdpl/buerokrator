@@ -53,6 +53,9 @@ def rename_document(
 
     current_path = Path(current_path)
 
+    if not current_path.exists():
+        return current_path
+
     category = get_archive_category(document_type)
 
     target_folder = Path("archive") / current_path.parent.parent.name / category
@@ -75,6 +78,15 @@ def rename_document(
     target = target_folder / new_filename
 
     target = get_unique_target_path(target)
+
+    print(f"Rename von: {current_path}")
+    print(f"Nach:       {target}")
+    print(f"Existiert:  {current_path.exists()}")
+    if current_path.resolve() == target.resolve():
+        return current_path
+
+    if not current_path.exists():
+        raise FileNotFoundError(f"Datei nicht gefunden: {current_path}")
 
     current_path.rename(target)
 

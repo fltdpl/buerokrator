@@ -94,7 +94,7 @@
 
 ### Hoch
 
-- [ ] Volltextsuche über OCR-Inhalte (`document_text`)
+- [x] Volltextsuche über OCR-Inhalte (`document_text`)
     
 - [ ] Suchergebnisse nach Relevanz sortieren
     

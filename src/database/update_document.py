@@ -25,7 +25,7 @@ def update_document(
             document_type = ?,
             extracted_data = ?,
             notes = ?,
-            verified = ?
+            verified = 1
         WHERE id = ?
         """,
         (

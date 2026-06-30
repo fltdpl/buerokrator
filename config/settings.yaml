@@ -28,16 +28,15 @@ supported_document_types:
   - invoice
   - tax
   - insurance
-  - building_savings
   - pension
   - bank
   - housing
+  - unknown
 archive:
   category_mapping:
     invoice: Rechnungen
     tax: Steuern
     insurance: Versicherungen
-    building_savings: Vorsorge
     pension: Vorsorge
     bank: Bank
     housing: Wohnen
