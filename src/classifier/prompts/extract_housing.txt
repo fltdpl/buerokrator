@@ -2,11 +2,11 @@ Antworte ausschließlich mit JSON.
 
 Schema:
 
-{
+{{
   "issuer": "",
   "document_date": "",
   "document_subtype": ""
-}
+}}
 
 issuer:
 Hausverwaltung, Vermieter oder Unternehmen

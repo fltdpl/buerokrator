@@ -4,14 +4,13 @@
 
 - id
 - filename
-- original_filename
-- document_type
-- issuer
-- document_date
-- amount
-- tax_relevant
 - archive_path
+- document_type
+- extracted_data
 - created_at
+- verified
+- document_text
+- notes
 
 ## Tabelle financial_products  
   
@@ -52,6 +51,10 @@ json:
 	"tags": []
 }
 ```
+
+Fachspezifische Felder wie `issuer`, `document_date`, `amount`,
+`invoice_number`, `policy_number` oder `tax_year` werden aktuell in
+`documents.extracted_data` als JSON gespeichert.
 
 
 

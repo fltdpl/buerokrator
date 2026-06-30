@@ -10,14 +10,9 @@ from src.core.document_display import (
 from src.database.delete_document import (
     delete_document,
 )
+from src.database.document_repository import save_document, update_notes
 from src.database.set_document_verified import (
     set_document_verified,
-)
-from src.database.update_document import (
-    update_document,
-)
-from src.organizer.filename_builder import (
-    rename_document,
 )
 
 LABELS = {
@@ -202,13 +197,9 @@ def display_document(
             "💾 Notiz speichern",
             key=f"save_notes_{document_id}",
         ):
-            update_document(
-                document_id=document_id,
-                filename=filename,
-                archive_path=archive_path,
-                document_type=document_type,
-                extracted_data=data,
-                notes=notes,
+            update_notes(
+                document_id,
+                notes,
             )
 
             st.success("Notiz gespeichert")
@@ -236,6 +227,29 @@ def display_document(
     # --------------------------------------------------
 
     with tab_edit:
+        document_type = st.selectbox(
+            "Dokumenttyp",
+            [
+                "invoice",
+                "insurance",
+                "pension",
+                "tax",
+                "bank",
+                "housing",
+                "unknown",
+            ],
+            index=[
+                "invoice",
+                "insurance",
+                "pension",
+                "tax",
+                "bank",
+                "housing",
+                "unknown",
+            ].index(document_type),
+            key=f"document_type_{document_id}",
+        )
+
         issuer = st.text_input(
             "Aussteller",
             value=data.get(
@@ -363,16 +377,9 @@ def display_document(
             "💾 Änderungen übernehmen",
             key=f"save_{document_id}",
         ):
-            new_path = rename_document(
-                archive_path,
-                document_type,
-                updated_data,
-            )
-
-            update_document(
+            save_document(
                 document_id=document_id,
-                filename=new_path.name,
-                archive_path=str(new_path),
+                archive_path=archive_path,
                 document_type=document_type,
                 extracted_data=updated_data,
                 notes=notes,
