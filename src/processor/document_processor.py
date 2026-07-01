@@ -176,8 +176,12 @@ def process(file_path):
 
         logger.info(f"Verarbeitung abgeschlossen: {file_path}")
 
+        return True
+
     except Exception as e:
         logger.error(
             f"{type(e).__name__}: Fehler bei der Verarbeitung des Dokuments {file_path}: {e}"
         )
         print(f"Fehler bei der Verarbeitung: {e}")
+
+        return False
