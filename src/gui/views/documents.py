@@ -10,6 +10,11 @@ from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
+from src.organizer.date_utils import year_from_archive_path
+
+
+def _document_year(row):
+    return year_from_archive_path(row[2])
 
 
 def render_documents_page(display_document):
@@ -44,29 +49,33 @@ def render_documents_page(display_document):
         ],
     )
 
-    selected_year = st.sidebar.selectbox(
-        "Jahr",
-        [
-            "Alle",
-            "2026",
-            "2025",
-            "2024",
-        ],
-    )
-
-    issuer_filter = st.sidebar.text_input("Anbieter")
-
-    filename_filter = st.sidebar.text_input("Dateiname")
-
-    st.sidebar.markdown("---")
-
-    # Dokumente laden
+    # Dokumente laden (früh, damit die Jahresauswahl datengetrieben ist)
 
     if search_term:
         documents = search_documents(search_term)
 
     else:
         documents = list_documents()
+
+    available_years = sorted(
+        {
+            year
+            for year in (_document_year(row) for row in documents)
+            if year is not None
+        }
+    )
+
+    year_options = ["Alle", *[str(year) for year in reversed(available_years)]]
+
+    selected_from_year = st.sidebar.selectbox("Jahr von", year_options)
+
+    selected_to_year = st.sidebar.selectbox("Jahr bis", year_options)
+
+    issuer_filter = st.sidebar.text_input("Anbieter")
+
+    filename_filter = st.sidebar.text_input("Dateiname")
+
+    st.sidebar.markdown("---")
 
     # Kategorie filtern
 
@@ -80,10 +89,23 @@ def render_documents_page(display_document):
 
         documents = [row for row in documents if row[5] == verified_value]
 
-    # Jahr filtern
+    # Jahr filtern (Bereich von/bis)
 
-    if selected_year != "Alle":
-        documents = [row for row in documents if selected_year in row[2]]
+    from_year = int(selected_from_year) if selected_from_year != "Alle" else None
+    to_year = int(selected_to_year) if selected_to_year != "Alle" else None
+
+    if from_year is not None and to_year is not None and from_year > to_year:
+        from_year, to_year = to_year, from_year
+
+    if from_year is not None or to_year is not None:
+        lower = from_year if from_year is not None else float("-inf")
+        upper = to_year if to_year is not None else float("inf")
+
+        documents = [
+            row
+            for row in documents
+            if (year := _document_year(row)) is not None and lower <= year <= upper
+        ]
 
     # Anbieter filtern
 

@@ -80,7 +80,7 @@
     
 - [ ] Bausparvertrag erfassen
     
-- [ ] Jahresübersicht erzeugen
+- [x] Jahresübersicht erzeugen ✅ 2026-07-01
     
 - [x] CSV-Export
     
@@ -236,18 +236,18 @@
 
 - [ ] Steuerrelevante Dokumente kennzeichnen
     
-- [ ] Steuerrelevante Informationen extrahieren
+- [x] Steuerrelevante Informationen extrahieren (Beiträge) ✅ 2026-07-01
     
 - [ ] Steuerjahr automatisch erkennen
     
-- [ ] Steuerübersicht pro Jahr
+- [x] Steuerübersicht pro Jahr ✅ 2026-07-01
     
 
 ### Mittel
 
-- [ ] Vorsorgeaufwendungen sammeln
+- [x] Vorsorgeaufwendungen sammeln ✅ 2026-07-01
     
-- [ ] Versicherungsbeiträge sammeln
+- [x] Versicherungsbeiträge sammeln ✅ 2026-07-01
     
 - [ ] Werbungskosten sammeln
     

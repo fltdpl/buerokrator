@@ -11,7 +11,8 @@ Schema:
   "product_name": "",
   "policy_number": "",
   "document_date": "",
-  "document_subtype": ""
+  "document_subtype": "",
+  "amount": null
 }}
 
 Extrahiere:
@@ -23,6 +24,19 @@ Extrahiere:
 
 Format:
 DD.MM.YYYY
+
+- amount = jährlicher Beitrag / Sparbeitrag
+
+Gemeint ist der eingezahlte Beitrag pro Jahr.
+
+Nicht die prognostizierte Rente.
+Nicht der Rückkaufswert.
+Nicht das garantierte Kapital.
+
+amount muss eine Zahl sein.
+Keine Währungszeichen.
+
+Wenn kein Beitrag gefunden wird, verwende null.
 
 document_subtype:
 

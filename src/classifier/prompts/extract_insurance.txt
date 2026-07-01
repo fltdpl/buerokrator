@@ -10,7 +10,8 @@ Schema:
   "issuer": "",
   "insurance_type": "",
   "policy_number": "",
-  "document_date": ""
+  "document_date": "",
+  "amount": null
 }}
 
 Extrahiere:
@@ -56,8 +57,27 @@ Beispiel:
 
 05.12.2025
 
+- amount = Versicherungsbeitrag
+
+Verwende bevorzugt den Jahresbeitrag.
+Falls nur ein Monatsbeitrag angegeben ist,
+verwende den Monatsbeitrag.
+
+amount muss eine Zahl sein.
+
+Beispiele:
+
+199.99
+60.00
+145.80
+
+Keine Währungszeichen.
+Keine Anführungszeichen.
+
+Wenn kein Beitrag gefunden wird, verwende null.
+
 Wenn ein Wert nicht gefunden wird,
-verwende "".
+verwende "" bzw. null.
 
 Dokument:
 

@@ -1,6 +1,7 @@
 from ollama import chat
 
 from src.classifier.prompt_loader import load_prompt
+from src.core.amount_utils import normalize_amount
 from src.core.config import load_config
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
@@ -37,6 +38,13 @@ def run_extractor(prompt_file, text):
     return parse_llm_json(response.message.content)
 
 
+def _normalize_amount_field(data):
+    if isinstance(data, dict) and "amount" in data:
+        data["amount"] = normalize_amount(data.get("amount"))
+
+    return data
+
+
 def extract_invoice(text):
     try:
         data = run_extractor(
@@ -44,18 +52,7 @@ def extract_invoice(text):
             text,
         )
 
-        amount = data.get("amount")
-        if isinstance(amount, str):
-            amount = amount.replace("€", "").replace(",", ".").strip()
-            try:
-                amount = float(amount)
-
-            except Exception:
-                amount = None
-
-            data["amount"] = amount
-
-        return data
+        return _normalize_amount_field(data)
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
@@ -78,10 +75,12 @@ def extract_tax(text):
 
 def extract_insurance(text):
     try:
-        return run_extractor(
+        data = run_extractor(
             "extract_insurance.txt",
             text,
         )
+
+        return _normalize_amount_field(data)
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
@@ -91,10 +90,12 @@ def extract_insurance(text):
 
 def extract_pension(text):
     try:
-        return run_extractor(
+        data = run_extractor(
             "extract_pension.txt",
             text,
         )
+
+        return _normalize_amount_field(data)
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
