@@ -14,14 +14,62 @@ from src.core.document_types import (
 from src.organizer.filename_builder import (
     build_filename,
 )
+from src.processor.batch_import import (
+    find_inbox_documents,
+    import_inbox_documents,
+)
 from src.processor.document_processor import (
     analyze_document,
     archive_analyzed_document,
 )
 
 
+def render_batch_import():
+    st.subheader("📦 Stapel-Import")
+    st.caption(
+        "Verarbeitet alle Dateien, die im Inbox-Ordner liegen, automatisch: "
+        "klassifizieren, umbenennen, archivieren."
+    )
+
+    pending = find_inbox_documents()
+
+    if not pending:
+        st.info("Keine Dateien im Inbox-Ordner.")
+
+    else:
+        st.write(f"{len(pending)} Datei(en) im Inbox-Ordner gefunden:")
+        for path in pending:
+            st.caption(f"• {path.name}")
+
+        if st.button("Alle importieren"):
+            progress = st.progress(0.0)
+            status = st.empty()
+
+            def on_progress(index, total, filename):
+                status.write(f"Verarbeite {index + 1}/{total}: {filename}")
+                progress.progress(index / total if total else 0.0)
+
+            succeeded, failed = import_inbox_documents(on_progress)
+
+            progress.progress(1.0)
+            status.empty()
+
+            st.success(f"{len(succeeded)} Dokument(e) archiviert.")
+
+            if failed:
+                st.error(f"{len(failed)} Dokument(e) fehlgeschlagen:")
+                for name in failed:
+                    st.caption(f"• {name}")
+
+
 def render_import_page():
     st.title("📥 Dokument importieren")
+
+    render_batch_import()
+
+    st.markdown("---")
+    st.subheader("Einzelnes Dokument")
+
     uploaded_file = st.file_uploader(
         "PDF auswählen",
         type=["pdf"],
