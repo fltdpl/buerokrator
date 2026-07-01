@@ -3,6 +3,14 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.core.document_types import (
+    DOCUMENT_TYPES,
+    INSURANCE,
+    INVOICE,
+    PENSION,
+    UNKNOWN,
+    normalize_document_type,
+)
 from src.organizer.filename_builder import (
     build_filename,
 )
@@ -45,23 +53,13 @@ def render_import_page():
 
             document_type = st.selectbox(
                 "Dokumenttyp",
-                [
-                    "invoice",
-                    "insurance",
-                    "pension",
-                    "tax",
-                    "unknown",
-                ],
-                index=[
-                    "invoice",
-                    "insurance",
-                    "pension",
-                    "tax",
-                    "unknown",
-                ].index(
-                    classification.get(
-                        "document_type",
-                        "unknown",
+                DOCUMENT_TYPES,
+                index=DOCUMENT_TYPES.index(
+                    normalize_document_type(
+                        classification.get(
+                            "document_type",
+                            UNKNOWN,
+                        )
                     )
                 ),
             )
@@ -88,7 +86,7 @@ def render_import_page():
                 edited_data["issuer"] = issuer
                 edited_data["document_date"] = document_date
 
-                if document_type == "invoice":
+                if document_type == INVOICE:
                     invoice_number = st.text_input(
                         "Rechnungsnummer",
                         value=extracted_data.get(
@@ -110,7 +108,7 @@ def render_import_page():
                     edited_data["invoice_number"] = invoice_number
                     edited_data["amount"] = amount
 
-                elif document_type == "insurance":
+                elif document_type == INSURANCE:
                     policy_number = st.text_input(
                         "Versicherungsnummer",
                         value=extracted_data.get(
@@ -130,7 +128,7 @@ def render_import_page():
                     edited_data["policy_number"] = policy_number
                     edited_data["insurance_type"] = insurance_type
 
-                elif document_type == "pension":
+                elif document_type == PENSION:
                     policy_number = st.text_input(
                         "Vertragsnummer",
                         value=extracted_data.get(

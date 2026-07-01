@@ -2,6 +2,7 @@ from ollama import chat
 
 from src.classifier.prompt_loader import load_prompt
 from src.core.config import load_config
+from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
 
 config = load_config()
@@ -131,23 +132,17 @@ def extract_document(
     document_type,
     text,
 ):
+    extractors = {
+        INVOICE: extract_invoice,
+        TAX: extract_tax,
+        INSURANCE: extract_insurance,
+        PENSION: extract_pension,
+        BANK: extract_bank,
+        HOUSING: extract_housing,
+    }
 
-    if document_type == "invoice":
-        return extract_invoice(text)
-
-    if document_type == "tax":
-        return extract_tax(text)
-
-    if document_type == "insurance":
-        return extract_insurance(text)
-
-    if document_type == "pension":
-        return extract_pension(text)
-
-    if document_type == "bank":
-        return extract_bank(text)
-
-    if document_type == "housing":
-        return extract_housing(text)
+    extractor = extractors.get(document_type)
+    if extractor:
+        return extractor(text)
 
     return {}
