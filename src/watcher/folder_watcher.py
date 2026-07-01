@@ -9,13 +9,21 @@ from src.processor.document_processor import process
 
 class Handler(FileSystemEventHandler):
     def on_created(self, event):
+        self._handle(event, event.src_path)
+
+    def on_moved(self, event):
+        # Dateien, die (z. B. vom Scanner) in die Inbox verschoben werden,
+        # lösen kein on_created aus.
+        self._handle(event, event.dest_path)
+
+    def _handle(self, event, path):
         if event.is_directory:
             return
 
         print("============")
-        print(f"Neue Datei erkannt: {event.src_path}")
-        logger.info(f"Neue Datei erkannt: {event.src_path}")
-        process(event.src_path)
+        print(f"Neue Datei erkannt: {path}")
+        logger.info(f"Neue Datei erkannt: {path}")
+        process(path)
 
 
 def start_watcher(path):

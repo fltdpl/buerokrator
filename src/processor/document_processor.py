@@ -1,6 +1,5 @@
 import shutil
 import time
-from datetime import datetime
 from pathlib import Path
 
 from src.classifier.document_classifier import classify
@@ -11,12 +10,11 @@ from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
 from src.organizer.category_mapper import get_archive_category
+from src.organizer.date_utils import extract_year
 from src.organizer.filename_builder import (
     build_filename,
     get_unique_target_path,
 )
-
-year = str(datetime.now().year)
 
 
 def get_file_type(file_path):
@@ -28,13 +26,30 @@ def validate_document(file_path):
 
 
 def wait_for_file(file_path):
-    for _ in range(10):
-        try:
-            with open(file_path, "rb"):
-                return True
+    """Wartet, bis die Datei lesbar ist und ihre Größe stabil bleibt.
 
-        except PermissionError:
+    Ein reiner Öffnen-Test genügt nicht: Unter Linux ist eine noch nicht
+    fertig kopierte Datei bereits öffenbar. Deshalb wird zusätzlich auf eine
+    über zwei Messungen konstante, nicht-leere Dateigröße gewartet.
+    """
+    path = Path(file_path)
+    last_size = -1
+
+    for _ in range(20):
+        try:
+            with open(path, "rb"):
+                pass
+            current_size = path.stat().st_size
+
+        except (PermissionError, FileNotFoundError):
             time.sleep(0.5)
+            continue
+
+        if current_size > 0 and current_size == last_size:
+            return True
+
+        last_size = current_size
+        time.sleep(0.5)
 
     return False
 
@@ -85,6 +100,7 @@ def archive_document(file_path, classification, extracted_data):
 
     document_type = classification["document_type"]
     category = get_archive_category(document_type)
+    year = extract_year(extracted_data)
     target_folder = Path("archive") / year / category
     target_folder.mkdir(parents=True, exist_ok=True)
     new_filename = build_filename(classification, extracted_data, file_path)
@@ -149,25 +165,12 @@ def process(file_path):
     logger.info(f"Verarbeitung gestartet: {file_path}")
     print(f"Verarbeite Dokument: {file_path}")
     try:
-        if not wait_for_file(file_path):
-            raise Exception(f"Datei konnte nicht geöffnet werden: {file_path}")
-
-        validate_document(file_path)
-
         result = analyze_document(file_path)
 
-        classification = result["classification"]
-        extracted_data = result["extracted_data"]
-
-        if extracted_data is None:
-            extracted_data = {}
-
-        archive_path = archive_document(file_path, classification, extracted_data)
-        insert_document(
-            filename=archive_path.name,
-            archive_path=str(archive_path),
-            document_type=classification["document_type"],
-            extracted_data=extracted_data,
+        archive_analyzed_document(
+            file_path,
+            result["classification"],
+            result["extracted_data"],
             document_text=result["document_text"],
         )
 

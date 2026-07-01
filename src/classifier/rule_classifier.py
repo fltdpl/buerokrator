@@ -1,29 +1,28 @@
-def classify(text):
+from src.core.document_types import (
+    HOUSING,
+    INSURANCE,
+    INVOICE,
+    PENSION,
+    TAX,
+    UNKNOWN,
+)
 
+# Reihenfolge = Priorität: die erste passende Regel gewinnt.
+RULES = (
+    ("lohnsteuerbescheinigung", TAX),
+    ("einkommensteuer", TAX),
+    ("zahnarzt", INVOICE),
+    ("versicherung", INSURANCE),
+    ("bauspar", PENSION),
+    ("nebenkostenabrechnung", HOUSING),
+)
+
+
+def classify(text):
     text = text.lower()
 
-    if "lohnsteuerbescheinigung" in text:
-        return {"document_type": "Steuern"}
-    
-    if "einkommensteuer" in text:
-        return {"document_type": "Steuern"}
+    for keyword, document_type in RULES:
+        if keyword in text:
+            return {"document_type": document_type}
 
-    if "zahnarzt" in text:
-        return {"document_type": "Gesundheit"}
-
-    if "versicherung" in text:
-        return {"document_type": "Versicherungen"}
-
-    if "bauspar" in text:
-        return {"document_type": "Vorsorge"}
-
-    if "nebenkostenabrechnung" in text:
-        return {"document_type": "Wohnen"}
-
-    return {"document_type": "Sonstiges"}
-
-
-
-
-
-
+    return {"document_type": UNKNOWN}

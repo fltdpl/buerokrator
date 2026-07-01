@@ -5,10 +5,9 @@ from src.core.config import load_config
 from src.core.document_types import DOCUMENT_TYPE_SET, UNKNOWN
 from src.core.json_utils import parse_llm_json
 
-config = load_config()
-
 
 def classify(text):
+    config = load_config()
     model = config["classifier"]["model"]
     max_input_chars = config["classifier"]["max_input_chars"]
     temperature = config["classifier"]["temperature"]
