@@ -4,6 +4,7 @@ from src.core.config import (
     load_config,
     save_config,
 )
+from src.database.reset_database import reset_database_and_archive
 
 st.set_page_config(
     page_title="Einstellungen",
@@ -96,3 +97,54 @@ if st.button("💾 Speichern"):
     config["database"]["path"] = database_path
     save_config(config)
     st.success("Einstellungen gespeichert.")
+
+st.markdown("---")
+st.subheader("🚨 Gefahrenzone")
+st.caption(
+    "Löscht alle archivierten Dokumente unwiderruflich und initialisiert "
+    "die Datenbank neu."
+)
+
+# Erfolgsmeldung nach abgeschlossenem Reset (überlebt den st.rerun).
+reset_result = st.session_state.pop("reset_done", None)
+if reset_result is not None:
+    st.success(f"Datenbank zurückgesetzt. {reset_result} Archiv-Einträge entfernt.")
+
+if not st.session_state.get("confirm_reset"):
+    # Bestätigungstext zurücksetzen, solange das Feld nicht angezeigt wird.
+    st.session_state.pop("confirm_reset_text", None)
+
+    if st.button("🗑 Datenbank & Archiv löschen"):
+        st.session_state["confirm_reset"] = True
+        st.rerun()
+
+else:
+    st.error(
+        "**Wirklich alles löschen?** Alle archivierten Dokumente werden "
+        "endgültig entfernt und die Datenbank wird neu initialisiert. "
+        "Dieser Schritt kann nicht rückgängig gemacht werden."
+    )
+
+    confirm_text = st.text_input(
+        "Zum Bestätigen LÖSCHEN eingeben",
+        key="confirm_reset_text",
+    )
+
+    col_delete, col_cancel = st.columns(2)
+
+    with col_delete:
+        if st.button("Endgültig löschen", type="primary"):
+            if confirm_text.strip().upper() == "LÖSCHEN":
+                removed = reset_database_and_archive()
+
+                st.session_state["confirm_reset"] = False
+                st.session_state["reset_done"] = removed
+                st.rerun()
+
+            else:
+                st.warning('Bitte "LÖSCHEN" eingeben, um zu bestätigen.')
+
+    with col_cancel:
+        if st.button("Abbrechen"):
+            st.session_state["confirm_reset"] = False
+            st.rerun()
