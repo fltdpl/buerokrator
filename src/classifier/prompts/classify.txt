@@ -9,9 +9,9 @@ Schema:
 Wähle exakt einen dieser Werte:
 
 invoice
+tax
 insurance
 pension
-tax
 bank
 housing
 unknown

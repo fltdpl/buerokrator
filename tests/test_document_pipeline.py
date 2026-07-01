@@ -3,10 +3,16 @@ import json
 import shutil
 from pathlib import Path
 
+from src.core.document_types import ARCHIVE_CATEGORY_LABELS
+
 
 def write_test_config(tmp_path):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
+    archive_mapping = [
+        f"    {document_type}: {label}"
+        for document_type, label in ARCHIVE_CATEGORY_LABELS.items()
+    ]
     (config_dir / "settings.yaml").write_text(
         "\n".join(
             [
@@ -31,13 +37,7 @@ def write_test_config(tmp_path):
                 "  temperature: 0.0",
                 "archive:",
                 "  category_mapping:",
-                "    invoice: Rechnungen",
-                "    tax: Steuern",
-                "    insurance: Versicherungen",
-                "    pension: Vorsorge",
-                "    bank: Bank",
-                "    housing: Wohnen",
-                "    unknown: Sonstiges",
+                *archive_mapping,
             ]
         ),
         encoding="utf-8",

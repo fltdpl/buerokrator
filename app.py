@@ -1,14 +1,12 @@
 import streamlit as st
 
+from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.database.recent_documents import get_recent_documents
 from src.database.statistics import get_statistics
 
 DISPLAY_NAMES = {
-    "invoice": "🧾 Rechnungen",
-    "insurance": "🛡 Versicherungen",
-    "pension": "👴 Vorsorge",
-    "tax": "🏛 Steuern",
-    "unknown": "❓ Sonstiges",
+    document_type: label
+    for document_type, label in DOCUMENT_TYPE_LABELS.items()
 }
 
 

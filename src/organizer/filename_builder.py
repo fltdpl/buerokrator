@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.organizer.category_mapper import get_archive_category
 from src.organizer.date_utils import normalize_date
 from src.organizer.issuer_normalizer import normalize_issuer
@@ -23,24 +24,18 @@ def build_filename(classification, extracted_data, original_file_path):
 
     document_type = classification["document_type"]
     suffix = Path(original_file_path).suffix
+    builders = {
+        INVOICE: build_invoice_filename,
+        TAX: build_tax_filename,
+        INSURANCE: build_insurance_filename,
+        PENSION: build_pension_filename,
+        BANK: build_bank_filename,
+        HOUSING: build_housing_filename,
+    }
 
-    if document_type == "invoice":
-        return build_invoice_filename(extracted_data, suffix)
-
-    if document_type == "tax":
-        return build_tax_filename(extracted_data, suffix)
-
-    if document_type == "insurance":
-        return build_insurance_filename(extracted_data, suffix)
-
-    if document_type == "pension":
-        return build_pension_filename(extracted_data, suffix)
-
-    if document_type == "bank":
-        return build_bank_filename(extracted_data, suffix)
-
-    if document_type == "housing":
-        return build_housing_filename(extracted_data, suffix)
+    builder = builders.get(document_type)
+    if builder:
+        return builder(extracted_data, suffix)
 
     return f"{document_type}{suffix}"
 

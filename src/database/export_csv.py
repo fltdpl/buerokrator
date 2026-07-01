@@ -21,12 +21,12 @@ def export_documents_csv(rows):
     )
 
     for row in rows:
-        filename = row[0]
-        archive_path = row[1]
-        document_type = row[2]
+        filename = row[1]
+        archive_path = row[2]
+        document_type = row[3]
 
         try:
-            data = json.loads(row[3])
+            data = json.loads(row[4])
 
         except Exception:
             data = {}

@@ -5,20 +5,11 @@ from pathlib import Path
 import streamlit as st
 
 from src.core.document_display import get_document_display_name
+from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
 from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
-
-DISPLAY_NAMES = {
-    "invoice": "Rechnung",
-    "insurance": "Versicherung",
-    "pension": "Vorsorge",
-    "tax": "Steuer",
-    "bank": "Bank",
-    "housing": "Wohnen",
-    "unknown": "Sonstiges",
-}
 
 
 def render_documents_page(display_document):
@@ -41,16 +32,7 @@ def render_documents_page(display_document):
 
     selected_type = st.sidebar.selectbox(
         "Kategorie",
-        [
-            "Alle",
-            "invoice",
-            "insurance",
-            "pension",
-            "tax",
-            "bank",
-            "housing",
-            "unknown",
-        ],
+        ["Alle", *DOCUMENT_TYPES],
     )
 
     selected_status = st.sidebar.selectbox(
@@ -268,7 +250,7 @@ def render_documents_page(display_document):
 
             with col3:
                 st.caption(
-                    DISPLAY_NAMES.get(
+                    DOCUMENT_TYPE_LABELS.get(
                         item["Kategorie"],
                         item["Kategorie"],
                     )

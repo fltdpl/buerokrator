@@ -1,5 +1,6 @@
 import streamlit as st
 
+from src.core.document_types import INSURANCE, INVOICE, PENSION
 from src.database.recent_documents import get_recent_documents
 
 
@@ -22,17 +23,17 @@ def render_dashboard(
 
     col2.metric(
         "Rechnungen",
-        counts.get("invoice", 0),
+        counts.get(INVOICE, 0),
     )
 
     col3.metric(
         "Versicherungen",
-        counts.get("insurance", 0),
+        counts.get(INSURANCE, 0),
     )
 
     col4.metric(
         "Vorsorge",
-        counts.get("pension", 0),
+        counts.get(PENSION, 0),
     )
 
     st.subheader("Zuletzt archiviert")

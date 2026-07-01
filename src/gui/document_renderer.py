@@ -7,6 +7,14 @@ import streamlit as st
 from src.core.document_display import (
     get_document_display_name,
 )
+from src.core.document_types import (
+    DOCUMENT_TYPES,
+    INSURANCE,
+    INVOICE,
+    PENSION,
+    TAX,
+    normalize_document_type,
+)
 from src.database.delete_document import (
     delete_document,
 )
@@ -229,24 +237,8 @@ def display_document(
     with tab_edit:
         document_type = st.selectbox(
             "Dokumenttyp",
-            [
-                "invoice",
-                "insurance",
-                "pension",
-                "tax",
-                "bank",
-                "housing",
-                "unknown",
-            ],
-            index=[
-                "invoice",
-                "insurance",
-                "pension",
-                "tax",
-                "bank",
-                "housing",
-                "unknown",
-            ].index(document_type),
+            DOCUMENT_TYPES,
+            index=DOCUMENT_TYPES.index(normalize_document_type(document_type)),
             key=f"document_type_{document_id}",
         )
 
@@ -273,7 +265,7 @@ def display_document(
         updated_data["issuer"] = issuer
         updated_data["document_date"] = document_date
 
-        if document_type == "invoice":
+        if document_type == INVOICE:
             invoice_number = st.text_input(
                 "Rechnungsnummer",
                 value=data.get(
@@ -297,7 +289,7 @@ def display_document(
             updated_data["invoice_number"] = invoice_number
             updated_data["amount"] = amount
 
-        elif document_type == "insurance":
+        elif document_type == INSURANCE:
             policy_number = st.text_input(
                 "Versicherungsnummer",
                 value=data.get(
@@ -319,7 +311,7 @@ def display_document(
             updated_data["policy_number"] = policy_number
             updated_data["insurance_type"] = insurance_type
 
-        elif document_type == "pension":
+        elif document_type == PENSION:
             product_name = st.text_input(
                 "Produkt",
                 value=data.get(
@@ -351,7 +343,7 @@ def display_document(
             updated_data["policy_number"] = policy_number
             updated_data["document_subtype"] = document_subtype
 
-        elif document_type == "tax":
+        elif document_type == TAX:
             employer = st.text_input(
                 "Arbeitgeber",
                 value=data.get(

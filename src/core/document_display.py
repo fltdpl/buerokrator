@@ -1,5 +1,7 @@
 import json
 
+from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
+
 
 def get_document_display_name(
     document_type,
@@ -25,22 +27,22 @@ def get_document_display_name(
 
     issuer = issuer[:10]
 
-    if document_type == "invoice":
+    if document_type == INVOICE:
         document_label = "Rechnung"
 
-    elif document_type == "insurance":
+    elif document_type == INSURANCE:
         document_label = data.get("insurance_type") or "Versicherung"
 
-    elif document_type == "pension":
+    elif document_type == PENSION:
         document_label = data.get("product_name") or "Vorsorge"
 
-    elif document_type == "tax":
+    elif document_type == TAX:
         document_label = "Lohnsteuer"
 
-    elif document_type == "bank":
+    elif document_type == BANK:
         document_label = data.get("document_subtype") or "Bank"
 
-    elif document_type == "housing":
+    elif document_type == HOUSING:
         document_label = data.get("document_subtype") or "Wohnen"
 
     else:
