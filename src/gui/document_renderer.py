@@ -4,6 +4,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.core.amount_utils import normalize_amount
 from src.core.document_display import (
     get_document_display_name,
 )
@@ -22,6 +23,14 @@ from src.database.document_repository import save_document, update_notes
 from src.database.set_document_verified import (
     set_document_verified,
 )
+
+def _amount_input_value(amount):
+    """Betrag für ein Textfeld aufbereiten: None/leer -> "" statt "None"."""
+    if amount is None or amount == "":
+        return ""
+
+    return str(amount)
+
 
 LABELS = {
     "issuer": "Aussteller",
@@ -277,17 +286,12 @@ def display_document(
 
             amount = st.text_input(
                 "Betrag",
-                value=str(
-                    data.get(
-                        "amount",
-                        "",
-                    )
-                ),
+                value=_amount_input_value(data.get("amount")),
                 key=f"amount_{document_id}",
             )
 
             updated_data["invoice_number"] = invoice_number
-            updated_data["amount"] = amount
+            updated_data["amount"] = normalize_amount(amount)
 
         elif document_type == INSURANCE:
             policy_number = st.text_input(
@@ -308,8 +312,15 @@ def display_document(
                 key=f"insurance_type_{document_id}",
             )
 
+            amount = st.text_input(
+                "Betrag (Jahresbeitrag)",
+                value=_amount_input_value(data.get("amount")),
+                key=f"amount_{document_id}",
+            )
+
             updated_data["policy_number"] = policy_number
             updated_data["insurance_type"] = insurance_type
+            updated_data["amount"] = normalize_amount(amount)
 
         elif document_type == PENSION:
             product_name = st.text_input(
@@ -339,9 +350,16 @@ def display_document(
                 key=f"subtype_{document_id}",
             )
 
+            amount = st.text_input(
+                "Betrag (Jahresbeitrag)",
+                value=_amount_input_value(data.get("amount")),
+                key=f"amount_{document_id}",
+            )
+
             updated_data["product_name"] = product_name
             updated_data["policy_number"] = policy_number
             updated_data["document_subtype"] = document_subtype
+            updated_data["amount"] = normalize_amount(amount)
 
         elif document_type == TAX:
             employer = st.text_input(

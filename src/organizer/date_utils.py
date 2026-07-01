@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from pathlib import Path
 
 
 def normalize_date(date_string):
@@ -40,3 +41,22 @@ def extract_year(extracted_data, fallback_year=None):
             return year
 
     return fallback_year
+
+
+def year_from_archive_path(archive_path):
+    """Liest das Archivjahr aus dem Pfad (Konvention archive/<Jahr>/...).
+
+    Gibt das Jahr als int zurück oder None, wenn kein plausibles Jahr im Pfad
+    enthalten ist.
+    """
+    archive_path = archive_path or ""
+
+    for part in Path(archive_path).parts:
+        if re.fullmatch(r"(?:19|20)\d{2}", part):
+            return int(part)
+
+    match = re.search(r"(?:19|20)\d{2}", str(archive_path))
+    if match:
+        return int(match.group(0))
+
+    return None
