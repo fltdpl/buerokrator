@@ -50,6 +50,21 @@ def migrate_documents_table(cursor):
         )
 
 
+def create_indexes(cursor):
+    cursor.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_documents_document_type
+        ON documents (document_type)
+        """
+    )
+    cursor.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_documents_created_at
+        ON documents (created_at)
+        """
+    )
+
+
 def init_database():
     conn = get_connection()
     cursor = conn.cursor()
@@ -66,6 +81,7 @@ def init_database():
     )
 
     migrate_documents_table(cursor)
+    create_indexes(cursor)
 
     conn.commit()
     conn.close()
