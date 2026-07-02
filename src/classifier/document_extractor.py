@@ -49,7 +49,14 @@ AMOUNT_FIELDS = {
     INVOICE: ("amount",),
     INSURANCE: ("amount",),
     PENSION: ("amount",),
-    TAX: ("gross_amount", "income_tax", "soli", "church_tax", "net_amount"),
+    TAX: (
+        "gross_amount",
+        "income_tax",
+        "soli",
+        "church_tax",
+        "net_amount",
+        "settlement_amount",
+    ),
 }
 
 PROMPT_FILES = {

@@ -56,16 +56,28 @@ def test_build_tax_filename_lohnsteuer_uses_month_when_present():
     )
 
 
-def test_build_tax_filename_einkommensbescheinigung_uses_year_month():
+def test_build_tax_filename_gehaltsabrechnung_uses_year_month():
     data = {
-        "document_subtype": "einkommensbescheinigung",
+        "document_subtype": "gehaltsabrechnung",
         "employer": "ACME AG",
         "tax_year": "2024",
         "month": "3",
     }
     assert (
+        build_tax_filename(data, ".pdf") == "2024-03_ACME_AG_Gehaltsabrechnung.pdf"
+    )
+
+
+def test_build_tax_filename_einkommensbescheinigung_finanzamt():
+    data = {
+        "document_subtype": "einkommensbescheinigung",
+        "issuer": "Finanzamt Karlsruhe",
+        "tax_year": "2024",
+        "settlement_amount": -740.74,
+    }
+    assert (
         build_tax_filename(data, ".pdf")
-        == "2024-03_ACME_AG_Einkommensbescheinigung.pdf"
+        == "2024-12_Finanzamt_Karlsruhe_Einkommensbescheinigung.pdf"
     )
 
 
@@ -98,4 +110,30 @@ def test_extract_tax_normalizes_amounts(monkeypatch):
     assert data["income_tax"] == 8230.5
     assert data["soli"] == 0.0
     assert data["church_tax"] == 740.74
-    assert data["net_amount"] is None
+    # net_amount gehört nicht zur Lohnsteuerbescheinigung -> weggefiltert.
+    assert "net_amount" not in data
+
+
+def test_extract_tax_finanzamt_keeps_only_subtype_fields(monkeypatch):
+    def fake_run_extractor(prompt_file, text, max_input_chars=None):
+        return {
+            "document_subtype": "einkommensbescheinigung",
+            "issuer": "Finanzamt Karlsruhe",
+            "tax_year": "2024",
+            "income_tax": "3.000,00",
+            "soli": "0",
+            "settlement_amount": "-740,74",
+            "gross_amount": "45.000,00",  # gehört nicht zu diesem Subtyp
+            "employer": "ACME",  # gehört nicht zu diesem Subtyp
+        }
+
+    monkeypatch.setattr(document_extractor, "run_extractor", fake_run_extractor)
+
+    data = document_extractor.extract_tax("text")
+
+    assert data["settlement_amount"] == -740.74
+    assert data["income_tax"] == 3000.0
+    assert data["issuer"] == "Finanzamt Karlsruhe"
+    # Felder anderer Subtypen werden verworfen.
+    assert "gross_amount" not in data
+    assert "employer" not in data

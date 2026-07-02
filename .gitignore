@@ -25,6 +25,9 @@ exports/
 examples/
 temp/
 
+# Von Streamlit ausgelieferte PDF-Vorschauen (Kopien privater Dokumente)
+static/
+
 # Betriebssystem
 .DS_Store
 Thumbs.db

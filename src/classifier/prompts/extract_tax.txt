@@ -6,49 +6,57 @@ Keine zusätzlichen Felder.
 Schema:
 
 {{
-  "employer": "",
   "document_subtype": "",
+  "employer": "",
+  "issuer": "",
   "tax_year": "",
   "month": "",
   "gross_amount": null,
+  "net_amount": null,
   "income_tax": null,
   "soli": null,
   "church_tax": null,
-  "net_amount": null
+  "settlement_amount": null
 }}
 
-Extrahiere:
+Bestimme zuerst document_subtype:
+
+"lohnsteuerbescheinigung"
+  = jährliche Lohnsteuerbescheinigung vom Arbeitgeber
+
+"gehaltsabrechnung"
+  = monatliche Gehalts-, Entgelt- oder Lohnabrechnung vom Arbeitgeber
+
+"einkommensbescheinigung"
+  = Bescheinigung oder Bescheid vom Finanzamt über Einkommen/Steuer
+
+Extrahiere je nach Subtyp:
 
 - employer = Arbeitgeber
+  (nur bei lohnsteuerbescheinigung und gehaltsabrechnung)
 
-- document_subtype:
-  "lohnsteuerbescheinigung"
-    = jährliche Lohnsteuerbescheinigung (nur ein Jahr, kein Monat)
-  "einkommensbescheinigung"
-    = monatliche Gehalts-, Entgelt-, Lohn- oder Verdienstabrechnung
+- issuer = Name des Finanzamts
+  (nur bei einkommensbescheinigung)
 
 - tax_year = Jahr, vierstellig
 
-Beispiele:
-2024
-2025
-
-- month = Monat als Zahl von 01 bis 12
-  Nur bei monatlicher Einkommensbescheinigung.
-  Bei einer Lohnsteuerbescheinigung: ""
+- month = Monat als Zahl 01 bis 12
+  (nur bei gehaltsabrechnung, sonst "")
 
 - gross_amount = Bruttoarbeitslohn / Bruttoentgelt
-- income_tax = einbehaltene Lohnsteuer
+- net_amount = Nettoentgelt / Auszahlungsbetrag
+- income_tax = Lohnsteuer bzw. Einkommensteuer
 - soli = Solidaritätszuschlag
 - church_tax = Kirchensteuer
-- net_amount = Nettoentgelt / Auszahlungsbetrag
+- settlement_amount = Abrechnungsbetrag des Finanzamts
+  (nur bei einkommensbescheinigung; negativ bei Erstattung)
 
 Beträge müssen Zahlen sein.
 Keine Währungszeichen.
 
 Beispiele:
 2450.00
-383.16
+-383.16
 
 Wenn ein Wert nicht gefunden wird,
 verwende "" bzw. null.

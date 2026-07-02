@@ -113,20 +113,28 @@ def build_invoice_filename(extracted_data, suffix):
     return f"{document_date}_{issuer}{suffix}"
 
 
-def build_tax_filename(extracted_data, suffix):
+def _clean_name(value, default):
+    return (value or default).replace(" ", "_").replace("/", "_")
 
-    employer = extracted_data.get("employer") or "unknown_employer"
-    employer = employer.replace(" ", "_").replace("/", "_")
+
+def build_tax_filename(extracted_data, suffix):
 
     tax_year = extracted_data.get("tax_year") or "unknown_year"
     subtype = (extracted_data.get("document_subtype") or "").lower()
 
-    if subtype == "einkommensbescheinigung":
+    if subtype == "gehaltsabrechnung":
+        employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
         month = normalize_month(extracted_data.get("month"))
-        return f"{tax_year}-{month}_{employer}_Einkommensbescheinigung{suffix}"
+        return f"{tax_year}-{month}_{employer}_Gehaltsabrechnung{suffix}"
 
-    # Lohnsteuerbescheinigung: jährlich. Datum möglichst vollständig als
-    # YYYY-MM; ohne konkreten Monat auf das Jahresende (12) zurückfallen.
+    if subtype == "einkommensbescheinigung":
+        # Finanzamt-Bescheinigung: jährlich, Aussteller = Finanzamt.
+        issuer = _clean_name(extracted_data.get("issuer"), "Finanzamt")
+        return f"{tax_year}-12_{issuer}_Einkommensbescheinigung{suffix}"
+
+    # Standard/Default: Lohnsteuerbescheinigung (jährlich). Datum möglichst
+    # vollständig als YYYY-MM; ohne konkreten Monat auf Jahresende (12).
+    employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
     month = normalize_month(extracted_data.get("month"))
     if month == "00":
         month = "12"

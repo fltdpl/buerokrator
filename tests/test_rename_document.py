@@ -33,7 +33,7 @@ def test_rename_moves_to_year_from_data_on_reclassification(tmp_path, monkeypatc
     source.write_text("inhalt")
 
     extracted = {
-        "document_subtype": "einkommensbescheinigung",
+        "document_subtype": "gehaltsabrechnung",
         "employer": "ACME",
         "tax_year": "2009",
         "month": "11",
@@ -47,7 +47,7 @@ def test_rename_moves_to_year_from_data_on_reclassification(tmp_path, monkeypatc
 
     # Zielordner nach Dokumentjahr (2009), nicht nach altem Pfad (1985).
     assert new_path == Path("archive") / "2009" / "Steuern" / (
-        "2009-11_ACME_Einkommensbescheinigung.pdf"
+        "2009-11_ACME_Gehaltsabrechnung.pdf"
     )
     assert (tmp_path / new_path).exists()
     assert not source.exists()
