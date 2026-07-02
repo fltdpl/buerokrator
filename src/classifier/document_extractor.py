@@ -6,13 +6,18 @@ from src.core.config import load_config
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
 
-config = load_config()
+# Steuerdokumente brauchen mehr Kontext: Titel steht oben, die Beträge
+# (Bruttolohn, Lohnsteuer, Soli, Kirchensteuer) stehen oft weiter unten.
+TAX_MAX_INPUT_CHARS = 6000
 
 
-def run_extractor(prompt_file, text):
+def run_extractor(prompt_file, text, max_input_chars=None):
+
+    config = load_config()
 
     model = config["classifier"]["model"]
-    max_input_chars = config["classifier"]["max_input_chars"]
+    if max_input_chars is None:
+        max_input_chars = config["classifier"]["max_input_chars"]
     temperature = config["classifier"]["temperature"]
 
     prompt = load_prompt(prompt_file)
@@ -38,95 +43,100 @@ def run_extractor(prompt_file, text):
     return parse_llm_json(response.message.content)
 
 
-def _normalize_amount_field(data):
-    if isinstance(data, dict) and "amount" in data:
-        data["amount"] = normalize_amount(data.get("amount"))
+# Erlaubte Felder je Dokumenttyp (muss dem jeweiligen Prompt-Schema entsprechen).
+# Dient als Sicherheitsnetz: alles, was das Modell darüber hinaus erfindet,
+# wird verworfen, statt in die Datenbank zu gelangen.
+ALLOWED_FIELDS = {
+    INVOICE: {"issuer", "document_date", "invoice_number", "amount"},
+    TAX: {
+        "employer",
+        "document_subtype",
+        "tax_year",
+        "month",
+        "gross_amount",
+        "income_tax",
+        "soli",
+        "church_tax",
+        "net_amount",
+    },
+    INSURANCE: {"issuer", "insurance_type", "policy_number", "document_date", "amount"},
+    PENSION: {
+        "issuer",
+        "product_name",
+        "policy_number",
+        "document_date",
+        "document_subtype",
+        "amount",
+    },
+    BANK: {"issuer", "document_date", "document_subtype"},
+    HOUSING: {"issuer", "document_date", "document_subtype"},
+}
 
-    return data
+# Felder, die als Betrag normalisiert werden.
+AMOUNT_FIELDS = {
+    INVOICE: ("amount",),
+    INSURANCE: ("amount",),
+    PENSION: ("amount",),
+    TAX: ("gross_amount", "income_tax", "soli", "church_tax", "net_amount"),
+}
+
+PROMPT_FILES = {
+    INVOICE: "extract_invoice.txt",
+    TAX: "extract_tax.txt",
+    INSURANCE: "extract_insurance.txt",
+    PENSION: "extract_pension.txt",
+    BANK: "extract_bank.txt",
+    HOUSING: "extract_housing.txt",
+}
+
+
+def _extract(document_type, text, max_input_chars=None):
+    try:
+        data = run_extractor(
+            PROMPT_FILES[document_type],
+            text,
+            max_input_chars=max_input_chars,
+        )
+
+    except Exception as e:
+        print(f"JSON Fehler: {e}")
+
+        return {}
+
+    if not isinstance(data, dict):
+        return {}
+
+    for field in AMOUNT_FIELDS.get(document_type, ()):
+        if field in data:
+            data[field] = normalize_amount(data.get(field))
+
+    allowed = ALLOWED_FIELDS.get(document_type, set())
+
+    return {key: value for key, value in data.items() if key in allowed}
 
 
 def extract_invoice(text):
-    try:
-        data = run_extractor(
-            "extract_invoice.txt",
-            text,
-        )
-
-        return _normalize_amount_field(data)
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(INVOICE, text)
 
 
 def extract_tax(text):
-    try:
-        return run_extractor(
-            "extract_tax.txt",
-            text,
-        )
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(TAX, text, max_input_chars=TAX_MAX_INPUT_CHARS)
 
 
 def extract_insurance(text):
-    try:
-        data = run_extractor(
-            "extract_insurance.txt",
-            text,
-        )
-
-        return _normalize_amount_field(data)
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(INSURANCE, text)
 
 
 def extract_pension(text):
-    try:
-        data = run_extractor(
-            "extract_pension.txt",
-            text,
-        )
-
-        return _normalize_amount_field(data)
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(PENSION, text)
 
 
 def extract_bank(text):
-    try:
-        return run_extractor(
-            "extract_bank.txt",
-            text,
-        )
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(BANK, text)
 
 
 def extract_housing(text):
-    try:
-        return run_extractor(
-            "extract_housing.txt",
-            text,
-        )
-
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
-
-        return {}
+    return _extract(HOUSING, text)
 
 
 def extract_document(

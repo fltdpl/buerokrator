@@ -56,6 +56,12 @@ pension:
 
 tax:
 - Lohnsteuerbescheinigungen
+- Gehaltsabrechnungen
+- Entgeltabrechnungen
+- Lohnabrechnungen
+- Verdienstbescheinigungen
+- Einkommensbescheinigungen
+- Bezügemitteilungen
 - Steuerbescheide
 - Einkommensteuerunterlagen
 - Schreiben vom Finanzamt

@@ -48,6 +48,36 @@ def list_documents(document_type=None):
     return rows
 
 
+def get_document(document_id):
+    if document_id is None:
+        return None
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    row = cursor.execute(
+        """
+        SELECT
+            id,
+            filename,
+            archive_path,
+            document_type,
+            extracted_data,
+            verified,
+            created_at,
+            document_text,
+            notes
+        FROM documents
+        WHERE id = ?
+        """,
+        (document_id,),
+    ).fetchone()
+
+    conn.close()
+
+    return row
+
+
 def get_documents_by_status(verified):
 
     conn = get_connection()

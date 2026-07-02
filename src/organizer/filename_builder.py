@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.organizer.category_mapper import get_archive_category
-from src.organizer.date_utils import normalize_date
+from src.organizer.date_utils import extract_year, normalize_date, normalize_month
 from src.organizer.issuer_normalizer import normalize_issuer
 
 
@@ -53,7 +53,12 @@ def rename_document(
 
     category = get_archive_category(document_type)
 
-    target_folder = Path("archive") / current_path.parent.parent.name / category
+    # Jahr aus den (ggf. geänderten) Dokumentdaten ableiten, konsistent zu
+    # archive_document. Vorher wurde das Jahr aus dem alten Pfad übernommen,
+    # sodass umklassifizierte Dokumente im falschen Jahr-Ordner landeten.
+    year = extract_year(extracted_data)
+
+    target_folder = Path("archive") / year / category
 
     target_folder.mkdir(
         parents=True,
@@ -110,11 +115,23 @@ def build_invoice_filename(extracted_data, suffix):
 
 def build_tax_filename(extracted_data, suffix):
 
-    employer = extracted_data.get("employer", "unknown_employer")
-    tax_year = extracted_data.get("tax_year", "unknown_year")
+    employer = extracted_data.get("employer") or "unknown_employer"
     employer = employer.replace(" ", "_").replace("/", "_")
 
-    return f"{tax_year}_{employer}_Lohnsteuerbescheinigung{suffix}"
+    tax_year = extracted_data.get("tax_year") or "unknown_year"
+    subtype = (extracted_data.get("document_subtype") or "").lower()
+
+    if subtype == "einkommensbescheinigung":
+        month = normalize_month(extracted_data.get("month"))
+        return f"{tax_year}-{month}_{employer}_Einkommensbescheinigung{suffix}"
+
+    # Lohnsteuerbescheinigung: jährlich. Datum möglichst vollständig als
+    # YYYY-MM; ohne konkreten Monat auf das Jahresende (12) zurückfallen.
+    month = normalize_month(extracted_data.get("month"))
+    if month == "00":
+        month = "12"
+
+    return f"{tax_year}-{month}_{employer}_Lohnsteuerbescheinigung{suffix}"
 
 
 def build_insurance_filename(extracted_data, suffix):

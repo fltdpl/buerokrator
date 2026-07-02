@@ -1,25 +1,57 @@
 Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
 
 Schema:
 
 {{
   "employer": "",
-  "tax_year": ""
+  "document_subtype": "",
+  "tax_year": "",
+  "month": "",
+  "gross_amount": null,
+  "income_tax": null,
+  "soli": null,
+  "church_tax": null,
+  "net_amount": null
 }}
 
 Extrahiere:
 
 - employer = Arbeitgeber
-- tax_year = Steuerjahr
+
+- document_subtype:
+  "lohnsteuerbescheinigung"
+    = jährliche Lohnsteuerbescheinigung (nur ein Jahr, kein Monat)
+  "einkommensbescheinigung"
+    = monatliche Gehalts-, Entgelt-, Lohn- oder Verdienstabrechnung
+
+- tax_year = Jahr, vierstellig
 
 Beispiele:
-
 2024
 2025
-2026
+
+- month = Monat als Zahl von 01 bis 12
+  Nur bei monatlicher Einkommensbescheinigung.
+  Bei einer Lohnsteuerbescheinigung: ""
+
+- gross_amount = Bruttoarbeitslohn / Bruttoentgelt
+- income_tax = einbehaltene Lohnsteuer
+- soli = Solidaritätszuschlag
+- church_tax = Kirchensteuer
+- net_amount = Nettoentgelt / Auszahlungsbetrag
+
+Beträge müssen Zahlen sein.
+Keine Währungszeichen.
+
+Beispiele:
+2450.00
+383.16
 
 Wenn ein Wert nicht gefunden wird,
-verwende "".
+verwende "" bzw. null.
 
 Dokument:
 

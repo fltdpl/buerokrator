@@ -7,7 +7,7 @@ import streamlit as st
 from src.core.document_display import get_document_display_name
 from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
 from src.database.export_csv import export_documents_csv
-from src.database.list_documents import list_documents
+from src.database.list_documents import get_document, list_documents
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
 from src.organizer.date_utils import year_from_archive_path
@@ -17,12 +17,53 @@ def _document_year(row):
     return year_from_archive_path(row[2])
 
 
+def _selected_document_id():
+    """Aktuell ausgewählte Dokument-ID aus dem URL-Query-Parameter (oder None)."""
+    raw = st.query_params.get("doc")
+
+    if raw is None:
+        return None
+
+    try:
+        return int(raw)
+
+    except (TypeError, ValueError):
+        return None
+
+
 def render_documents_page(display_document):
 
     st.title("📂 Dokumente")
 
-    if "document_view" not in st.session_state:
-        st.session_state["document_view"] = "list"
+    flash = st.session_state.pop("flash", None)
+    if flash:
+        st.toast(flash)
+
+    # Detailansicht: Dokument direkt per ID laden (unabhängig von Filtern),
+    # damit Änderungen sofort erscheinen und der Eintrag nicht durch einen
+    # Filter verschwindet.
+    selected_document_id = _selected_document_id()
+
+    if selected_document_id is not None:
+        selected_row = get_document(selected_document_id)
+
+        if selected_row:
+            # Streamlit kann den nativen "Dokumente"-Seitenlink nicht abfangen,
+            # solange man bereits auf der Seite ist. Ein eigener Button in der
+            # Seitenleiste kehrt zuverlässig zur Listenansicht zurück.
+            if st.sidebar.button(
+                "📋 Zur Übersicht",
+                use_container_width=True,
+            ):
+                del st.query_params["doc"]
+                st.rerun()
+
+            display_document(selected_row)
+
+            return
+
+        # Veraltete/ungültige ID -> zurück zur Liste.
+        del st.query_params["doc"]
 
     st.sidebar.subheader("Filter")
 
@@ -151,21 +192,6 @@ def render_documents_page(display_document):
 
         return
 
-    if st.session_state["document_view"] == "details":
-        selected_document_id = st.session_state.get("selected_document_id")
-        selected_row = next(
-            (row for row in documents if row[0] == selected_document_id),
-            None,
-        )
-
-        if selected_row:
-            display_document(
-                selected_row,
-                show_back_button=True,
-            )
-
-            return
-
     table_rows = []
 
     for row in documents:
@@ -224,13 +250,7 @@ def render_documents_page(display_document):
 
     st.subheader("Dokumente")
 
-    if "selected_document_id" not in st.session_state:
-        st.session_state["selected_document_id"] = table_rows[0]["ID"]
-
-    if "document_mode" not in st.session_state:
-        st.session_state["document_mode"] = "details"
-
-    if st.session_state["document_view"] == "list":
+    if table_rows:
         header1, header2, header3, header4, header5, header6 = st.columns(
             [0.5, 6, 2, 2, 1.5, 0.5]
         )
@@ -256,7 +276,7 @@ def render_documents_page(display_document):
         # st.divider()
 
         for item in table_rows:
-            selected = item["ID"] == st.session_state["selected_document_id"]
+            selected = item["ID"] == selected_document_id
 
             col1, col2, col3, col4, col5, col6 = st.columns([0.5, 6, 2, 2, 1.5, 0.5])
 
@@ -289,8 +309,6 @@ def render_documents_page(display_document):
                     "👁️",
                     key=f"open_{item['ID']}",
                 ):
-                    st.session_state["selected_document_id"] = item["ID"]
-
-                    st.session_state["document_view"] = "details"
+                    st.query_params["doc"] = str(item["ID"])
 
                     st.rerun()

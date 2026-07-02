@@ -115,7 +115,7 @@
     
 - [ ] Klassifikation "unknown" analysieren
     
-- [ ] Regelbasierte Erkennung vor LLM-Klassifikation prüfen
+- [x] Regelbasierte Erkennung vor LLM-Klassifikation prüfen ✅ 2026-07-01
     
 - [ ] Konfidenzscore für Dokumenttyp speichern
     
@@ -143,7 +143,7 @@
     
 - [ ] Nebenkostenabrechnungen
     
-- [ ] Gehaltsabrechnungen
+- [x] Gehaltsabrechnungen ✅ 2026-07-01
     
 - [ ] Renteninformationen
     
