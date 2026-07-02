@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from src.core.document_fields import whitelist_fields
 from src.database.database import get_connection
 from src.database.update_document import update_document
 from src.organizer.filename_builder import rename_document
@@ -61,6 +62,10 @@ def save_document(
     extracted_data,
     notes="",
 ):
+
+    # Auf die für den Dokumenttyp erlaubten Felder begrenzen, damit auch beim
+    # Bearbeiten keine fremden Felder (weiter-)gespeichert werden.
+    extracted_data = whitelist_fields(document_type, extracted_data)
 
     new_path = rename_document(
         archive_path,
