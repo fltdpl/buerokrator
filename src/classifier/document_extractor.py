@@ -3,6 +3,7 @@ from ollama import chat
 from src.classifier.prompt_loader import load_prompt
 from src.core.amount_utils import normalize_amount
 from src.core.config import load_config
+from src.core.document_fields import whitelist_fields
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
 
@@ -43,35 +44,6 @@ def run_extractor(prompt_file, text, max_input_chars=None):
     return parse_llm_json(response.message.content)
 
 
-# Erlaubte Felder je Dokumenttyp (muss dem jeweiligen Prompt-Schema entsprechen).
-# Dient als Sicherheitsnetz: alles, was das Modell darüber hinaus erfindet,
-# wird verworfen, statt in die Datenbank zu gelangen.
-ALLOWED_FIELDS = {
-    INVOICE: {"issuer", "document_date", "invoice_number", "amount"},
-    TAX: {
-        "employer",
-        "document_subtype",
-        "tax_year",
-        "month",
-        "gross_amount",
-        "income_tax",
-        "soli",
-        "church_tax",
-        "net_amount",
-    },
-    INSURANCE: {"issuer", "insurance_type", "policy_number", "document_date", "amount"},
-    PENSION: {
-        "issuer",
-        "product_name",
-        "policy_number",
-        "document_date",
-        "document_subtype",
-        "amount",
-    },
-    BANK: {"issuer", "document_date", "document_subtype"},
-    HOUSING: {"issuer", "document_date", "document_subtype"},
-}
-
 # Felder, die als Betrag normalisiert werden.
 AMOUNT_FIELDS = {
     INVOICE: ("amount",),
@@ -110,9 +82,7 @@ def _extract(document_type, text, max_input_chars=None):
         if field in data:
             data[field] = normalize_amount(data.get(field))
 
-    allowed = ALLOWED_FIELDS.get(document_type, set())
-
-    return {key: value for key, value in data.items() if key in allowed}
+    return whitelist_fields(document_type, data)
 
 
 def extract_invoice(text):
