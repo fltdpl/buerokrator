@@ -32,6 +32,12 @@ def _amount_input_value(amount):
     return str(amount)
 
 
+def _close_detail():
+    """Schließt die Detailansicht, indem der Query-Parameter entfernt wird."""
+    if "doc" in st.query_params:
+        del st.query_params["doc"]
+
+
 LABELS = {
     "issuer": "Aussteller",
     "document_date": "Datum",
@@ -41,15 +47,20 @@ LABELS = {
     "insurance_type": "Versicherungsart",
     "policy_number": "Versicherungsnummer",
     "tax_year": "Steuerjahr",
+    "month": "Monat",
     "employer": "Arbeitgeber",
     "product_name": "Produkt",
     "document_subtype": "Dokumenttyp",
+    "gross_amount": "Bruttolohn",
+    "income_tax": "Lohnsteuer",
+    "soli": "Solidaritätszuschlag",
+    "church_tax": "Kirchensteuer",
+    "net_amount": "Nettolohn",
 }
 
 
 def display_document(
     row,
-    show_back_button=False,
 ):
 
     document_id = row[0]
@@ -68,15 +79,6 @@ def display_document(
         data = {}
 
     pdf_path = Path(archive_path)
-
-    if show_back_button:
-        if st.button(
-            "← Zurück",
-            key=f"back_{document_id}",
-        ):
-            st.session_state["document_view"] = "list"
-
-            st.rerun()
 
     with st.popover("☰ Optionen"):
         if pdf_path.exists():
@@ -147,7 +149,9 @@ def display_document(
                         None,
                     )
 
-                    st.session_state["document_view"] = "list"
+                    st.session_state["flash"] = "Dokument gelöscht"
+
+                    _close_detail()
 
                     st.rerun()
 
@@ -219,7 +223,7 @@ def display_document(
                 notes,
             )
 
-            st.success("Notiz gespeichert")
+            st.session_state["flash"] = "Notiz gespeichert"
 
             st.rerun()
 
@@ -362,6 +366,21 @@ def display_document(
             updated_data["amount"] = normalize_amount(amount)
 
         elif document_type == TAX:
+            subtype_options = [
+                "lohnsteuerbescheinigung",
+                "einkommensbescheinigung",
+            ]
+            current_subtype = data.get("document_subtype", "")
+
+            document_subtype = st.selectbox(
+                "Unterart",
+                subtype_options,
+                index=subtype_options.index(current_subtype)
+                if current_subtype in subtype_options
+                else 0,
+                key=f"tax_subtype_{document_id}",
+            )
+
             employer = st.text_input(
                 "Arbeitgeber",
                 value=data.get(
@@ -380,8 +399,54 @@ def display_document(
                 key=f"tax_year_{document_id}",
             )
 
+            month = st.text_input(
+                "Monat (nur Einkommensbescheinigung)",
+                value=data.get(
+                    "month",
+                    "",
+                ),
+                key=f"month_{document_id}",
+            )
+
+            gross_amount = st.text_input(
+                "Bruttolohn",
+                value=_amount_input_value(data.get("gross_amount")),
+                key=f"gross_{document_id}",
+            )
+
+            income_tax = st.text_input(
+                "Lohnsteuer",
+                value=_amount_input_value(data.get("income_tax")),
+                key=f"income_tax_{document_id}",
+            )
+
+            soli = st.text_input(
+                "Solidaritätszuschlag",
+                value=_amount_input_value(data.get("soli")),
+                key=f"soli_{document_id}",
+            )
+
+            church_tax = st.text_input(
+                "Kirchensteuer",
+                value=_amount_input_value(data.get("church_tax")),
+                key=f"church_tax_{document_id}",
+            )
+
+            net_amount = st.text_input(
+                "Nettolohn",
+                value=_amount_input_value(data.get("net_amount")),
+                key=f"net_{document_id}",
+            )
+
+            updated_data["document_subtype"] = document_subtype
             updated_data["employer"] = employer
             updated_data["tax_year"] = tax_year
+            updated_data["month"] = month
+            updated_data["gross_amount"] = normalize_amount(gross_amount)
+            updated_data["income_tax"] = normalize_amount(income_tax)
+            updated_data["soli"] = normalize_amount(soli)
+            updated_data["church_tax"] = normalize_amount(church_tax)
+            updated_data["net_amount"] = normalize_amount(net_amount)
 
         if st.button(
             "💾 Änderungen übernehmen",
@@ -395,7 +460,7 @@ def display_document(
                 notes=notes,
             )
 
-            st.success("Dokument aktualisiert")
+            st.session_state["flash"] = "Dokument aktualisiert"
 
             st.rerun()
 

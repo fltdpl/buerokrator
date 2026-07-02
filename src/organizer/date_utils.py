@@ -43,6 +43,23 @@ def extract_year(extracted_data, fallback_year=None):
     return fallback_year
 
 
+def normalize_month(month):
+    """Normalisiert eine Monatsangabe zu zweistellig (z. B. 3 -> "03").
+
+    Gibt "00" als Platzhalter zurück, wenn kein Monat erkennbar ist, damit
+    Dateinamen im Format YYYY-MM korrekt sortieren.
+    """
+    if month is None:
+        return "00"
+
+    text = str(month).strip()
+
+    if text.isdigit():
+        return f"{int(text):02d}"
+
+    return text or "00"
+
+
 def year_from_archive_path(archive_path):
     """Liest das Archivjahr aus dem Pfad (Konvention archive/<Jahr>/...).
 

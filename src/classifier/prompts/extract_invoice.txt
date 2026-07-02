@@ -1,4 +1,7 @@
 Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
 
 Schema:
 
