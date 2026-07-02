@@ -2,6 +2,12 @@ import json
 
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 
+TAX_SUBTYPE_SHORT_LABELS = {
+    "lohnsteuerbescheinigung": "Lohnsteuer",
+    "gehaltsabrechnung": "Gehaltsabrechnung",
+    "einkommensbescheinigung": "Einkommensbescheinigung",
+}
+
 
 def get_document_display_name(
     document_type,
@@ -37,7 +43,10 @@ def get_document_display_name(
         document_label = data.get("product_name") or "Vorsorge"
 
     elif document_type == TAX:
-        document_label = "Lohnsteuer"
+        document_label = TAX_SUBTYPE_SHORT_LABELS.get(
+            data.get("document_subtype"),
+            "Steuer",
+        )
 
     elif document_type == BANK:
         document_label = data.get("document_subtype") or "Bank"

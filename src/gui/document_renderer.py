@@ -1,5 +1,5 @@
-import base64
 import json
+import shutil
 from pathlib import Path
 
 import streamlit as st
@@ -38,6 +38,27 @@ def _close_detail():
         del st.query_params["doc"]
 
 
+def _static_pdf_url(pdf_path, document_id):
+    """Kopiert das PDF nach ./static/ und gibt eine lokale URL zurück.
+
+    Streamlit liefert Dateien aus ./static/ unter app/static/ aus. Das umgeht
+    das Größenlimit von base64-Data-URIs, sodass auch große PDFs (mehrere MB)
+    im Viewer angezeigt werden. Kopiert wird nur, wenn die Kopie fehlt oder
+    veraltet ist.
+    """
+    source = Path(pdf_path)
+    target_dir = Path("static") / "pdf"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target = target_dir / f"{document_id}.pdf"
+
+    if not target.exists() or target.stat().st_mtime < source.stat().st_mtime:
+        shutil.copy2(source, target)
+
+    version = int(source.stat().st_mtime)
+
+    return f"app/static/pdf/{document_id}.pdf?v={version}"
+
+
 LABELS = {
     "issuer": "Aussteller",
     "document_date": "Datum",
@@ -50,12 +71,19 @@ LABELS = {
     "month": "Monat",
     "employer": "Arbeitgeber",
     "product_name": "Produkt",
-    "document_subtype": "Dokumenttyp",
+    "document_subtype": "Unterart",
     "gross_amount": "Bruttolohn",
-    "income_tax": "Lohnsteuer",
+    "income_tax": "Lohn-/Einkommensteuer",
     "soli": "Solidaritätszuschlag",
     "church_tax": "Kirchensteuer",
     "net_amount": "Nettolohn",
+    "settlement_amount": "Abrechnungsbetrag",
+}
+
+TAX_SUBTYPE_LABELS = {
+    "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
+    "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
+    "einkommensbescheinigung": "Einkommensbescheinigung (Finanzamt)",
 }
 
 
@@ -255,28 +283,31 @@ def display_document(
             key=f"document_type_{document_id}",
         )
 
-        issuer = st.text_input(
-            "Aussteller",
-            value=data.get(
-                "issuer",
-                "",
-            ),
-            key=f"issuer_{document_id}",
-        )
-
-        document_date = st.text_input(
-            "Datum",
-            value=data.get(
-                "document_date",
-                "",
-            ),
-            key=f"date_{document_id}",
-        )
-
         updated_data = dict(data)
 
-        updated_data["issuer"] = issuer
-        updated_data["document_date"] = document_date
+        # Aussteller/Datum sind für Steuerdokumente nicht relevant (die haben
+        # eigene Felder je Unterart) und werden dort ausgeblendet.
+        if document_type != TAX:
+            issuer = st.text_input(
+                "Aussteller",
+                value=data.get(
+                    "issuer",
+                    "",
+                ),
+                key=f"issuer_{document_id}",
+            )
+
+            document_date = st.text_input(
+                "Datum",
+                value=data.get(
+                    "document_date",
+                    "",
+                ),
+                key=f"date_{document_id}",
+            )
+
+            updated_data["issuer"] = issuer
+            updated_data["document_date"] = document_date
 
         if document_type == INVOICE:
             invoice_number = st.text_input(
@@ -368,6 +399,7 @@ def display_document(
         elif document_type == TAX:
             subtype_options = [
                 "lohnsteuerbescheinigung",
+                "gehaltsabrechnung",
                 "einkommensbescheinigung",
             ]
             current_subtype = data.get("document_subtype", "")
@@ -375,78 +407,106 @@ def display_document(
             document_subtype = st.selectbox(
                 "Unterart",
                 subtype_options,
+                format_func=lambda value: TAX_SUBTYPE_LABELS.get(value, value),
                 index=subtype_options.index(current_subtype)
                 if current_subtype in subtype_options
                 else 0,
                 key=f"tax_subtype_{document_id}",
             )
 
-            employer = st.text_input(
-                "Arbeitgeber",
-                value=data.get(
-                    "employer",
-                    "",
-                ),
-                key=f"employer_{document_id}",
-            )
+            updated_data["document_subtype"] = document_subtype
 
             tax_year = st.text_input(
                 "Steuerjahr",
-                value=data.get(
-                    "tax_year",
-                    "",
-                ),
+                value=data.get("tax_year", ""),
                 key=f"tax_year_{document_id}",
             )
-
-            month = st.text_input(
-                "Monat (nur Einkommensbescheinigung)",
-                value=data.get(
-                    "month",
-                    "",
-                ),
-                key=f"month_{document_id}",
-            )
-
-            gross_amount = st.text_input(
-                "Bruttolohn",
-                value=_amount_input_value(data.get("gross_amount")),
-                key=f"gross_{document_id}",
-            )
-
-            income_tax = st.text_input(
-                "Lohnsteuer",
-                value=_amount_input_value(data.get("income_tax")),
-                key=f"income_tax_{document_id}",
-            )
-
-            soli = st.text_input(
-                "Solidaritätszuschlag",
-                value=_amount_input_value(data.get("soli")),
-                key=f"soli_{document_id}",
-            )
-
-            church_tax = st.text_input(
-                "Kirchensteuer",
-                value=_amount_input_value(data.get("church_tax")),
-                key=f"church_tax_{document_id}",
-            )
-
-            net_amount = st.text_input(
-                "Nettolohn",
-                value=_amount_input_value(data.get("net_amount")),
-                key=f"net_{document_id}",
-            )
-
-            updated_data["document_subtype"] = document_subtype
-            updated_data["employer"] = employer
             updated_data["tax_year"] = tax_year
-            updated_data["month"] = month
-            updated_data["gross_amount"] = normalize_amount(gross_amount)
-            updated_data["income_tax"] = normalize_amount(income_tax)
-            updated_data["soli"] = normalize_amount(soli)
-            updated_data["church_tax"] = normalize_amount(church_tax)
-            updated_data["net_amount"] = normalize_amount(net_amount)
+
+            if document_subtype == "einkommensbescheinigung":
+                # Finanzamt-Bescheinigung
+                finanzamt = st.text_input(
+                    "Finanzamt",
+                    value=data.get("issuer", ""),
+                    key=f"tax_issuer_{document_id}",
+                )
+
+                income_tax = st.text_input(
+                    "Einkommensteuer",
+                    value=_amount_input_value(data.get("income_tax")),
+                    key=f"income_tax_{document_id}",
+                )
+
+                soli = st.text_input(
+                    "Solidaritätszuschlag",
+                    value=_amount_input_value(data.get("soli")),
+                    key=f"soli_{document_id}",
+                )
+
+                settlement_amount = st.text_input(
+                    "Abrechnungsbetrag (Erstattung negativ)",
+                    value=_amount_input_value(data.get("settlement_amount")),
+                    key=f"settlement_{document_id}",
+                )
+
+                updated_data["issuer"] = finanzamt
+                updated_data["income_tax"] = normalize_amount(income_tax)
+                updated_data["soli"] = normalize_amount(soli)
+                updated_data["settlement_amount"] = normalize_amount(settlement_amount)
+
+            else:
+                employer = st.text_input(
+                    "Arbeitgeber",
+                    value=data.get("employer", ""),
+                    key=f"employer_{document_id}",
+                )
+                updated_data["employer"] = employer
+
+                gross_amount = st.text_input(
+                    "Bruttolohn",
+                    value=_amount_input_value(data.get("gross_amount")),
+                    key=f"gross_{document_id}",
+                )
+                updated_data["gross_amount"] = normalize_amount(gross_amount)
+
+                if document_subtype == "gehaltsabrechnung":
+                    month = st.text_input(
+                        "Monat",
+                        value=data.get("month", ""),
+                        key=f"month_{document_id}",
+                    )
+
+                    net_amount = st.text_input(
+                        "Nettolohn",
+                        value=_amount_input_value(data.get("net_amount")),
+                        key=f"net_{document_id}",
+                    )
+
+                    updated_data["month"] = month
+                    updated_data["net_amount"] = normalize_amount(net_amount)
+
+                else:  # lohnsteuerbescheinigung
+                    income_tax = st.text_input(
+                        "Lohnsteuer",
+                        value=_amount_input_value(data.get("income_tax")),
+                        key=f"income_tax_{document_id}",
+                    )
+
+                    soli = st.text_input(
+                        "Solidaritätszuschlag",
+                        value=_amount_input_value(data.get("soli")),
+                        key=f"soli_{document_id}",
+                    )
+
+                    church_tax = st.text_input(
+                        "Kirchensteuer",
+                        value=_amount_input_value(data.get("church_tax")),
+                        key=f"church_tax_{document_id}",
+                    )
+
+                    updated_data["income_tax"] = normalize_amount(income_tax)
+                    updated_data["soli"] = normalize_amount(soli)
+                    updated_data["church_tax"] = normalize_amount(church_tax)
 
         if st.button(
             "💾 Änderungen übernehmen",
@@ -469,15 +529,11 @@ def display_document(
     st.subheader("PDF")
 
     if pdf_path.exists():
-        with open(
-            pdf_path,
-            "rb",
-        ) as pdf_file:
-            base64_pdf = base64.b64encode(pdf_file.read()).decode("utf-8")
+        pdf_url = _static_pdf_url(pdf_path, document_id)
 
         pdf_display = f"""
         <iframe
-            src="data:application/pdf;base64,{base64_pdf}"
+            src="{pdf_url}"
             width="100%"
             height="1200"
             type="application/pdf">
