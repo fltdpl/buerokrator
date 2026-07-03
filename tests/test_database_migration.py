@@ -13,6 +13,7 @@ EXPECTED_DOCUMENT_COLUMNS = {
     "verified",
     "document_text",
     "notes",
+    "tax_year",
 }
 
 

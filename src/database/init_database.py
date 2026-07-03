@@ -11,6 +11,7 @@ DOCUMENT_COLUMNS = {
     "verified": "INTEGER DEFAULT 0",
     "document_text": "TEXT",
     "notes": "TEXT",
+    "tax_year": "TEXT",
 }
 
 REQUIRED_EXISTING_COLUMNS = {

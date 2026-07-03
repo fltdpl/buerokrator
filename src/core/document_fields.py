@@ -54,9 +54,57 @@ ALLOWED_FIELDS = {
         "document_date",
         "document_subtype",
         "amount",
+        # Bauspar-Jahresauszug / Kapitalerträge / Steuerbescheinigung
+        "interest",
+        "capital_gains_tax",
+        "soli",
+        "church_tax",
+        "contributions_total",
+        "opening_balance",
+        "closing_balance",
     },
     BANK: {"issuer", "document_date", "document_subtype"},
     HOUSING: {"issuer", "document_date", "document_subtype"},
+}
+
+# Pension-Subtypen: der Bauspar-Jahresauszug nutzt Kapitalertragsfelder statt
+# des generischen amount (Jahresbeitrag); alle anderen den Basissatz.
+PENSION_BASE_FIELDS = {
+    "issuer",
+    "product_name",
+    "policy_number",
+    "document_date",
+    "document_subtype",
+    "amount",
+}
+
+PENSION_BAUSPAR_FIELDS = {
+    "issuer",
+    "product_name",
+    "policy_number",
+    "document_date",
+    "document_subtype",
+    "interest",
+    "contributions_total",
+    "opening_balance",
+    "closing_balance",
+}
+
+PENSION_STEUERBESCHEINIGUNG_FIELDS = {
+    "issuer",
+    "product_name",
+    "policy_number",
+    "document_date",
+    "document_subtype",
+    "interest",
+    "capital_gains_tax",
+    "soli",
+    "church_tax",
+}
+
+PENSION_SUBTYPE_FIELDS = {
+    "bauspar_jahresauszug": PENSION_BAUSPAR_FIELDS,
+    "steuerbescheinigung": PENSION_STEUERBESCHEINIGUNG_FIELDS,
 }
 
 
@@ -74,6 +122,11 @@ def whitelist_fields(document_type, data):
     if document_type == TAX:
         subtype = data.get("document_subtype")
         allowed = TAX_SUBTYPE_FIELDS.get(subtype, ALLOWED_FIELDS[TAX])
+        return {key: value for key, value in data.items() if key in allowed}
+
+    if document_type == PENSION:
+        subtype = data.get("document_subtype")
+        allowed = PENSION_SUBTYPE_FIELDS.get(subtype, PENSION_BASE_FIELDS)
         return {key: value for key, value in data.items() if key in allowed}
 
     if document_type not in ALLOWED_FIELDS:

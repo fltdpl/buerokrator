@@ -1,9 +1,11 @@
 import json
 from datetime import datetime
 
+from src.core.amount_utils import enforce_amount_signs
 from src.core.document_fields import whitelist_fields
 from src.database.database import get_connection
 from src.database.update_document import update_document
+from src.organizer.date_utils import extract_year
 from src.organizer.filename_builder import rename_document
 
 
@@ -30,11 +32,12 @@ def insert_document(
             extracted_data,
             document_text,
             created_at,
-            verified
+            verified,
+            tax_year
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             filename,
@@ -47,6 +50,7 @@ def insert_document(
             document_text,
             datetime.now().isoformat(),
             verified,
+            extract_year(extracted_data),
         ),
     )
 
@@ -64,8 +68,11 @@ def save_document(
 ):
 
     # Auf die für den Dokumenttyp erlaubten Felder begrenzen, damit auch beim
-    # Bearbeiten keine fremden Felder (weiter-)gespeichert werden.
-    extracted_data = whitelist_fields(document_type, extracted_data)
+    # Bearbeiten keine fremden Felder (weiter-)gespeichert werden. Beträge als
+    # Magnitude speichern (Vorzeichen-Verwechslung absichern).
+    extracted_data = enforce_amount_signs(
+        whitelist_fields(document_type, extracted_data)
+    )
 
     new_path = rename_document(
         archive_path,

@@ -17,7 +17,20 @@ KNOWN_ISSUERS = {
     "Lebensversicherungsverein a. G.": "Debeka",
 }
 
+KNOWN_PREFIXES = {
+    "Debeka": "Debeka",
+}
+
+
+# def normalize_issuer(issuer):
+#
+#    return KNOWN_ISSUERS.get(issuer, issuer)
+
 
 def normalize_issuer(issuer):
-
-    return KNOWN_ISSUERS.get(issuer, issuer)
+    if issuer in KNOWN_ISSUERS:
+        return KNOWN_ISSUERS[issuer]
+    for prefix, short in KNOWN_PREFIXES.items():
+        if issuer.startswith(prefix):
+            return short
+    return issuer
