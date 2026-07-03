@@ -1,6 +1,7 @@
 import json
 
 from src.database.database import get_connection
+from src.organizer.date_utils import extract_year
 
 
 def update_document(
@@ -25,7 +26,8 @@ def update_document(
             document_type = ?,
             extracted_data = ?,
             notes = ?,
-            verified = 1
+            verified = 1,
+            tax_year = ?
         WHERE id = ?
         """,
         (
@@ -37,6 +39,7 @@ def update_document(
                 ensure_ascii=False,
             ),
             notes,
+            extract_year(extracted_data),
             document_id,
         ),
     )

@@ -68,6 +68,34 @@ def render_tax_page():
         mime="text/csv",
     )
 
+    capital = summary["capital_income"]
+
+    if totals["income_tax"] or capital["count"]:
+        st.markdown("---")
+        st.subheader("Weitere steuerrelevante Summen")
+
+        scol1, scol2, scol3 = st.columns(3)
+
+        scol1.metric(
+            "Gezahlte Lohn-/Einkommensteuer",
+            _format_euro(totals["income_tax"]),
+        )
+        scol2.metric(
+            "Guthabenszinsen (Anlage KAP)",
+            _format_euro(capital["interest"]),
+        )
+        scol3.metric(
+            "Kapitalertragssteuer",
+            _format_euro(capital["capital_gains_tax"]),
+        )
+
+        if capital["count"]:
+            st.caption(
+                f"Kapitalerträge aus {capital['count']} Steuerbescheinigung(en). "
+                "Bauspar-Kontoauszüge zählen nicht mit (Steuerbescheinigung ist "
+                "maßgeblich)."
+            )
+
     st.markdown("---")
 
     for category in summary["categories"]:

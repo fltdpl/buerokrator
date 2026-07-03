@@ -234,6 +234,7 @@ def render_documents_page(display_document):
         display_name = get_document_display_name(
             document_type,
             data,
+            year=_document_year(row),
         )
 
         table_rows.append(

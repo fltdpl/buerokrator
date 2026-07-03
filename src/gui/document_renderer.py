@@ -24,6 +24,7 @@ from src.database.set_document_verified import (
     set_document_verified,
 )
 
+
 def _amount_input_value(amount):
     """Betrag für ein Textfeld aufbereiten: None/leer -> "" statt "None"."""
     if amount is None or amount == "":
@@ -78,6 +79,11 @@ LABELS = {
     "church_tax": "Kirchensteuer",
     "net_amount": "Nettolohn",
     "settlement_amount": "Abrechnungsbetrag",
+    "interest": "Guthabenszinsen",
+    "capital_gains_tax": "Kapitalertragssteuer",
+    "contributions_total": "Beiträge (Jahressumme)",
+    "opening_balance": "Saldovortrag",
+    "closing_balance": "Endsaldo",
 }
 
 TAX_SUBTYPE_LABELS = {
@@ -85,6 +91,30 @@ TAX_SUBTYPE_LABELS = {
     "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
     "einkommensbescheinigung": "Einkommensbescheinigung (Finanzamt)",
 }
+
+PENSION_SUBTYPE_LABELS = {
+    "contract": "Vertrag",
+    "annual_statement": "Jahresmitteilung",
+    "cost_statement": "Kostenmitteilung",
+    "surrender_value_table": "Rückkaufswerte",
+    "pension_information": "Renteninformation",
+    "bauspar_jahresauszug": "Bauspar-Jahresauszug",
+    "steuerbescheinigung": "Steuerbescheinigung",
+}
+
+
+def _subtype_selectbox(label, options, current, key, format_func):
+    """Selectbox, die einen unbekannten Bestandswert erhält statt ihn zu überschreiben."""
+    if current and current not in options:
+        options = [current, *options]
+
+    return st.selectbox(
+        label,
+        options,
+        index=options.index(current) if current in options else 0,
+        format_func=format_func,
+        key=key,
+    )
 
 
 def display_document(
@@ -376,25 +406,50 @@ def display_document(
                 key=f"policy_{document_id}",
             )
 
-            document_subtype = st.text_input(
-                "Dokumenttyp",
-                value=data.get(
-                    "document_subtype",
-                    "",
-                ),
+            document_subtype = _subtype_selectbox(
+                "Unterart",
+                list(PENSION_SUBTYPE_LABELS.keys()),
+                data.get("document_subtype", ""),
                 key=f"subtype_{document_id}",
-            )
-
-            amount = st.text_input(
-                "Betrag (Jahresbeitrag)",
-                value=_amount_input_value(data.get("amount")),
-                key=f"amount_{document_id}",
+                format_func=lambda value: PENSION_SUBTYPE_LABELS.get(value, value),
             )
 
             updated_data["product_name"] = product_name
             updated_data["policy_number"] = policy_number
             updated_data["document_subtype"] = document_subtype
-            updated_data["amount"] = normalize_amount(amount)
+
+            capital_fields = {
+                "bauspar_jahresauszug": (
+                    ("interest", "Guthabenszinsen"),
+                    ("contributions_total", "Beiträge (Jahressumme)"),
+                    ("opening_balance", "Saldovortrag"),
+                    ("closing_balance", "Endsaldo"),
+                ),
+                "steuerbescheinigung": (
+                    ("interest", "Kapitalerträge"),
+                    ("capital_gains_tax", "Kapitalertragssteuer"),
+                    ("soli", "Solidaritätszuschlag"),
+                    ("church_tax", "Kirchensteuer"),
+                ),
+            }
+
+            if document_subtype in capital_fields:
+                # Kapitalertragsfelder statt generischem Jahresbeitrag.
+                for field, label in capital_fields[document_subtype]:
+                    value = st.text_input(
+                        label,
+                        value=_amount_input_value(data.get(field)),
+                        key=f"{field}_{document_id}",
+                    )
+                    updated_data[field] = normalize_amount(value)
+
+            else:
+                amount = st.text_input(
+                    "Betrag (Jahresbeitrag)",
+                    value=_amount_input_value(data.get("amount")),
+                    key=f"amount_{document_id}",
+                )
+                updated_data["amount"] = normalize_amount(amount)
 
         elif document_type == TAX:
             subtype_options = [

@@ -12,7 +12,14 @@ Schema:
   "policy_number": "",
   "document_date": "",
   "document_subtype": "",
-  "amount": null
+  "amount": null,
+  "interest": null,
+  "capital_gains_tax": null,
+  "soli": null,
+  "church_tax": null,
+  "contributions_total": null,
+  "opening_balance": null,
+  "closing_balance": null
 }}
 
 Extrahiere:
@@ -54,6 +61,31 @@ Rückkaufswerte, beitragsfreie Werte
 
 pension_information:
 allgemeine Renteninformation
+
+bauspar_jahresauszug:
+jährlicher Kontoauszug eines Bausparvertrags
+
+steuerbescheinigung:
+Steuerbescheinigung über Kapitalerträge
+
+Bei bauspar_jahresauszug zusätzlich (sonst null):
+
+- interest = Guthabenszinsen
+- contributions_total = Summe der Beiträge im Jahr
+- opening_balance = Saldovortrag
+- closing_balance = Endsaldo
+
+Steuern (Kapitalertragssteuer, Soli) NICHT vom Kontoauszug
+erfassen; diese stehen auf der Steuerbescheinigung.
+
+Bei steuerbescheinigung zusätzlich (sonst null):
+
+- interest = Kapitalerträge
+- capital_gains_tax = Kapitalertragssteuer
+- soli = Solidaritätszuschlag
+- church_tax = Kirchensteuer
+
+Beträge müssen Zahlen sein. Keine Währungszeichen.
 
 Wenn ein Wert nicht gefunden wird, verwende "".
 

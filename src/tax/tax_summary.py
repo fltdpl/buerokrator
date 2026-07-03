@@ -110,7 +110,11 @@ def build_tax_summary(year, documents=None):
         "verified_amount": 0.0,
         "deductible_amount": 0.0,
         "deductible_verified_amount": 0.0,
+        # gezahlte Lohn-/Einkommensteuer (aus tax-Dokumenten)
+        "income_tax": 0.0,
     }
+    # Kapitalerträge (Anlage KAP), z. B. aus Bauspar-Jahresauszügen.
+    capital_income = {"interest": 0.0, "capital_gains_tax": 0.0, "count": 0}
 
     for row in documents:
         if year_from_archive_path(row[2]) != year:
@@ -121,6 +125,21 @@ def build_tax_summary(year, documents=None):
         data = _parse_data(row[4])
         amount = normalize_amount(data.get("amount"))
         verified = bool(row[5])
+
+        # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
+        income_tax = normalize_amount(data.get("income_tax"))
+        if income_tax is not None:
+            totals["income_tax"] += income_tax
+
+        # Nur die Steuerbescheinigung ist maßgeblich (aggregiert je Anbieter
+        # über alle Verträge). Kontoauszüge würden sonst doppelt gezählt.
+        if data.get("document_subtype") == "steuerbescheinigung":
+            interest = normalize_amount(data.get("interest"))
+            capital_gains_tax = normalize_amount(data.get("capital_gains_tax"))
+            if interest is not None or capital_gains_tax is not None:
+                capital_income["count"] += 1
+                capital_income["interest"] += interest or 0.0
+                capital_income["capital_gains_tax"] += capital_gains_tax or 0.0
 
         entry = categories.setdefault(category, _new_category_entry(category))
 
@@ -173,6 +192,7 @@ def build_tax_summary(year, documents=None):
         "year": year,
         "categories": ordered,
         "totals": totals,
+        "capital_income": capital_income,
     }
 
 

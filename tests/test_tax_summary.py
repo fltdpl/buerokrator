@@ -96,3 +96,38 @@ def test_export_tax_summary_csv_has_header_and_rows():
     assert lines[0] == "Datum;Kategorie;Betrag;Geprueft;Dokumentreferenz"
     # Eine Zeile pro Dokument des Jahres (5 Dokumente 2019).
     assert len(lines) == 1 + 5
+
+
+def test_capital_income_counts_only_steuerbescheinigung():
+    docs = [
+        make_row(
+            1,
+            "pension",
+            2023,
+            {
+                "document_subtype": "steuerbescheinigung",
+                "interest": 120.0,
+                "capital_gains_tax": 30.0,
+            },
+        ),
+        # Bauspar-Kontoauszug: darf NICHT in die Kapitalerträge-Summe zählen.
+        make_row(
+            2,
+            "pension",
+            2023,
+            {"document_subtype": "bauspar_jahresauszug", "interest": 999.0},
+        ),
+        make_row(
+            3,
+            "tax",
+            2023,
+            {"document_subtype": "lohnsteuerbescheinigung", "income_tax": 8000.0},
+        ),
+    ]
+
+    summary = build_tax_summary(2023, docs)
+
+    assert summary["capital_income"]["count"] == 1
+    assert summary["capital_income"]["interest"] == 120.0
+    assert summary["capital_income"]["capital_gains_tax"] == 30.0
+    assert summary["totals"]["income_tax"] == 8000.0

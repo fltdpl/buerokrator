@@ -12,6 +12,7 @@ TAX_SUBTYPE_SHORT_LABELS = {
 def get_document_display_name(
     document_type,
     extracted_data,
+    year=None,
 ):
 
     if isinstance(
@@ -56,5 +57,8 @@ def get_document_display_name(
 
     else:
         document_label = "Dokument"
+
+    if year:
+        return f"{year} · {issuer} · {document_label}"
 
     return f"{issuer} · {document_label}"
