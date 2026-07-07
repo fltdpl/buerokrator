@@ -130,6 +130,8 @@ def render_tax_page():
                 date_text = document["document_date"] or "ohne Datum"
                 issuer_text = document["issuer"] or type_label
 
-                st.write(
-                    f"{status}  {date_text}  ·  {issuer_text}  ·  **{amount_text}**"
+                st.markdown(
+                    f"{status}  {date_text}  ·  "
+                    f"[{issuer_text}](/Dokumente?doc={document['id']})"
+                    f"  ·  **{amount_text}**"
                 )
