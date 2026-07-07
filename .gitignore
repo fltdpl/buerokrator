@@ -28,6 +28,7 @@ temp/
 # Von Streamlit ausgelieferte PDF-Vorschauen (Kopien privater Dokumente)
 static/
 
+
 # Betriebssystem
 .DS_Store
 Thumbs.db
@@ -38,3 +39,6 @@ Thumbs.db
 
 # Obsidian Cache
 .obsidian/
+
+# Handover-Notizen (nur lokal, nicht versioniert)
+HANDOVER.md
