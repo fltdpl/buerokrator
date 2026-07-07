@@ -46,6 +46,32 @@ class TestValuesMatch:
     def test_bool_not_treated_as_number(self):
         assert not values_match(1.0, True)
 
+    def test_dates_match_across_formats(self):
+        assert values_match("31.12.2022", "2022-12-31")
+        assert values_match("05.05.2026", "05. Mai 2026")
+        assert values_match("5.5.2026", "05.05.2026")
+        assert not values_match("31.12.2022", "01.01.2023")
+        assert not values_match("31.12.2022", "")
+
+    def test_empty_expected_matches_empty_actual(self):
+        assert values_match("", None)
+        assert values_match(None, "")
+        assert values_match("", "  ")
+        assert not values_match("", "990001112223")
+
+    def test_issuer_containment_counts_as_match(self):
+        assert values_match("Debeka Bausparkasse", "Debeka Bausparkasse AG")
+        assert values_match("Deutsche Wohnen Management GmbH", "Deutsche Wohnen")
+        # Kurze Fragmente dürfen nicht per Teilstring matchen
+        assert not values_match("AG", "Debeka Bausparkasse AG")
+        assert not values_match("Bausparvertrag", "Steuerbescheinigung")
+
+    def test_company_form_aliases(self):
+        assert values_match(
+            "Debeka Bausparkasse AG",
+            "Debeka Bausparkasse Aktiengesellschaft",
+        )
+
 
 class TestCompareDocument:
     def test_all_correct(self):

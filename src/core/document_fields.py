@@ -1,3 +1,5 @@
+from difflib import get_close_matches
+
 from src.core.document_types import (
     BANK,
     HOUSING,
@@ -98,10 +100,12 @@ PENSION_BAUSPAR_FIELDS = {
     "closing_balance",
 }
 
+# Bewusst OHNE policy_number: die Steuerbescheinigung aggregiert je Anbieter
+# über alle Verträge — eine einzelne Vertragsnummer wäre irreführend (das LLM
+# greift sonst Steuernummern o. Ä. ab).
 PENSION_STEUERBESCHEINIGUNG_FIELDS = {
     "issuer",
     "product_name",
-    "policy_number",
     "document_date",
     "document_subtype",
     "interest",
@@ -168,14 +172,24 @@ SUBTYPE_ALIASES = {
 def normalize_subtype(document_type, value):
     """Normalisiert einen Subtyp auf das kanonische Vokabular.
 
-    Kleinschreibung + Alias-Mapping; unbekannte Werte bleiben (kleingeschrieben)
+    Kleinschreibung + Alias-Mapping; LLM-Tippfehler (z. B.
+    "bauxpar_jahresauszug") werden per Ähnlichkeitsvergleich auf den nächsten
+    bekannten Subtyp korrigiert. Unbekannte Werte bleiben (kleingeschrieben)
     erhalten, damit nichts verloren geht.
     """
     if not isinstance(value, str) or not value.strip():
         return value
 
     lowered = value.strip().lower()
-    return SUBTYPE_ALIASES.get(document_type, {}).get(lowered, lowered)
+    aliased = SUBTYPE_ALIASES.get(document_type, {}).get(lowered, lowered)
+
+    known = KNOWN_SUBTYPES.get(document_type)
+    if known and aliased not in known:
+        close = get_close_matches(aliased, known, n=1, cutoff=0.85)
+        if close:
+            return close[0]
+
+    return aliased
 
 
 def whitelist_fields(document_type, data):

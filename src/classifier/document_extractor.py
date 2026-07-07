@@ -7,9 +7,11 @@ from src.core.document_fields import whitelist_fields
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
 
-# Steuerdokumente brauchen mehr Kontext: Titel steht oben, die Beträge
-# (Bruttolohn, Lohnsteuer, Soli, Kirchensteuer) stehen oft weiter unten.
+# Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
+# die Beträge (Lohnsteuer/Soli bzw. Zinsen/Salden beim Bauspar-Jahresauszug)
+# stehen oft weiter unten.
 TAX_MAX_INPUT_CHARS = 6000
+PENSION_MAX_INPUT_CHARS = 6000
 
 
 def run_extractor(prompt_file, text, max_input_chars=None):
@@ -80,16 +82,22 @@ PROMPT_FILES = {
 
 
 def _extract(document_type, text, max_input_chars=None):
-    try:
-        data = run_extractor(
-            PROMPT_FILES[document_type],
-            text,
-            max_input_chars=max_input_chars,
-        )
+    # Ein Wiederholungsversuch: das LLM liefert gelegentlich einmalig
+    # ungültiges JSON — ohne Retry gehen dann alle Felder verloren.
+    data = None
+    for attempt in (1, 2):
+        try:
+            data = run_extractor(
+                PROMPT_FILES[document_type],
+                text,
+                max_input_chars=max_input_chars,
+            )
+            break
 
-    except Exception as e:
-        print(f"JSON Fehler: {e}")
+        except Exception as e:
+            print(f"JSON Fehler (Versuch {attempt}): {e}")
 
+    if data is None:
         return {}
 
     if not isinstance(data, dict):
@@ -115,7 +123,7 @@ def extract_insurance(text):
 
 
 def extract_pension(text):
-    return _extract(PENSION, text)
+    return _extract(PENSION, text, max_input_chars=PENSION_MAX_INPUT_CHARS)
 
 
 def extract_bank(text):

@@ -24,13 +24,33 @@ Schema:
 
 Extrahiere:
 
-- issuer = Anbieter der Rentenversicherung
-- product_name = Produktbezeichnung
-- policy_number = Vertragsnummer / Versicherungsscheinnummer
-- document_date = Dokumentdatum
+- issuer = Anbieter / Gesellschaft
+  (z. B. "Debeka Bausparkasse AG", "VBL")
+
+- product_name = Bezeichnung des PRODUKTS bzw. Tarifs
+  (z. B. "Bausparvertrag", "VBLklassik", "Rentenversicherung")
+  NICHT der Titel des Dokuments ("Steuerbescheinigung",
+  "Jahreskontoauszug", "Bausparkasse" sind KEINE Produktnamen).
+  Bei allen Dokumenten einer Bausparkasse ist das Produkt
+  "Bausparvertrag".
+
+- policy_number = Vertragsnummer / Bausparkontonummer /
+  Versicherungsscheinnummer des Vertrags, um den es geht.
+  Keine Kundennummer, keine Steuernummer, keine Nummer des
+  Finanzamts. Steht keine Vertragsnummer im Dokument
+  (z. B. Steuerbescheinigung über mehrere Verträge),
+  verwende "".
+
+- document_date = Datum des Dokuments oder Stichtag
 
 Format:
 DD.MM.YYYY
+
+Beispiel: 30.12.2022
+
+Bei Jahresauszügen und Steuerbescheinigungen ist der Stichtag
+der LETZTE Tag des bescheinigten Jahres (z. B. 31.12.2022),
+NIEMALS der 01.01.
 
 - amount = jährlicher Beitrag / Sparbeitrag
 
@@ -47,8 +67,10 @@ Wenn kein Beitrag gefunden wird, verwende null.
 
 document_subtype:
 
+Wähle exakt einen dieser Werte:
+
 contract:
-Versicherungsschein, Nachtrag, Antrag, Vertragsunterlagen
+Versicherungsschein, Nachtrag, Antrag, Vertragsunterlagen, Urkunde
 
 annual_statement:
 jährliche Mitteilung zum Stand der Rentenversicherung
@@ -70,10 +92,10 @@ Steuerbescheinigung über Kapitalerträge
 
 Bei bauspar_jahresauszug zusätzlich (sonst null):
 
-- interest = Guthabenszinsen
-- contributions_total = Summe der Beiträge im Jahr
-- opening_balance = Saldovortrag
-- closing_balance = Endsaldo
+- interest = Guthabenszinsen des Jahres
+- contributions_total = Summe der Sparbeiträge im Jahr
+- opening_balance = Saldovortrag / Anfangssaldo
+- closing_balance = Endsaldo / neues Guthaben
 
 Steuern (Kapitalertragssteuer, Soli) NICHT vom Kontoauszug
 erfassen; diese stehen auf der Steuerbescheinigung.
@@ -85,9 +107,15 @@ Bei steuerbescheinigung zusätzlich (sonst null):
 - soli = Solidaritätszuschlag
 - church_tax = Kirchensteuer
 
-Beträge müssen Zahlen sein. Keine Währungszeichen.
+Listet die Bescheinigung mehrere Verträge auf, gib jeweils die
+SUMME über alle Verträge an (steht meist als Gesamtbetrag im
+Dokument).
 
-Wenn ein Wert nicht gefunden wird, verwende "".
+Beträge müssen Zahlen sein. Keine Währungszeichen.
+Steht ein Betrag als 0,00 im Dokument, verwende 0.0 (nicht null).
+
+Wenn ein Textfeld nicht gefunden wird, verwende "".
+Wenn ein Betrag nicht gefunden wird, verwende null.
 
 Dokument:
 

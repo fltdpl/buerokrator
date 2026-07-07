@@ -23,10 +23,15 @@ Schema:
 Bestimme zuerst document_subtype:
 
 "lohnsteuerbescheinigung"
-  = jährliche Lohnsteuerbescheinigung vom Arbeitgeber
+  = Lohnsteuerbescheinigung vom Arbeitgeber.
+  Entscheidend ist der TITEL des Dokuments: Steht dort
+  "Lohnsteuerbescheinigung", ist es IMMER lohnsteuerbescheinigung —
+  auch wenn sie nur einen Monat oder Teilzeitraum bescheinigt.
 
 "gehaltsabrechnung"
-  = monatliche Gehalts-, Entgelt- oder Lohnabrechnung vom Arbeitgeber
+  = Gehalts-, Entgelt- oder Lohnabrechnung vom Arbeitgeber
+  (Titel z. B. "Gehaltsabrechnung", "Entgeltabrechnung",
+  "Verdienstabrechnung", "Abrechnung der Brutto-Netto-Bezüge")
 
 "einkommensbescheinigung"
   = Bescheinigung oder Bescheid vom Finanzamt über Einkommen/Steuer
@@ -69,8 +74,13 @@ Beispiele:
 2450.00
 -383.16
 
-Wenn ein Wert nicht gefunden wird,
-verwende "" bzw. null.
+Steht ein Betrag als 0,00 im Dokument (z. B. Lohnsteuer 0,00
+bei geringfügiger Beschäftigung), verwende 0.0 — nicht null.
+Bei lohnsteuerbescheinigung IMMER income_tax, soli und
+church_tax angeben (notfalls 0.0).
+
+Wenn ein Textfeld nicht gefunden wird, verwende "".
+Wenn ein Betrag nicht im Dokument steht, verwende null.
 
 Dokument:
 

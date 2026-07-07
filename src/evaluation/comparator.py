@@ -3,12 +3,87 @@
 Bewusst ohne LLM-/OCR-Abhängigkeiten, damit sie vollständig testbar ist.
 """
 
+import re
+from datetime import date
+
 # Toleranz für Betragsvergleiche (Rundungsdifferenzen der Normalisierung).
 AMOUNT_TOLERANCE = 0.01
 
+# Kurzer Text (z. B. "AG") darf nicht per Teilstring matchen.
+MIN_CONTAINMENT_LENGTH = 4
+
+GERMAN_MONTHS = {
+    "januar": 1,
+    "februar": 2,
+    "märz": 3,
+    "maerz": 3,
+    "april": 4,
+    "mai": 5,
+    "juni": 6,
+    "juli": 7,
+    "august": 8,
+    "september": 9,
+    "oktober": 10,
+    "november": 11,
+    "dezember": 12,
+}
+
+_DATE_PATTERNS = (
+    # 31.12.2022 / 1.2.2022
+    (re.compile(r"^(\d{1,2})\.(\d{1,2})\.(\d{4})$"), ("d", "m", "y")),
+    # 2022-12-31
+    (re.compile(r"^(\d{4})-(\d{1,2})-(\d{1,2})$"), ("y", "m", "d")),
+)
+
+
+def _parse_date(value):
+    """Parst gängige Datumsschreibweisen ("31.12.2022", "2022-12-31",
+    "5. Mai 2026") zu einem date — sonst None."""
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip()
+
+    for pattern, order in _DATE_PATTERNS:
+        match = pattern.match(text)
+        if match:
+            parts = dict(zip(order, match.groups()))
+            try:
+                return date(int(parts["y"]), int(parts["m"]), int(parts["d"]))
+            except ValueError:
+                return None
+
+    # "5. Mai 2026"
+    match = re.match(r"^(\d{1,2})\.?\s+([A-Za-zäöüÄÖÜ]+)\s+(\d{4})$", text)
+    if match:
+        month = GERMAN_MONTHS.get(match.group(2).lower())
+        if month:
+            try:
+                return date(int(match.group(3)), month, int(match.group(1)))
+            except ValueError:
+                return None
+
+    return None
+
+
+# Häufige Firmierungs-Varianten, die dieselbe Firma bezeichnen.
+_COMPANY_FORM_ALIASES = (
+    ("aktiengesellschaft", "ag"),
+    ("gesellschaft mit beschränkter haftung", "gmbh"),
+)
+
 
 def _normalize_string(value):
-    return " ".join(str(value).strip().casefold().split())
+    text = " ".join(str(value).strip().casefold().split())
+
+    for long_form, short_form in _COMPANY_FORM_ALIASES:
+        text = text.replace(long_form, short_form)
+
+    return text
+
+
+def _is_empty(value):
+    return value is None or (isinstance(value, str) and not value.strip())
 
 
 def _as_number(value):
@@ -25,12 +100,20 @@ def _as_number(value):
 def values_match(expected, actual):
     """Vergleicht einen erwarteten mit einem extrahierten Feldwert.
 
-    Zahlen (auch als String) werden numerisch mit Toleranz verglichen,
-    alles andere als normalisierter String (Groß-/Kleinschreibung,
-    Whitespace egal).
+    - leer erwartet (None/"") matcht leer extrahiert
+    - Daten in verschiedenen Schreibweisen werden als Datum verglichen
+    - Zahlen (auch als String) numerisch mit Toleranz
+    - sonst normalisierter Stringvergleich; zusätzlich gilt Enthaltensein
+      als Treffer ("Debeka Bausparkasse" vs. "Debeka Bausparkasse AG"),
+      damit Aussteller-Varianten die Messung nicht verrauschen
     """
-    if expected is None:
-        return actual is None
+    if _is_empty(expected):
+        return _is_empty(actual)
+
+    expected_date = _parse_date(expected)
+    if expected_date is not None:
+        actual_date = _parse_date(actual) if not _is_empty(actual) else None
+        return actual_date == expected_date
 
     expected_number = _as_number(expected)
     if expected_number is not None:
@@ -39,10 +122,22 @@ def values_match(expected, actual):
             return False
         return abs(expected_number - actual_number) <= AMOUNT_TOLERANCE
 
-    if actual is None:
+    if _is_empty(actual):
         return False
 
-    return _normalize_string(expected) == _normalize_string(actual)
+    expected_text = _normalize_string(expected)
+    actual_text = _normalize_string(actual)
+
+    if expected_text == actual_text:
+        return True
+
+    if (
+        min(len(expected_text), len(actual_text)) >= MIN_CONTAINMENT_LENGTH
+        and (expected_text in actual_text or actual_text in expected_text)
+    ):
+        return True
+
+    return False
 
 
 def compare_document(case, actual_type, actual_fields):
@@ -61,8 +156,8 @@ def compare_document(case, actual_type, actual_fields):
     field_results = {}
     for field, expected in expected_fields.items():
         if field not in actual_fields:
-            # Erwartet "kein Wert" + Feld nicht extrahiert = korrekt.
-            status = "correct" if expected is None else "missing"
+            # Erwartet "kein Wert" (None/"") + Feld nicht extrahiert = korrekt.
+            status = "correct" if _is_empty(expected) else "missing"
             field_results[field] = {"status": status, "expected": expected, "actual": None}
         elif values_match(expected, actual_fields[field]):
             field_results[field] = {
