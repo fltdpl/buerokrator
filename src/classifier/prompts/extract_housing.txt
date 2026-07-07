@@ -8,21 +8,31 @@ Schema:
 {{
   "issuer": "",
   "document_date": "",
-  "document_subtype": ""
+  "document_subtype": "",
+  "amount": null
 }}
 
 issuer:
 Hausverwaltung, Vermieter oder Unternehmen
 
 document_date:
-Dokumentdatum im Format YYYY-MM-DD falls erkennbar
+Dokumentdatum im Format DD.MM.YYYY falls erkennbar
 
 document_subtype:
-z.B.
-Nebenkostenabrechnung
-Mietvertrag
-Mieterhöhung
-Hausgeldabrechnung
+Wähle exakt einen dieser Werte:
+
+nebenkostenabrechnung
+mietvertrag
+mieterhoehung
+hausgeldabrechnung
+
+amount:
+Bei Nebenkosten-/Betriebskosten-/Hausgeldabrechnungen der
+Abrechnungsbetrag (Nachzahlung oder Gesamtbetrag).
+Bei Mietverträgen und Mieterhöhungen die monatliche Miete.
+
+amount muss eine Zahl sein. Keine Währungszeichen.
+Wenn kein Betrag gefunden wird, verwende null.
 
 Dokument:
 

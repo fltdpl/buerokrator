@@ -29,30 +29,7 @@ invoice:
 - Kaufbelege
 - Zahlungsaufforderungen
 - Quittungen
-- Nebenkostenabrechnungen
-
-insurance:
-- Versicherungspolicen
-- Versicherungsverträge
-- Versicherungsinformationen
-- Versicherungsnachträge
-- Versicherungsscheine
-- Kapitalbildende Lebensversicherungen
-- Rückkaufswertmitteilungen
-- Kapitalwahlrecht
-- Beitragsrechnungen von Versicherungen
-
-pension:
-- Renteninformationen
-- Rentenbescheide
-- Altersvorsorge
-- Private Rentenversicherung
-- Bausparverträge
-- Bausparkonten
-- Bausparkassen-Mitteilungen
-- Bausparkontoauszüge
-- Riester-Verträge
-- Rürup-Verträge
+- Beitragsquittungen (Verein, Gewerkschaft, Mitgliedschaft)
 
 tax:
 - Lohnsteuerbescheinigungen
@@ -63,33 +40,51 @@ tax:
 - Einkommensbescheinigungen
 - Bezügemitteilungen
 - Steuerbescheide
-- Einkommensteuerunterlagen
 - Schreiben vom Finanzamt
 - ELSTER-Unterlagen
-- Steuerliche Nachweise
 - Meldebescheinigungen zur Sozialversicherung
-- Bescheinigungen und Informationsschreiben
+
+insurance:
+- Versicherungsscheine und -policen (Unfall, Haftpflicht, Hausrat, Kfz, Rechtsschutz, Kranken)
+- Lebensversicherungen (auch kapitalbildend)
+- Versicherungsnachträge
+- Rückkaufswertmitteilungen
+- Beitragsrechnungen von Versicherungen
+
+pension:
+- Renteninformationen und Rentenbescheide
+- Private Rentenversicherungen (Verträge, Standmitteilungen, Kostenmitteilungen)
+- Betriebliche Altersvorsorge (z. B. VBL)
+- Bausparverträge und Bausparkassen-Unterlagen (auch Bauspar-Kontoauszüge!)
+- Riester- und Rürup-Verträge
+- Steuerbescheinigungen über Kapitalerträge von Bausparkassen
 
 bank:
-- Kontoauszüge
+- Kontoauszüge von Girokonten
 - Kreditkartenabrechnungen
-- Depotübersicht
+- Depotübersichten
 
 housing:
 - Nebenkostenabrechnungen
-- Mietvertrag
-- Hausverwaltung
+- Betriebskostenabrechnungen
+- Mietverträge und Mieterhöhungen
+- Schreiben der Hausverwaltung
+- Hausgeldabrechnungen
 
 unknown:
-- Kontoauszüge
-- Kreditkartenabrechnungen
-- Depotübersichten
-- Mitgliedsbeiträge
-- Spendenquittungen
-- Vereinsbeiträge
-- Gewerkschaftsbeiträge
-- Beitragsquittungen
 - Dokumente, die keiner der Kategorien eindeutig zugeordnet werden können
+
+Entscheidungsregeln bei Überschneidungen:
+
+- Rentenversicherung -> pension. Lebensversicherung -> insurance.
+- Kommt der Auszug von einer Bausparkasse (z. B. "Jahreskontoauszug"
+  zum Bausparvertrag), dann pension, NICHT bank.
+- Gehalts-/Lohnabrechnungen erwähnen Renten-, Kranken- und
+  Sozialversicherung als Beitragszeilen: trotzdem tax, NICHT insurance.
+- Nebenkostenabrechnungen sind housing, auch wenn ein Betrag
+  gefordert wird.
+- Eine Rechnung VON einer Versicherung über Versicherungsbeiträge
+  ist insurance.
 
 Dokument:
 
