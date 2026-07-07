@@ -132,6 +132,11 @@ def build_tax_filename(extracted_data, suffix):
         issuer = _clean_name(extracted_data.get("issuer"), "Finanzamt")
         return f"{tax_year}-12_{issuer}_Einkommensbescheinigung{suffix}"
 
+    if subtype == "bescheinigung":
+        # Meldebescheinigung / Informationsschreiben.
+        issuer = _clean_name(extracted_data.get("issuer"), "unknown_issuer")
+        return f"{tax_year}_{issuer}_Bescheinigung{suffix}"
+
     # Standard/Default: Lohnsteuerbescheinigung (jährlich). Datum möglichst
     # vollständig als YYYY-MM; ohne konkreten Monat auf Jahresende (12).
     employer = _clean_name(extracted_data.get("employer"), "unknown_employer")

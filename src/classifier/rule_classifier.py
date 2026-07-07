@@ -12,6 +12,7 @@ from src.core.document_types import (
 # Gehaltsabrechnung nicht fälschlich als insurance erkannt wird.
 RULES = (
     ("lohnsteuerbescheinigung", TAX),
+    ("meldebescheinigung", TAX),
     ("einkommensteuer", TAX),
     ("gehaltsabrechnung", TAX),
     ("entgeltabrechnung", TAX),

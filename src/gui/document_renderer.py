@@ -73,6 +73,7 @@ LABELS = {
     "employer": "Arbeitgeber",
     "product_name": "Produkt",
     "document_subtype": "Unterart",
+    "description": "Art der Bescheinigung",
     "gross_amount": "Bruttolohn",
     "income_tax": "Lohn-/Einkommensteuer",
     "soli": "Solidaritätszuschlag",
@@ -90,6 +91,7 @@ TAX_SUBTYPE_LABELS = {
     "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
     "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
     "einkommensbescheinigung": "Einkommensbescheinigung (Finanzamt)",
+    "bescheinigung": "Bescheinigung / Sonstiges",
 }
 
 PENSION_SUBTYPE_LABELS = {
@@ -456,6 +458,7 @@ def display_document(
                 "lohnsteuerbescheinigung",
                 "gehaltsabrechnung",
                 "einkommensbescheinigung",
+                "bescheinigung",
             ]
             current_subtype = data.get("document_subtype", "")
 
@@ -508,6 +511,21 @@ def display_document(
                 updated_data["income_tax"] = normalize_amount(income_tax)
                 updated_data["soli"] = normalize_amount(soli)
                 updated_data["settlement_amount"] = normalize_amount(settlement_amount)
+
+            elif document_subtype == "bescheinigung":
+                # Meldebescheinigung / Informationsschreiben: keine Beträge.
+                issuer = st.text_input(
+                    "Aussteller",
+                    value=data.get("issuer", ""),
+                    key=f"tax_issuer_{document_id}",
+                )
+                description = st.text_input(
+                    "Art der Bescheinigung",
+                    value=data.get("description", ""),
+                    key=f"description_{document_id}",
+                )
+                updated_data["issuer"] = issuer
+                updated_data["description"] = description
 
             else:
                 employer = st.text_input(

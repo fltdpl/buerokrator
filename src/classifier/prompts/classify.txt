@@ -67,6 +67,8 @@ tax:
 - Schreiben vom Finanzamt
 - ELSTER-Unterlagen
 - Steuerliche Nachweise
+- Meldebescheinigungen zur Sozialversicherung
+- Bescheinigungen und Informationsschreiben
 
 bank:
 - Kontoauszüge

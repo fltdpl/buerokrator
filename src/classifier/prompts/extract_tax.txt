@@ -9,6 +9,7 @@ Schema:
   "document_subtype": "",
   "employer": "",
   "issuer": "",
+  "description": "",
   "tax_year": "",
   "month": "",
   "gross_amount": null,
@@ -30,10 +31,20 @@ Bestimme zuerst document_subtype:
 "einkommensbescheinigung"
   = Bescheinigung oder Bescheid vom Finanzamt über Einkommen/Steuer
 
+"bescheinigung"
+  = Meldebescheinigung zur Sozialversicherung oder anderes
+    Informationsschreiben ohne konkrete Beträge
+
 Extrahiere je nach Subtyp:
 
 - employer = Arbeitgeber
   (nur bei lohnsteuerbescheinigung und gehaltsabrechnung)
+
+- issuer = Aussteller
+  (bei einkommensbescheinigung das Finanzamt; bei bescheinigung der Absender)
+
+- description = kurze Art der Bescheinigung
+  (nur bei bescheinigung, z. B. "Anmeldung Sozialversicherung")
 
 - issuer = Name des Finanzamts
   (nur bei einkommensbescheinigung)
