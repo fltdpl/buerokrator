@@ -137,3 +137,16 @@ def test_extract_tax_finanzamt_keeps_only_subtype_fields(monkeypatch):
     # Felder anderer Subtypen werden verworfen.
     assert "gross_amount" not in data
     assert "employer" not in data
+
+
+def test_build_tax_filename_bescheinigung():
+    data = {
+        "document_subtype": "bescheinigung",
+        "issuer": "AOK",
+        "tax_year": "2024",
+    }
+    assert build_tax_filename(data, ".pdf") == "2024_AOK_Bescheinigung.pdf"
+
+
+def test_match_rule_meldebescheinigung_is_tax():
+    assert match_rule("Meldebescheinigung zur Sozialversicherung") == "tax"

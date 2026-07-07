@@ -38,6 +38,14 @@ TAX_SUBTYPE_FIELDS = {
         "soli",
         "settlement_amount",
     },
+    # Auffangkategorie: Meldebescheinigungen (Sozialversicherung),
+    # Informationsschreiben u. Ä. ohne eigene Beträge.
+    "bescheinigung": {
+        "document_subtype",
+        "issuer",
+        "tax_year",
+        "description",
+    },
 }
 
 # Erlaubte Felder je Dokumenttyp (muss dem jeweiligen Prompt-Schema entsprechen).
