@@ -17,7 +17,10 @@ def evaluate_case(case):
     # nicht die Extraktion unter Idealbedingungen.
     actual_fields = extract_document(actual_type, text) or {}
 
-    return compare_document(case, actual_type, actual_fields)
+    result = compare_document(case, actual_type, actual_fields)
+    result["classification_source"] = classification.get("source", "llm")
+
+    return result
 
 
 def run_evaluation(document_type=None, limit=None):
@@ -64,6 +67,11 @@ def format_report(report):
             f"  {doc_type:<10} Typ {stats['type_correct']}/{stats['docs']}, {field_part}"
         )
 
+    lines.append("")
+    lines.append("Klassifikation nach Quelle:")
+    for source, stats in sorted(summary["by_source"].items()):
+        lines.append(f"  {source:<6} {stats['type_correct']}/{stats['docs']} korrekt")
+
     problems = [
         r
         for r in report["results"]
@@ -75,8 +83,10 @@ def format_report(report):
         for r in problems:
             lines.append(f"  {r['name']}:")
             if not r["type_correct"]:
+                source = r.get("classification_source", "llm")
                 lines.append(
-                    f"    Typ: erwartet {r['expected_type']}, erkannt {r['actual_type']}"
+                    f"    Typ: erwartet {r['expected_type']},"
+                    f" erkannt {r['actual_type']} (Quelle: {source})"
                 )
             for field, detail in r["fields"].items():
                 if detail["status"] == "missing":

@@ -72,7 +72,7 @@ ALLOWED_FIELDS = {
         "closing_balance",
     },
     BANK: {"issuer", "document_date", "document_subtype"},
-    HOUSING: {"issuer", "document_date", "document_subtype"},
+    HOUSING: {"issuer", "document_date", "document_subtype", "amount"},
 }
 
 # Pension-Subtypen: der Bauspar-Jahresauszug nutzt Kapitalertragsfelder statt
@@ -115,6 +115,68 @@ PENSION_SUBTYPE_FIELDS = {
     "steuerbescheinigung": PENSION_STEUERBESCHEINIGUNG_FIELDS,
 }
 
+# Kanonisches Subtyp-Vokabular je Dokumenttyp (muss Prompt + GUI-Labels
+# entsprechen). Alles außerhalb wird beim Normalisieren auf einen Alias
+# gemappt oder unverändert gelassen (kein Datenverlust).
+KNOWN_SUBTYPES = {
+    TAX: set(TAX_SUBTYPE_FIELDS),
+    PENSION: {
+        "contract",
+        "annual_statement",
+        "cost_statement",
+        "surrender_value_table",
+        "pension_information",
+        "bauspar_jahresauszug",
+        "steuerbescheinigung",
+    },
+    HOUSING: {
+        "nebenkostenabrechnung",
+        "mietvertrag",
+        "mieterhoehung",
+        "hausgeldabrechnung",
+    },
+    BANK: {
+        "kontoauszug",
+        "kreditkartenabrechnung",
+        "depotuebersicht",
+    },
+}
+
+# Aliasse für frei eingegebene oder vom LLM erfundene Subtypen.
+SUBTYPE_ALIASES = {
+    PENSION: {
+        "bauspar-urkunde": "contract",
+        "bauspar_urkunde": "contract",
+        "vertrag": "contract",
+        "jahresmitteilung": "annual_statement",
+        "standmitteilung": "annual_statement",
+        "kostenmitteilung": "cost_statement",
+        "renteninformation": "pension_information",
+        "jahreskontoauszug": "bauspar_jahresauszug",
+        "kontoauszug": "bauspar_jahresauszug",
+    },
+    HOUSING: {
+        "betriebskostenabrechnung": "nebenkostenabrechnung",
+        "mieterhöhung": "mieterhoehung",
+    },
+    BANK: {
+        "depotübersicht": "depotuebersicht",
+    },
+}
+
+
+def normalize_subtype(document_type, value):
+    """Normalisiert einen Subtyp auf das kanonische Vokabular.
+
+    Kleinschreibung + Alias-Mapping; unbekannte Werte bleiben (kleingeschrieben)
+    erhalten, damit nichts verloren geht.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return value
+
+    lowered = value.strip().lower()
+    return SUBTYPE_ALIASES.get(document_type, {}).get(lowered, lowered)
+
 
 def whitelist_fields(document_type, data):
     """Reduziert ein Datendict auf die für den Dokumenttyp erlaubten Felder.
@@ -126,6 +188,14 @@ def whitelist_fields(document_type, data):
     """
     if not isinstance(data, dict):
         return {}
+
+    if "document_subtype" in data:
+        data = {
+            **data,
+            "document_subtype": normalize_subtype(
+                document_type, data["document_subtype"]
+            ),
+        }
 
     if document_type == TAX:
         subtype = data.get("document_subtype")

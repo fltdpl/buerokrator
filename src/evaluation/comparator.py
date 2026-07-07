@@ -112,6 +112,14 @@ def aggregate_results(results):
         stats["fields_total"] += r["fields_total"]
         stats["fields_correct"] += r["fields_correct"]
 
+    # Klassifikationsquelle (Regel vs. LLM): zeigt, welcher Pfad Fehler macht.
+    by_source = {}
+    for r in results:
+        source = r.get("classification_source", "llm")
+        stats = by_source.setdefault(source, {"docs": 0, "type_correct": 0})
+        stats["docs"] += 1
+        stats["type_correct"] += 1 if r["type_correct"] else 0
+
     return {
         "documents": total_docs,
         "unverified": sum(1 for r in results if not r["verified"]),
@@ -120,4 +128,5 @@ def aggregate_results(results):
         "fields_total": fields_total,
         "fields_correct": fields_correct,
         "by_type": by_type,
+        "by_source": by_source,
     }

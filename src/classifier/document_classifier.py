@@ -46,9 +46,11 @@ def classify(text):
 
             result["document_type"] = UNKNOWN
 
+        result["source"] = "llm"
+
         return result
 
     except Exception as e:
         print(f"JSON Fehler: {e}")
 
-        return {"document_type": UNKNOWN}
+        return {"document_type": UNKNOWN, "source": "llm"}
