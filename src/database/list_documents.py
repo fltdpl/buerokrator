@@ -101,6 +101,31 @@ def get_documents_by_status(verified):
     return rows
 
 
+def get_next_unverified_id(exclude_id=None):
+    """Liefert die ID des nächsten ungeprüften Dokuments (oder None).
+
+    Aufsteigend nach ID, damit der Prüf-Workflow eine stabile Reihenfolge
+    hat; exclude_id blendet das gerade bearbeitete Dokument aus.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    row = cursor.execute(
+        """
+        SELECT id
+        FROM documents
+        WHERE verified = 0 AND id != ?
+        ORDER BY id ASC
+        LIMIT 1
+        """,
+        (exclude_id if exclude_id is not None else -1,),
+    ).fetchone()
+
+    conn.close()
+
+    return row[0] if row else None
+
+
 def get_unverified_documents():
 
     conn = get_connection()
