@@ -1,4 +1,4 @@
-from src.gui.pdf_cache import cleanup_pdf_cache, remove_cached_pdf
+from src.services.pdf_cache import cleanup_pdf_cache, remove_cached_pdf
 
 
 def test_cleanup_removes_orphans_and_keeps_valid(tmp_path):

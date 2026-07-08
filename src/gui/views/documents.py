@@ -1,11 +1,6 @@
-import json
-from datetime import datetime
-from pathlib import Path
-
 import pandas as pd
 import streamlit as st
 
-from src.core.document_display import get_document_display_name
 from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
 from src.database.export_csv import export_documents_csv
 from src.database.list_documents import (
@@ -15,11 +10,11 @@ from src.database.list_documents import (
 )
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
-from src.organizer.date_utils import year_from_archive_path
-
-
-def _document_year(row):
-    return year_from_archive_path(row[2])
+from src.services.document_service import (
+    available_years,
+    build_table_rows,
+    filter_documents,
+)
 
 
 def _selected_document_id():
@@ -131,15 +126,9 @@ def render_documents_page(display_document):
     else:
         documents = list_documents()
 
-    available_years = sorted(
-        {
-            year
-            for year in (_document_year(row) for row in documents)
-            if year is not None
-        }
-    )
+    years = available_years(documents)
 
-    year_options = ["Alle", *[str(year) for year in reversed(available_years)]]
+    year_options = ["Alle", *[str(year) for year in reversed(years)]]
 
     selected_from_year = st.sidebar.selectbox("Jahr von", year_options)
 
@@ -151,63 +140,17 @@ def render_documents_page(display_document):
 
     st.sidebar.markdown("---")
 
-    # Kategorie filtern
-
-    if selected_type != "Alle":
-        documents = [row for row in documents if row[3] == selected_type]
-
-    # Status filtern
-
-    if selected_status != "Alle":
-        verified_value = 0 if selected_status == "Ungeprüft" else 1
-
-        documents = [row for row in documents if row[5] == verified_value]
-
-    # Jahr filtern (Bereich von/bis)
-
-    from_year = int(selected_from_year) if selected_from_year != "Alle" else None
-    to_year = int(selected_to_year) if selected_to_year != "Alle" else None
-
-    if from_year is not None and to_year is not None and from_year > to_year:
-        from_year, to_year = to_year, from_year
-
-    if from_year is not None or to_year is not None:
-        lower = from_year if from_year is not None else float("-inf")
-        upper = to_year if to_year is not None else float("inf")
-
-        documents = [
-            row
-            for row in documents
-            if (year := _document_year(row)) is not None and lower <= year <= upper
-        ]
-
-    # Anbieter filtern
-
-    if issuer_filter:
-        issuer_filter = issuer_filter.lower().strip()
-
-        filtered = []
-
-        for row in documents:
-            try:
-                data = json.loads(row[4])
-
-                issuer = data.get("issuer") or data.get("insurer") or ""
-
-                if issuer_filter in issuer.lower():
-                    filtered.append(row)
-
-            except Exception:
-                pass
-
-        documents = filtered
-
-    # Dateiname filtern
-
-    if filename_filter:
-        filename_filter = filename_filter.lower().strip()
-
-        documents = [row for row in documents if filename_filter in row[1].lower()]
+    documents = filter_documents(
+        documents,
+        document_type=None if selected_type == "Alle" else selected_type,
+        verified=None
+        if selected_status == "Alle"
+        else selected_status == "Geprüft",
+        from_year=int(selected_from_year) if selected_from_year != "Alle" else None,
+        to_year=int(selected_to_year) if selected_to_year != "Alle" else None,
+        issuer=issuer_filter,
+        filename=filename_filter,
+    )
 
     st.caption(f"{len(documents)} Dokumente gefunden")
 
@@ -225,67 +168,21 @@ def render_documents_page(display_document):
 
         return
 
-    table_rows = []
-
-    for row in documents:
-        document_id = row[0]
-        filename = row[1]
-        archive_path = row[2]
-        document_type = row[3]
-        verified = row[5]
-        created_at = row[6]
-
-        try:
-            data = json.loads(row[4])
-
-        except Exception:
-            data = {}
-
-        try:
-            created_at = datetime.fromisoformat(
-                str(created_at).replace("Z", "")
-            ).strftime("%d.%m.%Y")
-
-        except Exception:
-            created_at = "-"
-
-        try:
-            file_size = Path(archive_path).stat().st_size
-
-            if file_size < 1024:
-                size_text = f"{file_size} B"
-
-            elif file_size < 1024 * 1024:
-                size_text = f"{file_size / 1024:.0f} KB"
-
-            else:
-                size_text = f"{file_size / 1024 / 1024:.1f} MB"
-
-        except Exception:
-            size_text = "-"
-
-        document_year = _document_year(row)
-
-        display_name = get_document_display_name(
-            document_type,
-            data,
-            year=document_year,
-        )
-
-        table_rows.append(
-            {
-                "ID": document_id,
-                "Status": "🟢" if verified else "🟡",
-                "Jahr": str(document_year) if document_year else "-",
-                "Dokument": display_name,
-                "Kategorie": DOCUMENT_TYPE_LABELS.get(
-                    document_type,
-                    document_type,
-                ),
-                "Importiert": created_at or "-",
-                "Größe": size_text,
-            }
-        )
+    table_rows = [
+        {
+            "ID": row["id"],
+            "Status": "🟢" if row["verified"] else "🟡",
+            "Jahr": str(row["year"]) if row["year"] else "-",
+            "Dokument": row["display_name"],
+            "Kategorie": DOCUMENT_TYPE_LABELS.get(
+                row["document_type"],
+                row["document_type"],
+            ),
+            "Importiert": row["created_at"],
+            "Größe": row["file_size"],
+        }
+        for row in build_table_rows(documents)
+    ]
 
     st.subheader("Dokumente")
     st.caption("Zeile anklicken, um das Dokument zu öffnen.")

@@ -32,7 +32,9 @@ def import_inbox_documents(progress_callback=None):
     """Verarbeitet alle Dokumente im Inbox-Ordner.
 
     progress_callback(index, total, filename) wird vor jeder Datei aufgerufen.
-    Gibt (erfolgreich, fehlgeschlagen) als Listen von Dateinamen zurück.
+    Gibt (erfolgreich, fehlgeschlagen) zurück: erfolgreich als Liste von
+    Ergebnis-dicts aus process() (erkannter Typ, neuer Name, Zielpfad,
+    Dokument-ID), fehlgeschlagen als Liste von Dateinamen.
     """
     files = find_inbox_documents()
 
@@ -45,8 +47,10 @@ def import_inbox_documents(progress_callback=None):
         if progress_callback:
             progress_callback(index, total, path.name)
 
-        if process(str(path)):
-            succeeded.append(path.name)
+        result = process(str(path))
+
+        if result:
+            succeeded.append(result)
 
         else:
             failed.append(path.name)

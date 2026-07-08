@@ -10,6 +10,7 @@ def get_recent_documents(limit=10):
     rows = cursor.execute(
         """
         SELECT
+            id,
             filename,
             document_type,
             created_at

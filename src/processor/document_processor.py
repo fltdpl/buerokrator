@@ -150,7 +150,7 @@ def archive_analyzed_document(
         extracted_data,
     )
 
-    insert_document(
+    document_id = insert_document(
         filename=archive_path.name,
         archive_path=str(archive_path),
         document_type=classification["document_type"],
@@ -158,16 +158,21 @@ def archive_analyzed_document(
         document_text=document_text,
     )
 
-    return archive_path
+    return archive_path, document_id
 
 
 def process(file_path):
+    """Verarbeitet eine Datei komplett.
+
+    Gibt bei Erfolg ein Ergebnis-dict zurück (truthy, für das Frontend:
+    was wurde erkannt, wohin archiviert), bei Fehler None (falsy).
+    """
     logger.info(f"Verarbeitung gestartet: {file_path}")
     print(f"Verarbeite Dokument: {file_path}")
     try:
         result = analyze_document(file_path)
 
-        archive_analyzed_document(
+        archive_path, document_id = archive_analyzed_document(
             file_path,
             result["classification"],
             result["extracted_data"],
@@ -176,7 +181,13 @@ def process(file_path):
 
         logger.info(f"Verarbeitung abgeschlossen: {file_path}")
 
-        return True
+        return {
+            "source_name": Path(file_path).name,
+            "document_id": document_id,
+            "document_type": result["classification"]["document_type"],
+            "filename": archive_path.name,
+            "archive_path": str(archive_path),
+        }
 
     except Exception as e:
         logger.error(
@@ -184,4 +195,4 @@ def process(file_path):
         )
         print(f"Fehler bei der Verarbeitung: {e}")
 
-        return False
+        return None
