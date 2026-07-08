@@ -109,9 +109,9 @@
 
 ### Dokumentklassifikation
 
-- [ ] Klassifikationsgenauigkeit messen
+- [x] Klassifikationsgenauigkeit messen (`evaluate.py`, je Typ und Quelle rule/llm) ✅ 2026-07-08
     
-- [ ] Testdatensatz mit echten Dokumenten aufbauen
+- [x] Testdatensatz mit echten Dokumenten aufbauen (geprüfte Dokumente in der DB als Ground Truth) ✅ 2026-07-08
     
 - [ ] Klassifikation "unknown" analysieren
     
@@ -124,7 +124,7 @@
 
 - [ ] Fehlende Felder erkennen und markieren
     
-- [ ] Extraktionsqualität messen
+- [x] Extraktionsqualität messen (`evaluate.py`, Felder aktuell 82 %) ✅ 2026-07-08
     
 - [ ] Validierung von Datumsangaben
     
@@ -137,17 +137,17 @@
 
 ### Neue Dokumenttypen
 
-- [ ] Kontoauszüge
+- [x] Kontoauszüge (bank-Subtyp) ✅ 2026-07-08
     
-- [ ] Kreditkartenabrechnungen
+- [x] Kreditkartenabrechnungen (bank-Subtyp) ✅ 2026-07-08
     
-- [ ] Nebenkostenabrechnungen
+- [x] Nebenkostenabrechnungen (housing-Subtyp) ✅ 2026-07-08
     
 - [x] Gehaltsabrechnungen ✅ 2026-07-01
     
-- [ ] Renteninformationen
+- [x] Renteninformationen (pension-Subtyp pension_information) ✅ 2026-07-08
     
-- [ ] Depotauszüge
+- [x] Depotauszüge (bank-Subtyp depotuebersicht) ✅ 2026-07-08
     
 - [ ] Bescheide
     
@@ -199,11 +199,11 @@
 
 ### Hoch
 
-- [ ] Suche in `document_text`
+- [x] Suche in `document_text` ✅ 2026-07-08
     
-- [ ] Suche in Notizen
+- [x] Suche in Notizen ✅ 2026-07-08
     
-- [ ] Suche nach Vertragsnummern
+- [x] Suche nach Vertragsnummern (über Volltext in `extracted_data`) ✅ 2026-07-08
     
 - [ ] Suche nach Beträgen
     
@@ -234,11 +234,11 @@
 
 ### Hoch
 
-- [ ] Steuerrelevante Dokumente kennzeichnen
+- [x] Steuerrelevante Dokumente kennzeichnen (Absetzbarkeit je Dokument: ja/nein/unklar) ✅ 2026-07-08
     
 - [x] Steuerrelevante Informationen extrahieren (Beiträge) ✅ 2026-07-01
     
-- [ ] Steuerjahr automatisch erkennen
+- [x] Steuerjahr automatisch erkennen (`tax_year`-Spalte, steuert Archivpfad) ✅ 2026-07-08
     
 - [x] Steuerübersicht pro Jahr ✅ 2026-07-01
     
@@ -280,11 +280,11 @@
 
 ### Mittel
 
-- [ ] Statistiken zur Erkennungsqualität
+- [x] Statistiken zur Erkennungsqualität (Report auf stdout + `exports/evaluation_report.json`) ✅ 2026-07-08
     
 - [ ] Dashboard für Erkennungsfehler
     
-- [ ] Qualitätskennzahlen pro Dokumenttyp
+- [x] Qualitätskennzahlen pro Dokumenttyp (im Evaluationsreport) ✅ 2026-07-08
     
 
 ---

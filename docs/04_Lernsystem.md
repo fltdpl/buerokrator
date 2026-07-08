@@ -1,5 +1,11 @@
 # Lernsystem
 
+> **Status: Konzept, nicht umgesetzt.** Es gibt weder Code noch die geplante
+> Tabelle `learning_rules`. Was heute existiert und dem Ziel am nächsten
+> kommt: Benutzerkorrekturen aus dem Prüf-Workflow sind die Ground Truth der
+> Qualitätsmessung (`evaluate.py`) — Verbesserungen fließen manuell in
+> Prompts und Regel-Klassifikator zurück, nicht automatisch.
+
 ## Ziel
 
 Das System soll aus Benutzerkorrekturen lernen.

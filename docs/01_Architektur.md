@@ -1,44 +1,72 @@
 # Architektur
 
-## Komponenten
+Monolithische Python-Anwendung (siehe [[004_folder_structure]]). Alle
+Komponenten laufen lokal, keine externen Dienste.
 
-### Watcher
+## Komponenten (`src/`)
 
-Überwacht den Inbox-Ordner.
+### OCR (`src/ocr`)
 
-### OCR
+Extrahiert Text aus PDFs und Bildern (Tesseract, Poppler für PDF→Bild).
 
-Extrahiert Text aus PDFs und Bildern.
+### Classifier (`src/classifier`)
 
-### Classifier
+Bestimmt den Dokumenttyp zweistufig:
 
-Bestimmt Dokumenttyp und Kategorie.
+1. **Regeln** (`rule_classifier.py`): gewichtetes Keyword-Scoring, entscheidet
+   nur bei eindeutigem Ergebnis.
+2. **LLM** (`prompts/classify.txt` über Ollama): alle unklaren Fälle.
 
-### Organizer
+Enthält außerdem die **Extraktion** (`document_extractor.py`): typspezifische
+Prompts; das Ergebnis wird gegen die Feld-Whitelist in
+`src/core/document_fields.py` gefiltert.
 
-Benennt Dateien um und archiviert sie.
+### Organizer (`src/organizer`)
 
-### Database
+Benennt Dateien typabhängig um und archiviert sie nach
+`archive/<Jahr>/<Kategorie>/`.
 
-Speichert Metadaten.
+### Database (`src/database`)
 
-### Export
+SQLite, Tabelle `documents`; Migration läuft automatisch beim ersten Zugriff.
 
-Erstellt Steuerberichte.
+### GUI (`src/gui`, `app.py`, `pages/`)
 
-### Relevante Entscheidungen  
-  
-- [[09_Decisions]]
+Streamlit-Multipage-App: Dashboard, Dokumentenliste mit Detailansicht und
+Prüf-Workflow, Stapel-Import, Steuer-Übersicht.
 
+### Steuer (`src/tax`)
+
+Jahres-Übersicht und CSV-Export (siehe [[05_Steuerlogik]]).
+
+### Evaluation (`src/evaluation`, `evaluate.py`)
+
+Misst Klassifikations- und Extraktionsqualität gegen die in der App
+geprüften Dokumente (Ground Truth).
+
+### Watcher (`src/watcher`, `main.py`)
+
+Alt-Weg (Live-Überwachung der Inbox). Der zuverlässige Pfad ist der
+Stapel-Import über die Import-Seite.
 
 ## Workflow
 
-Scan  
-↓  
-inbox  
-↓  
-OCR  
-↓  
-Klassifikation  
-↓  
-Archiv  
+Scan
+↓
+inbox
+↓
+OCR
+↓
+Klassifikation (Regeln → LLM)
+↓
+Extraktion (+ Feld-Whitelist)
+↓
+Organizer (Umbenennen, Archiv)
+↓
+Datenbank
+↓
+GUI: Prüfen/Korrigieren → Steuer-Übersicht
+
+## Relevante Entscheidungen
+
+- [[09_Decisions]]

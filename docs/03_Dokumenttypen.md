@@ -1,17 +1,38 @@
+# Dokumenttypen
 
-# Gewählte Kategorien
+## Gewählte Typen (implementiert)
 
-- invoice  
-- insurance  
-- pension  
-- building_savings  
-- tax  
-- housing  
+- invoice
+- tax
+- insurance
+- pension (inkl. Bausparen — kein eigener Typ)
+- bank
+- housing
 - unknown
 
+Quelle: `src/core/document_types.py` bzw. `config/settings.yaml`.
 
+**Konvention: Typ = Lebensbereich.** Eine Nebenkostenabrechnung ist
+`housing`, nicht `invoice`; der Zahlungsaspekt ist das Feld `amount`.
 
-# Möglich Dokumenttypen
+## Kanonische Subtypen (`document_subtype`)
+
+Zentral in `src/core/document_fields.py` (`KNOWN_SUBTYPES`), dort maßgeblich:
+
+- **tax**: lohnsteuerbescheinigung, gehaltsabrechnung,
+  einkommensbescheinigung, bescheinigung
+- **pension**: contract, annual_statement, cost_statement,
+  surrender_value_table, pension_information, bauspar_jahresauszug,
+  steuerbescheinigung
+- **housing**: nebenkostenabrechnung, mietvertrag, mieterhoehung,
+  hausgeldabrechnung
+- **bank**: kontoauszug, kreditkartenabrechnung, depotuebersicht
+
+---
+
+# Ideenspeicher: mögliche Dokumenttypen (nicht umgesetzt)
+
+Brainstorming aus der Konzeptphase — kein Ist-Stand.
 
 ## Arbeit
 

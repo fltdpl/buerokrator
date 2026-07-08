@@ -1,63 +1,59 @@
 # Datenmodell
 
-## Tabelle documents
+## Tabelle documents (einzige Tabelle)
 
-- id
+- id — eindeutige ID, in der GUI als `?doc=<id>` und für `static/pdf/<id>.pdf` genutzt
 - filename
 - archive_path
 - document_type
-- extracted_data
+- extracted_data — JSON, Felder je Typ/Subtyp (siehe unten)
 - created_at
-- verified
-- document_text
+- verified — 1 = in der App geprüft (Ground Truth der Qualitätsmessung)
+- document_text — OCR-Text (Eingabe für die Qualitätsmessung)
 - notes
+- tax_year — eigene Spalte, steuert die Archivstruktur `archive/<Jahr>/…`
 
-## Tabelle financial_products  
-  
-- id  
-- product_type (Rentenversicherung, Bausparvertrag, etc.)  
-- provider  
-- contract_start  
-- contract_number  
-- monthly_contribution  
-- status
+Migration läuft automatisch (`database.get_connection` → `init_database`,
+ALTER TABLE für fehlende Spalten).
 
-## Tabelle tax_entries
+## Dokumentenschema (`extracted_data`)
 
-- id
-- document_id
-- category
-- tax_year
-- deductible_amount
+Die gültigen Felder sind je Dokumenttyp — bei tax und pension zusätzlich je
+`document_subtype` — zentral in **`src/core/document_fields.py`** definiert
+(`ALLOWED_FIELDS`, `TAX_SUBTYPE_FIELDS`, `PENSION_SUBTYPE_FIELDS`). Diese
+Whitelist greift bei Extraktion und Speichern; alles außerhalb wird
+verworfen. Neue Felder müssen dort **und** im Prompt-Schema ergänzt werden.
 
-## Tabelle learning_rules
+Konventionen:
 
-- id
-- pattern
-- category
-- confidence
+- Beträge als Magnitude; nur `settlement_amount` behält sein Vorzeichen
+  (Erstattung negativ).
+- Datumsformat DD.MM.YYYY.
+- Subtypen werden auf ein kanonisches Vokabular normalisiert
+  (`KNOWN_SUBTYPES`, `SUBTYPE_ALIASES`, Fuzzy-Match für LLM-Tippfehler).
 
-## Dokumentenschema
+## Geplante Tabellen (nicht umgesetzt)
 
-json:
+Ideen aus der Konzeptphase — es existiert bisher nur `documents`:
 
-```json
-{
-	"document_type": "",
-	"issuer": "",
-	"document_date": "",
-	"amount": null,
-	"tax_relevant": false,
-	"tags": []
-}
-```
+### financial_products
 
-Fachspezifische Felder wie `issuer`, `document_date`, `amount`,
-`invoice_number`, `policy_number` oder `tax_year` werden aktuell in
-`documents.extracted_data` als JSON gespeichert.
+- id, product_type (Rentenversicherung, Bausparvertrag, etc.), provider,
+  contract_start, contract_number, monthly_contribution, status
 
+### tax_entries
 
+- id, document_id, category, tax_year, deductible_amount
 
-### Relevante Entscheidungen  
-  
+(Die Steuer-Übersicht wird derzeit zur Laufzeit aus `documents` aggregiert,
+siehe `src/tax/tax_summary.py`.)
+
+### learning_rules
+
+- id, pattern, category, confidence
+
+(Siehe [[04_Lernsystem]] — Konzept, nicht umgesetzt.)
+
+## Relevante Entscheidungen
+
 - [[001_sqlite]]
