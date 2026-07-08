@@ -15,7 +15,9 @@ Dokumente werden per Post empfangen und eingescannt.
 5. Datei wird korrekt benannt
 6. Datei wird archiviert
 7. Daten werden gespeichert
-8. Steuerdaten werden bereitgestellt
+8. Benutzer prüft und korrigiert die erfassten Daten in der App
+   (geprüfte Dokumente sind zugleich die Ground Truth der Qualitätsmessung)
+9. Steuerdaten werden bereitgestellt
 
 ## Erfolgskriterien
 

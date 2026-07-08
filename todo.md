@@ -12,4 +12,4 @@
 - [ ] gui auf leistungsfähigeres system umstellen (Kandidat: NiceGUI, siehe HANDOVER)
 
 ## Sonstiges
-- [ ] docs prüfen und überarbeiten (docs/ ist WIP, Code ist maßgeblich; 05_Steuerlogik.md an neues Absetzbar-Mapping angleichen)
+- [x] docs prüfen und überarbeiten — alle Dateien an den Code angeglichen, 07_API.md gelöscht, neue ADRs 007–009; nicht Umgesetztes (Lernsystem, geplante Tabellen, Ideenspeicher) ist als solches markiert.
