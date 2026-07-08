@@ -506,16 +506,12 @@ def display_document(
                     "einkommensbescheinigung",
                     "bescheinigung",
                 ]
-                current_subtype = data.get("document_subtype", "")
-
-                document_subtype = st.selectbox(
+                document_subtype = _subtype_selectbox(
                     "Unterart",
                     subtype_options,
-                    format_func=lambda value: TAX_SUBTYPE_LABELS.get(value, value),
-                    index=subtype_options.index(current_subtype)
-                    if current_subtype in subtype_options
-                    else 0,
+                    data.get("document_subtype", ""),
                     key=f"tax_subtype_{document_id}",
+                    format_func=lambda value: TAX_SUBTYPE_LABELS.get(value, value),
                 )
 
                 updated_data["document_subtype"] = document_subtype
@@ -573,7 +569,10 @@ def display_document(
                     updated_data["issuer"] = issuer
                     updated_data["description"] = description
 
-                else:
+                elif document_subtype in (
+                    "gehaltsabrechnung",
+                    "lohnsteuerbescheinigung",
+                ):
                     employer = st.text_input(
                         "Arbeitgeber",
                         value=data.get("employer", ""),
@@ -626,6 +625,13 @@ def display_document(
                         updated_data["income_tax"] = normalize_amount(income_tax)
                         updated_data["soli"] = normalize_amount(soli)
                         updated_data["church_tax"] = normalize_amount(church_tax)
+
+                else:
+                    # Unbekannter Bestandssubtyp: keine typspezifischen Felder
+                    # anbieten; vorhandene Werte bleiben beim Speichern erhalten.
+                    st.caption(
+                        "Unbekannte Unterart — bestehende Felder bleiben unverändert."
+                    )
 
             def _save():
                 save_document(
