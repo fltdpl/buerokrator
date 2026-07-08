@@ -4,6 +4,7 @@ from src.tax.tax_summary import (
     available_tax_years,
     build_tax_summary,
     export_tax_summary_csv,
+    resolve_document_amount,
     tax_category_for_type,
 )
 
@@ -96,6 +97,71 @@ def test_export_tax_summary_csv_has_header_and_rows():
     assert lines[0] == "Datum;Kategorie;Betrag;Geprueft;Dokumentreferenz"
     # Eine Zeile pro Dokument des Jahres (5 Dokumente 2019).
     assert len(lines) == 1 + 5
+
+
+def test_resolve_document_amount_uses_named_tax_fields():
+    # Generisches amount hat Vorrang.
+    assert resolve_document_amount("invoice", {"amount": 42.5}) == 42.5
+
+    # tax: benannte Felder je Subtyp.
+    assert resolve_document_amount(
+        "tax",
+        {"document_subtype": "lohnsteuerbescheinigung", "income_tax": 8000.0},
+    ) == 8000.0
+    # settlement_amount behält sein Vorzeichen (Erstattung negativ).
+    assert resolve_document_amount(
+        "tax",
+        {
+            "document_subtype": "einkommensbescheinigung",
+            "settlement_amount": -350.0,
+            "income_tax": 9000.0,
+        },
+    ) == -350.0
+    assert resolve_document_amount(
+        "tax",
+        {"document_subtype": "gehaltsabrechnung", "gross_amount": 4000.0},
+    ) == 4000.0
+    assert resolve_document_amount(
+        "tax",
+        {
+            "document_subtype": "gehaltsabrechnung",
+            "net_amount": 2500.0,
+            "gross_amount": 4000.0,
+        },
+    ) == 2500.0
+
+    # Ohne Beträge bzw. bei Subtypen ohne Betragsfelder: None.
+    assert resolve_document_amount(
+        "tax", {"document_subtype": "bescheinigung"}
+    ) is None
+    assert resolve_document_amount("tax", {}) is None
+
+
+def test_build_tax_summary_sums_named_tax_amounts():
+    docs = [
+        make_row(
+            1,
+            "tax",
+            2023,
+            {"document_subtype": "lohnsteuerbescheinigung", "income_tax": 8000.0},
+            verified=1,
+        ),
+        make_row(
+            2,
+            "tax",
+            2023,
+            {"document_subtype": "bescheinigung", "issuer": "Krankenkasse"},
+            verified=1,
+        ),
+    ]
+
+    summary = build_tax_summary(2023, docs)
+    by_category = {c["category"]: c for c in summary["categories"]}
+
+    einkommen = by_category["einkommen"]
+    assert einkommen["count"] == 2
+    assert einkommen["amount"] == 8000.0
+    assert einkommen["verified_amount"] == 8000.0
 
 
 def test_capital_income_counts_only_steuerbescheinigung():

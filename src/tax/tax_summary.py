@@ -53,6 +53,35 @@ TAX_CATEGORY_ORDER = [
 # Kategorien, deren Beträge als steuerlich absetzbar aufsummiert werden.
 DEDUCTIBLE_CATEGORIES = {"vorsorgeaufwendungen"}
 
+# tax-Dokumente haben kein generisches amount — ihre Beträge liegen in
+# benannten Feldern. Pro Subtyp das aussagekräftigste Feld für die Übersicht
+# (Prioritätenliste, das erste vorhandene Feld gewinnt). "bescheinigung"
+# fehlt bewusst: dort gibt es keine Beträge.
+TAX_AMOUNT_FIELDS = {
+    "lohnsteuerbescheinigung": ("income_tax",),
+    "einkommensbescheinigung": ("settlement_amount", "income_tax"),
+    "gehaltsabrechnung": ("net_amount", "gross_amount"),
+}
+
+
+def resolve_document_amount(document_type, data):
+    """Betrag eines Dokuments für die Übersicht (generisch oder benannt)."""
+    amount = normalize_amount(data.get("amount"))
+
+    if amount is not None:
+        return amount
+
+    if document_type == TAX:
+        fields = TAX_AMOUNT_FIELDS.get(data.get("document_subtype"), ())
+
+        for field in fields:
+            value = normalize_amount(data.get(field))
+
+            if value is not None:
+                return value
+
+    return None
+
 
 def tax_category_for_type(document_type):
     return TAX_CATEGORY_BY_TYPE.get(document_type, "sonstiges")
@@ -123,7 +152,7 @@ def build_tax_summary(year, documents=None):
         document_type = row[3]
         category = tax_category_for_type(document_type)
         data = _parse_data(row[4])
-        amount = normalize_amount(data.get("amount"))
+        amount = resolve_document_amount(document_type, data)
         verified = bool(row[5])
 
         # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
