@@ -3,6 +3,9 @@ import streamlit as st
 from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.database.list_documents import list_documents
 from src.tax.tax_summary import (
+    DEDUCTIBLE,
+    NOT_DEDUCTIBLE,
+    UNCLEAR,
     available_tax_years,
     build_tax_summary,
     export_tax_summary_csv,
@@ -61,6 +64,14 @@ def render_tax_page():
             "bevor du die Summen für die Steuererklärung verwendest."
         )
 
+    if totals["deductible_unclear_count"]:
+        st.info(
+            f"{_format_euro(totals['deductible_unclear_amount'])} aus "
+            f"{totals['deductible_unclear_count']} Dokument(en) mit unklarer "
+            "Versicherungsart sind nicht in „Absetzbar“ enthalten. "
+            "Versicherungsart am Dokument ergänzen, dann zählt der Betrag mit."
+        )
+
     st.download_button(
         "📥 Jahres-Export (CSV)",
         data=export_tax_summary_csv(summary),
@@ -99,7 +110,8 @@ def render_tax_page():
     st.markdown("---")
 
     for category in summary["categories"]:
-        deductible_hint = " · absetzbar" if category["deductible"] else ""
+        # Absetzbarkeit entscheidet sich je Dokument (siehe Zeilen im Expander).
+        deductible_hint = " · absetzbar (je nach Art)" if category["deductible"] else ""
 
         header = (
             f"{category['label']}{deductible_hint}"
@@ -130,8 +142,18 @@ def render_tax_page():
                 date_text = document["document_date"] or "ohne Datum"
                 issuer_text = document["issuer"] or type_label
 
+                # Nur in Kategorien mit absetzbaren Dokumenten relevant —
+                # dort entscheidet die Versicherungsart je Dokument.
+                deductibility_text = ""
+                if category["deductible"]:
+                    deductibility_text = {
+                        DEDUCTIBLE: "  ·  absetzbar",
+                        NOT_DEDUCTIBLE: "  ·  nicht absetzbar",
+                        UNCLEAR: "  ·  ❓ Art unklar",
+                    }.get(document["deductibility"], "")
+
                 st.markdown(
                     f"{status}  {date_text}  ·  "
                     f"[{issuer_text}](/Dokumente?doc={document['id']})"
-                    f"  ·  **{amount_text}**"
+                    f"  ·  **{amount_text}**{deductibility_text}"
                 )

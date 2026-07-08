@@ -50,8 +50,64 @@ TAX_CATEGORY_ORDER = [
     "sonstiges",
 ]
 
-# Kategorien, deren Beträge als steuerlich absetzbar aufsummiert werden.
+# Kategorien, die absetzbare Dokumente enthalten können (Label/Reihenfolge).
+# Ob ein einzelnes Dokument zählt, entscheidet document_deductibility().
 DEDUCTIBLE_CATEGORIES = {"vorsorgeaufwendungen"}
+
+# Absetzbarkeit je Dokument (siehe docs/05_Steuerlogik.md, bewusst grob):
+# Versicherungen werden nach insurance_type unterschieden — Vorsorge
+# (Sonderausgaben/sonstige Vorsorgeaufwendungen) ist absetzbar, reine
+# Sachversicherungen nicht. Unbekannte Arten landen in "unclear" und werden
+# separat ausgewiesen statt still mitsummiert.
+DEDUCTIBLE = "deductible"
+NOT_DEDUCTIBLE = "not_deductible"
+UNCLEAR = "unclear"
+
+# Reihenfolge wichtig: Zusatzversicherungen wie "Lebensversicherung -
+# Unfall-Zusatzversicherung" sollen über den Vorsorge-Anteil zählen.
+DEDUCTIBLE_INSURANCE_KEYWORDS = (
+    "kranken",
+    "pflege",
+    "haftpflicht",
+    "unfall",
+    "berufsunfähigkeit",
+    "berufsunfaehigkeit",
+    "risikoleben",
+    "arbeitslosen",
+)
+
+# Kapital-Lebensversicherungen (Abschluss ab 2005) sind nicht absetzbar;
+# Altverträge wären es anteilig — das bleibt bewusst außen vor.
+NON_DEDUCTIBLE_INSURANCE_KEYWORDS = (
+    "hausrat",
+    "rechtsschutz",
+    "gebäude",
+    "gebaeude",
+    "kasko",
+    "reise",
+    "lebensversicherung",
+)
+
+
+def document_deductibility(document_type, data):
+    """Absetzbarkeit eines einzelnen Dokuments (deductible/not/unclear)."""
+    if document_type != INSURANCE:
+        category = tax_category_for_type(document_type)
+        return DEDUCTIBLE if category in DEDUCTIBLE_CATEGORIES else NOT_DEDUCTIBLE
+
+    insurance_type = data.get("insurance_type")
+    if not isinstance(insurance_type, str) or not insurance_type.strip():
+        return UNCLEAR
+
+    lowered = insurance_type.lower()
+
+    if any(keyword in lowered for keyword in DEDUCTIBLE_INSURANCE_KEYWORDS):
+        return DEDUCTIBLE
+
+    if any(keyword in lowered for keyword in NON_DEDUCTIBLE_INSURANCE_KEYWORDS):
+        return NOT_DEDUCTIBLE
+
+    return UNCLEAR
 
 # tax-Dokumente haben kein generisches amount — ihre Beträge liegen in
 # benannten Feldern. Pro Subtyp das aussagekräftigste Feld für die Übersicht
@@ -139,6 +195,10 @@ def build_tax_summary(year, documents=None):
         "verified_amount": 0.0,
         "deductible_amount": 0.0,
         "deductible_verified_amount": 0.0,
+        # Beträge, deren Absetzbarkeit unklar ist (z. B. Versicherung ohne
+        # erkannte Art) — separat ausweisen statt still mitsummieren.
+        "deductible_unclear_amount": 0.0,
+        "deductible_unclear_count": 0,
         # gezahlte Lohn-/Einkommensteuer (aus tax-Dokumenten)
         "income_tax": 0.0,
     }
@@ -154,6 +214,7 @@ def build_tax_summary(year, documents=None):
         data = _parse_data(row[4])
         amount = resolve_document_amount(document_type, data)
         verified = bool(row[5])
+        deductibility = document_deductibility(document_type, data)
 
         # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
         income_tax = normalize_amount(data.get("income_tax"))
@@ -186,11 +247,15 @@ def build_tax_summary(year, documents=None):
                 entry["verified_amount"] += amount
                 totals["verified_amount"] += amount
 
-            if entry["deductible"]:
+            if deductibility == DEDUCTIBLE:
                 totals["deductible_amount"] += amount
 
                 if verified:
                     totals["deductible_verified_amount"] += amount
+
+            elif deductibility == UNCLEAR:
+                totals["deductible_unclear_amount"] += amount
+                totals["deductible_unclear_count"] += 1
 
         entry["documents"].append(
             {
@@ -199,6 +264,7 @@ def build_tax_summary(year, documents=None):
                 "document_type": document_type,
                 "amount": amount,
                 "verified": verified,
+                "deductibility": deductibility,
                 "document_date": data.get("document_date", ""),
                 "issuer": (
                     data.get("issuer")
@@ -228,8 +294,14 @@ def build_tax_summary(year, documents=None):
 def export_tax_summary_csv(summary):
     """Jahres-CSV je Dokument gemäß docs/05_Steuerlogik.md.
 
-    Spalten: Datum, Kategorie, Betrag, Geprueft, Dokumentreferenz.
+    Spalten: Datum, Kategorie, Betrag, Absetzbar, Geprueft, Dokumentreferenz.
     """
+    deductibility_labels = {
+        DEDUCTIBLE: "ja",
+        NOT_DEDUCTIBLE: "nein",
+        UNCLEAR: "unklar",
+    }
+
     output = StringIO()
     writer = csv.writer(output, delimiter=";")
     writer.writerow(
@@ -237,6 +309,7 @@ def export_tax_summary_csv(summary):
             "Datum",
             "Kategorie",
             "Betrag",
+            "Absetzbar",
             "Geprueft",
             "Dokumentreferenz",
         ]
@@ -251,6 +324,7 @@ def export_tax_summary_csv(summary):
                     document["document_date"],
                     category["label"],
                     "" if amount is None else f"{amount:.2f}",
+                    deductibility_labels.get(document["deductibility"], "unklar"),
                     "ja" if document["verified"] else "nein",
                     document["filename"],
                 ]
