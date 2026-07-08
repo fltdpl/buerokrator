@@ -123,16 +123,16 @@ Regeln für die Trennung:
 
 ### Phase 3 — Restliche Seiten
 
-- [ ] Import (Upload → Inbox, Stapel-Import mit Fortschrittsanzeige über
+- [x] Import (Upload → Inbox, Stapel-Import mit Fortschrittsanzeige über
       den vorhandenen Callback); Ergebnis je Datei (Typ, Name, Ziel) und
       danach direkter **„Jetzt prüfen"-Button**.
-- [ ] Steuer (Metriken, Kategorien, Dokument-Links, CSV-Download);
+- [x] Steuer (Metriken, Kategorien, Dokument-Links, CSV-Download);
       die „unklar"-Infobox **verlinkt die betroffenen Dokumente** zum
       Nachpflegen.
-- [ ] Einstellungen (Formular + Gefahrenzone mit Bestätigungsdialog);
+- [x] Einstellungen (Formular + Gefahrenzone mit Bestätigungsdialog);
       **Log-Ansicht** (Inhalt aus `logs/` einsehbar, z. B. letzte N Zeilen
       mit Level-Filter).
-- [ ] Dashboard: „Zuletzt archiviert" **verlinkt** die Dokumente;
+- [x] Dashboard: „Zuletzt archiviert" **verlinkt** die Dokumente;
       Analyse-Zahlen integriert (Analyse-Seite entfällt).
 
 ### Phase 4 — Ablösung

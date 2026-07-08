@@ -17,7 +17,9 @@ from nicegui import app, ui
 import src.frontend.pages.dashboard  # noqa: F401
 import src.frontend.pages.document_detail  # noqa: F401
 import src.frontend.pages.documents  # noqa: F401
-import src.frontend.pages.placeholders  # noqa: F401
+import src.frontend.pages.import_page  # noqa: F401
+import src.frontend.pages.settings  # noqa: F401
+import src.frontend.pages.tax  # noqa: F401
 from src.database.list_documents import get_document
 
 HOST = "127.0.0.1"
