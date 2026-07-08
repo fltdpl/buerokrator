@@ -22,6 +22,7 @@ from src.database.delete_document import (
 )
 from src.database.document_repository import save_document, update_notes
 from src.database.list_documents import get_next_unverified_id
+from src.gui.pdf_cache import remove_cached_pdf
 from src.database.set_document_verified import (
     set_document_verified,
 )
@@ -238,6 +239,7 @@ def display_document(
                         pass
 
                     delete_document(document_id)
+                    remove_cached_pdf(document_id)
 
                     st.session_state.pop(
                         f"confirm_delete_{document_id}",
