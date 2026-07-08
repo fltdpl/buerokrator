@@ -2,6 +2,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.processor.batch_import import (
     find_inbox_documents,
     import_inbox_documents,
@@ -43,6 +44,17 @@ def render_batch_import():
                 f"{len(succeeded)} Dokument(e) archiviert. "
                 "Zum Prüfen auf die Dokumente-Seite wechseln (Filter: Ungeprüft)."
             )
+
+            # Ergebnis je Datei: was wurde als was erkannt und wohin abgelegt.
+            for result in succeeded:
+                type_label = DOCUMENT_TYPE_LABELS.get(
+                    result["document_type"],
+                    result["document_type"],
+                )
+                st.caption(
+                    f"• {result['source_name']} → {type_label} · "
+                    f"{result['filename']}"
+                )
 
             if failed:
                 st.error(f"{len(failed)} Dokument(e) fehlgeschlagen:")

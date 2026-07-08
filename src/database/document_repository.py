@@ -54,9 +54,13 @@ def insert_document(
         ),
     )
 
+    document_id = cursor.lastrowid
+
     conn.commit()
 
     conn.close()
+
+    return document_id
 
 
 def save_document(

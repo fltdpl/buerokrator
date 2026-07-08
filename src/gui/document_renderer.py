@@ -4,27 +4,25 @@ from pathlib import Path
 
 import streamlit as st
 
-from src.core.amount_utils import normalize_amount
 from src.core.document_display import (
     get_document_display_name,
 )
 from src.core.document_types import (
     DOCUMENT_TYPES,
     DOCUMENT_TYPE_LABELS,
-    INSURANCE,
-    INVOICE,
-    PENSION,
-    TAX,
     normalize_document_type,
-)
-from src.database.delete_document import (
-    delete_document,
 )
 from src.database.document_repository import save_document, update_notes
 from src.database.list_documents import get_next_unverified_id
-from src.gui.pdf_cache import remove_cached_pdf
 from src.database.set_document_verified import (
     set_document_verified,
+)
+from src.services.document_service import move_document_to_trash
+from src.services.form_schema import (
+    form_fields,
+    is_known_subtype,
+    merge_form_values,
+    subtype_config,
 )
 
 
@@ -123,24 +121,6 @@ LABELS = {
     "closing_balance": "Endsaldo",
 }
 
-TAX_SUBTYPE_LABELS = {
-    "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
-    "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
-    "einkommensbescheinigung": "Einkommensbescheinigung (Finanzamt)",
-    "bescheinigung": "Bescheinigung / Sonstiges",
-}
-
-PENSION_SUBTYPE_LABELS = {
-    "contract": "Vertrag",
-    "annual_statement": "Jahresmitteilung",
-    "cost_statement": "Kostenmitteilung",
-    "surrender_value_table": "Rückkaufswerte",
-    "pension_information": "Renteninformation",
-    "bauspar_jahresauszug": "Bauspar-Jahresauszug",
-    "steuerbescheinigung": "Steuerbescheinigung",
-}
-
-
 def _subtype_selectbox(label, options, current, key, format_func):
     """Selectbox, die einen unbekannten Bestandswert erhält statt ihn zu überschreiben."""
     if current and current not in options:
@@ -231,22 +211,14 @@ def display_document(
                     "Ja löschen",
                     key=f"delete_yes_{document_id}",
                 ):
-                    try:
-                        if pdf_path.exists():
-                            pdf_path.unlink()
-
-                    except Exception:
-                        pass
-
-                    delete_document(document_id)
-                    remove_cached_pdf(document_id)
+                    move_document_to_trash(document_id)
 
                     st.session_state.pop(
                         f"confirm_delete_{document_id}",
                         None,
                     )
 
-                    st.session_state["flash"] = "Dokument gelöscht"
+                    st.session_state["flash"] = "Dokument in den Papierkorb verschoben"
 
                     _close_detail()
 
@@ -363,277 +335,52 @@ def display_document(
                 key=f"document_type_{document_id}",
             )
 
-            updated_data = dict(data)
+            # Formular deklarativ aus dem Schema (src/services/form_schema.py):
+            # eine Schleife statt typspezifischer Branches. Subtyp zuerst,
+            # weil er bestimmt, welche Felder erscheinen.
+            sub_config = subtype_config(document_type)
+            document_subtype = None
 
-            # Aussteller/Datum sind für Steuerdokumente nicht relevant (die haben
-            # eigene Felder je Unterart) und werden dort ausgeblendet.
-            if document_type != TAX:
-                issuer = st.text_input(
-                    "Aussteller",
-                    value=data.get(
-                        "issuer",
-                        "",
-                    ),
-                    key=f"issuer_{document_id}",
-                )
-
-                document_date = st.text_input(
-                    "Datum",
-                    value=data.get(
-                        "document_date",
-                        "",
-                    ),
-                    key=f"date_{document_id}",
-                )
-
-                updated_data["issuer"] = issuer
-                updated_data["document_date"] = document_date
-
-            if document_type == INVOICE:
-                invoice_number = st.text_input(
-                    "Rechnungsnummer",
-                    value=data.get(
-                        "invoice_number",
-                        "",
-                    ),
-                    key=f"invoice_{document_id}",
-                )
-
-                amount = st.text_input(
-                    "Betrag",
-                    value=_amount_input_value(data.get("amount")),
-                    key=f"amount_{document_id}",
-                )
-
-                updated_data["invoice_number"] = invoice_number
-                updated_data["amount"] = normalize_amount(amount)
-
-            elif document_type == INSURANCE:
-                policy_number = st.text_input(
-                    "Versicherungsnummer",
-                    value=data.get(
-                        "policy_number",
-                        "",
-                    ),
-                    key=f"policy_{document_id}",
-                )
-
-                insurance_type = st.text_input(
-                    "Versicherungsart",
-                    value=data.get(
-                        "insurance_type",
-                        "",
-                    ),
-                    key=f"insurance_type_{document_id}",
-                )
-
-                amount = st.text_input(
-                    "Betrag (Jahresbeitrag)",
-                    value=_amount_input_value(data.get("amount")),
-                    key=f"amount_{document_id}",
-                )
-
-                updated_data["policy_number"] = policy_number
-                updated_data["insurance_type"] = insurance_type
-                updated_data["amount"] = normalize_amount(amount)
-
-            elif document_type == PENSION:
-                product_name = st.text_input(
-                    "Produkt",
-                    value=data.get(
-                        "product_name",
-                        "",
-                    ),
-                    key=f"product_{document_id}",
-                )
-
-                policy_number = st.text_input(
-                    "Vertragsnummer",
-                    value=data.get(
-                        "policy_number",
-                        "",
-                    ),
-                    key=f"policy_{document_id}",
-                )
-
+            if sub_config:
                 document_subtype = _subtype_selectbox(
                     "Unterart",
-                    list(PENSION_SUBTYPE_LABELS.keys()),
+                    sub_config["options"],
                     data.get("document_subtype", ""),
                     key=f"subtype_{document_id}",
-                    format_func=lambda value: PENSION_SUBTYPE_LABELS.get(value, value),
-                )
-
-                updated_data["product_name"] = product_name
-                updated_data["policy_number"] = policy_number
-                updated_data["document_subtype"] = document_subtype
-
-                capital_fields = {
-                    "bauspar_jahresauszug": (
-                        ("interest", "Guthabenszinsen"),
-                        ("contributions_total", "Beiträge (Jahressumme)"),
-                        ("opening_balance", "Saldovortrag"),
-                        ("closing_balance", "Endsaldo"),
+                    format_func=lambda value: sub_config["labels"].get(
+                        value, value
                     ),
-                    "steuerbescheinigung": (
-                        ("interest", "Kapitalerträge"),
-                        ("capital_gains_tax", "Kapitalertragssteuer"),
-                        ("soli", "Solidaritätszuschlag"),
-                        ("church_tax", "Kirchensteuer"),
-                    ),
-                }
-
-                if document_subtype in capital_fields:
-                    # Kapitalertragsfelder statt generischem Jahresbeitrag.
-                    for field, label in capital_fields[document_subtype]:
-                        value = st.text_input(
-                            label,
-                            value=_amount_input_value(data.get(field)),
-                            key=f"{field}_{document_id}",
-                        )
-                        updated_data[field] = normalize_amount(value)
-
-                else:
-                    amount = st.text_input(
-                        "Betrag (Jahresbeitrag)",
-                        value=_amount_input_value(data.get("amount")),
-                        key=f"amount_{document_id}",
-                    )
-                    updated_data["amount"] = normalize_amount(amount)
-
-            elif document_type == TAX:
-                subtype_options = [
-                    "lohnsteuerbescheinigung",
-                    "gehaltsabrechnung",
-                    "einkommensbescheinigung",
-                    "bescheinigung",
-                ]
-                document_subtype = _subtype_selectbox(
-                    "Unterart",
-                    subtype_options,
-                    data.get("document_subtype", ""),
-                    key=f"tax_subtype_{document_id}",
-                    format_func=lambda value: TAX_SUBTYPE_LABELS.get(value, value),
                 )
 
-                updated_data["document_subtype"] = document_subtype
-
-                tax_year = st.text_input(
-                    "Steuerjahr",
-                    value=data.get("tax_year", ""),
-                    key=f"tax_year_{document_id}",
-                )
-                updated_data["tax_year"] = tax_year
-
-                if document_subtype == "einkommensbescheinigung":
-                    # Finanzamt-Bescheinigung
-                    finanzamt = st.text_input(
-                        "Finanzamt",
-                        value=data.get("issuer", ""),
-                        key=f"tax_issuer_{document_id}",
-                    )
-
-                    income_tax = st.text_input(
-                        "Einkommensteuer",
-                        value=_amount_input_value(data.get("income_tax")),
-                        key=f"income_tax_{document_id}",
-                    )
-
-                    soli = st.text_input(
-                        "Solidaritätszuschlag",
-                        value=_amount_input_value(data.get("soli")),
-                        key=f"soli_{document_id}",
-                    )
-
-                    settlement_amount = st.text_input(
-                        "Abrechnungsbetrag (Erstattung negativ)",
-                        value=_amount_input_value(data.get("settlement_amount")),
-                        key=f"settlement_{document_id}",
-                    )
-
-                    updated_data["issuer"] = finanzamt
-                    updated_data["income_tax"] = normalize_amount(income_tax)
-                    updated_data["soli"] = normalize_amount(soli)
-                    updated_data["settlement_amount"] = normalize_amount(settlement_amount)
-
-                elif document_subtype == "bescheinigung":
-                    # Meldebescheinigung / Informationsschreiben: keine Beträge.
-                    issuer = st.text_input(
-                        "Aussteller",
-                        value=data.get("issuer", ""),
-                        key=f"tax_issuer_{document_id}",
-                    )
-                    description = st.text_input(
-                        "Art der Bescheinigung",
-                        value=data.get("description", ""),
-                        key=f"description_{document_id}",
-                    )
-                    updated_data["issuer"] = issuer
-                    updated_data["description"] = description
-
-                elif document_subtype in (
-                    "gehaltsabrechnung",
-                    "lohnsteuerbescheinigung",
+                if document_subtype and not is_known_subtype(
+                    document_type, document_subtype
                 ):
-                    employer = st.text_input(
-                        "Arbeitgeber",
-                        value=data.get("employer", ""),
-                        key=f"employer_{document_id}",
+                    st.caption(
+                        "Unbekannte Unterart — bestehende Felder bleiben "
+                        "unverändert."
                     )
-                    updated_data["employer"] = employer
 
-                    gross_amount = st.text_input(
-                        "Bruttolohn",
-                        value=_amount_input_value(data.get("gross_amount")),
-                        key=f"gross_{document_id}",
-                    )
-                    updated_data["gross_amount"] = normalize_amount(gross_amount)
+            values = {}
 
-                    if document_subtype == "gehaltsabrechnung":
-                        month = st.text_input(
-                            "Monat",
-                            value=data.get("month", ""),
-                            key=f"month_{document_id}",
-                        )
-
-                        net_amount = st.text_input(
-                            "Nettolohn",
-                            value=_amount_input_value(data.get("net_amount")),
-                            key=f"net_{document_id}",
-                        )
-
-                        updated_data["month"] = month
-                        updated_data["net_amount"] = normalize_amount(net_amount)
-
-                    else:  # lohnsteuerbescheinigung
-                        income_tax = st.text_input(
-                            "Lohnsteuer",
-                            value=_amount_input_value(data.get("income_tax")),
-                            key=f"income_tax_{document_id}",
-                        )
-
-                        soli = st.text_input(
-                            "Solidaritätszuschlag",
-                            value=_amount_input_value(data.get("soli")),
-                            key=f"soli_{document_id}",
-                        )
-
-                        church_tax = st.text_input(
-                            "Kirchensteuer",
-                            value=_amount_input_value(data.get("church_tax")),
-                            key=f"church_tax_{document_id}",
-                        )
-
-                        updated_data["income_tax"] = normalize_amount(income_tax)
-                        updated_data["soli"] = normalize_amount(soli)
-                        updated_data["church_tax"] = normalize_amount(church_tax)
+            for field in form_fields(document_type, document_subtype):
+                if field["kind"] == "amount":
+                    default = _amount_input_value(data.get(field["key"]))
 
                 else:
-                    # Unbekannter Bestandssubtyp: keine typspezifischen Felder
-                    # anbieten; vorhandene Werte bleiben beim Speichern erhalten.
-                    st.caption(
-                        "Unbekannte Unterart — bestehende Felder bleiben unverändert."
-                    )
+                    default = data.get(field["key"]) or ""
+
+                values[field["key"]] = st.text_input(
+                    field["label"],
+                    value=default,
+                    key=f"field_{field['key']}_{document_id}",
+                )
+
+            updated_data = merge_form_values(
+                document_type,
+                data,
+                values,
+                subtype=document_subtype,
+            )
 
             def _save():
                 save_document(

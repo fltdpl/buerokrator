@@ -56,7 +56,16 @@ def test_import_inbox_documents_splits_success_and_failure(tmp_path, monkeypatch
 
     # process durch ein Fake ersetzen: bad.pdf schlägt fehl.
     def fake_process(file_path):
-        return not file_path.endswith("bad.pdf")
+        if file_path.endswith("bad.pdf"):
+            return None
+
+        return {
+            "source_name": "ok.pdf",
+            "document_id": 1,
+            "document_type": "invoice",
+            "filename": "2024-01-01_ok.pdf",
+            "archive_path": "archive/2024/Rechnungen/2024-01-01_ok.pdf",
+        }
 
     monkeypatch.setattr(batch_import, "process", fake_process)
 
@@ -65,7 +74,9 @@ def test_import_inbox_documents_splits_success_and_failure(tmp_path, monkeypatch
         lambda index, total, name: calls.append((index, total, name))
     )
 
-    assert succeeded == ["ok.pdf"]
+    # Erfolgreiche Importe liefern das Ergebnis-dict aus process().
+    assert [result["source_name"] for result in succeeded] == ["ok.pdf"]
+    assert succeeded[0]["document_type"] == "invoice"
     assert failed == ["bad.pdf"]
     # progress_callback für jede Datei aufgerufen.
     assert len(calls) == 2

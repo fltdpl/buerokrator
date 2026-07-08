@@ -1,0 +1,177 @@
+from nicegui import ui
+
+from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
+from src.database.export_csv import export_documents_csv
+from src.database.list_documents import list_documents
+from src.database.search import search_documents
+from src.database.statistics import get_verification_statistics
+from src.frontend.layout import format_euro, page_layout
+from src.services.document_service import (
+    available_years,
+    build_table_rows,
+    filter_documents,
+)
+
+COLUMNS = [
+    {"name": "status", "label": "", "field": "status", "align": "center"},
+    {"name": "year", "label": "Jahr", "field": "year", "sortable": True, "align": "left"},
+    {"name": "display_name", "label": "Dokument", "field": "display_name", "sortable": True, "align": "left"},
+    {"name": "category", "label": "Kategorie", "field": "category", "sortable": True, "align": "left"},
+    {"name": "issuer", "label": "Aussteller", "field": "issuer", "sortable": True, "align": "left"},
+    {"name": "amount", "label": "Betrag", "field": "amount", "sortable": True, "align": "right", ":sort": "(a, b, rowA, rowB) => (rowA.amount_raw ?? -1) - (rowB.amount_raw ?? -1)"},
+    {"name": "created_at", "label": "Importiert", "field": "created_at", "sortable": True, "align": "left"},
+]
+
+
+def _table_rows(documents):
+    rows = []
+
+    for row in build_table_rows(documents):
+        rows.append(
+            {
+                "id": row["id"],
+                "status": "🟢" if row["verified"] else "🟡",
+                "year": str(row["year"]) if row["year"] else "-",
+                "display_name": row["display_name"],
+                "category": DOCUMENT_TYPE_LABELS.get(
+                    row["document_type"], row["document_type"]
+                ),
+                "issuer": row["issuer"],
+                "amount": format_euro(row["amount"]) if row["amount"] is not None else "",
+                "amount_raw": row["amount"],
+                "created_at": row["created_at"],
+            }
+        )
+
+    return rows
+
+
+@ui.page("/dokumente")
+def documents_page():
+    filters = {
+        "search": "",
+        "type": "Alle",
+        "status": "Alle",
+        "year_range": None,
+        "issuer": "",
+        "filename": "",
+    }
+
+    all_years = available_years(list_documents())
+
+    def filtered_documents():
+        documents = (
+            search_documents(filters["search"])
+            if filters["search"]
+            else list_documents()
+        )
+
+        year_range = filters["year_range"]
+        from_year = to_year = None
+
+        # Jahr-Filter nur anwenden, wenn der Regler nicht die volle
+        # Spannweite abdeckt (volle Spannweite = kein Filter).
+        if year_range and all_years:
+            if year_range["min"] > all_years[0]:
+                from_year = int(year_range["min"])
+
+            if year_range["max"] < all_years[-1]:
+                to_year = int(year_range["max"])
+
+        return filter_documents(
+            documents,
+            document_type=None if filters["type"] == "Alle" else filters["type"],
+            verified=None
+            if filters["status"] == "Alle"
+            else filters["status"] == "Geprüft",
+            from_year=from_year,
+            to_year=to_year,
+            issuer=filters["issuer"],
+            filename=filters["filename"],
+        )
+
+    @ui.refreshable
+    def results():
+        documents = filtered_documents()
+        rows = _table_rows(documents)
+
+        with ui.row().classes("items-center gap-4 w-full"):
+            ui.label(f"{len(rows)} Dokumente gefunden").classes("text-gray-500")
+
+            ui.button(
+                "📥 CSV Export",
+                on_click=lambda: ui.download(
+                    export_documents_csv(documents).encode("utf-8"),
+                    "buerokrator_export.csv",
+                ),
+            ).props("flat dense")
+
+        if not rows:
+            ui.label("Keine Dokumente gefunden.")
+            return
+
+        table = ui.table(
+            columns=COLUMNS,
+            rows=rows,
+            row_key="id",
+            pagination=25,
+        ).classes("w-full")
+
+        table.on(
+            "rowClick",
+            lambda event: ui.navigate.to(f"/dokumente/{event.args[1]['id']}"),
+        )
+
+    def set_filter(key, value):
+        filters[key] = value
+        results.refresh()
+
+    unverified, verified = get_verification_statistics()
+
+    with page_layout("Dokumente"):
+        ui.label("📂 Dokumente").classes("text-2xl font-bold")
+        ui.label(f"🟡 {unverified} ungeprüft · 🟢 {verified} geprüft").classes(
+            "text-gray-500"
+        )
+
+        with ui.row().classes("items-end gap-4 w-full"):
+            ui.input(
+                "Volltext",
+                on_change=lambda event: set_filter("search", event.value),
+            ).props("dense clearable").classes("w-48")
+
+            ui.select(
+                ["Alle", *DOCUMENT_TYPES],
+                value="Alle",
+                label="Kategorie",
+                on_change=lambda event: set_filter("type", event.value),
+            ).props("dense").classes("w-36")
+
+            ui.select(
+                ["Alle", "Ungeprüft", "Geprüft"],
+                value="Alle",
+                label="Status",
+                on_change=lambda event: set_filter("status", event.value),
+            ).props("dense").classes("w-36")
+
+            ui.input(
+                "Aussteller",
+                on_change=lambda event: set_filter("issuer", event.value),
+            ).props("dense clearable").classes("w-40")
+
+            ui.input(
+                "Dateiname",
+                on_change=lambda event: set_filter("filename", event.value),
+            ).props("dense clearable").classes("w-40")
+
+            if len(all_years) > 1:
+                with ui.column().classes("w-56 gap-0"):
+                    ui.label("Jahre").classes("text-xs text-gray-500")
+                    ui.range(
+                        min=all_years[0],
+                        max=all_years[-1],
+                        value={"min": all_years[0], "max": all_years[-1]},
+                        on_change=lambda event: set_filter("year_range", event.value),
+                    ).props("label dense")
+
+        results()

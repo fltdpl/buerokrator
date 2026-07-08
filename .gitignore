@@ -42,3 +42,6 @@ Thumbs.db
 
 # Handover-Notizen (nur lokal, nicht versioniert)
 HANDOVER.md
+
+# Papierkorb (verschobene Original-Dokumente)
+trash/
