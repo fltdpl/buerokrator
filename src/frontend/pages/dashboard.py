@@ -1,6 +1,12 @@
 from nicegui import ui
 
-from src.core.document_types import DOCUMENT_TYPE_LABELS, INSURANCE, INVOICE, PENSION
+from src.core.document_types import (
+    DOCUMENT_TYPE_LABELS,
+    INSURANCE,
+    INVOICE,
+    PENSION,
+    TAX,
+)
 from src.frontend.layout import page_layout
 from src.services.stats_service import get_dashboard_data
 
@@ -20,11 +26,13 @@ def dashboard_page():
         ui.label("Dashboard").classes("text-2xl font-bold")
         ui.label(f"{stats['total']} Dokumente archiviert").classes("text-gray-500")
 
+        # Übernimmt auch die Zahlen der alten Analyse-Seite (entfällt).
         with ui.row().classes("gap-4"):
             _metric("Dokumente", stats["total"])
             _metric("Rechnungen", counts.get(INVOICE, 0))
             _metric("Versicherungen", counts.get(INSURANCE, 0))
             _metric("Vorsorge", counts.get(PENSION, 0))
+            _metric("Steuern", counts.get(TAX, 0))
 
         # Aufgaben: die beiden Dinge, die tatsächlich Arbeit bedeuten —
         # Inbox importieren und ungeprüfte Dokumente durchsehen.
