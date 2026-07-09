@@ -48,9 +48,13 @@ DD.MM.YYYY
 
 Beispiel: 30.12.2022
 
-Bei Jahresauszügen und Steuerbescheinigungen ist der Stichtag
-der LETZTE Tag des bescheinigten Jahres (z. B. 31.12.2022),
-NIEMALS der 01.01.
+Übernimm den im Dokument genannten Stichtag WÖRTLICH.
+Runde ihn nicht auf den 31.12. auf; steht dort 30.12.2022,
+lautet die Antwort 30.12.2022.
+
+Steht kein Stichtag im Dokument, verwende bei Jahresauszügen
+und Steuerbescheinigungen den letzten Tag des bescheinigten
+Jahres, NIEMALS den 01.01.
 
 - amount = jährlicher Beitrag / Sparbeitrag
 

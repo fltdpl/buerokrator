@@ -28,7 +28,8 @@ def get_statistics():
 
 
 def get_verification_statistics():
-
+    """Anzahl (ungeprüft, geprüft) — bewusst ein Tupel, denn alle Aufrufer
+    entpacken das Ergebnis."""
     conn = get_connection()
     cursor = conn.cursor()
     rows = cursor.execute(
@@ -43,34 +44,11 @@ def get_verification_statistics():
 
     conn.close()
 
-    stats = {
-        0: 0,
-        1: 0,
-    }
-
+    counts = {0: 0, 1: 0}
     for verified, count in rows:
-        stats[verified] = count
+        counts[verified] = count
 
-    return stats
-
-
-def get_unknown_document_count():
-
-    conn = get_connection()
-
-    cursor = conn.cursor()
-
-    count = cursor.execute(
-        """
-        SELECT COUNT(*)
-        FROM documents
-        WHERE document_type = 'unknown'
-        """
-    ).fetchone()[0]
-
-    conn.close()
-
-    return count
+    return counts[0], counts[1]
 
 
 def get_unknown_document_count():

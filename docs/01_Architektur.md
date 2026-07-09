@@ -55,6 +55,36 @@ Jahres-Übersicht und CSV-Export (siehe [[05_Steuerlogik]]).
 Misst Klassifikations- und Extraktionsqualität gegen die in der App
 geprüften Dokumente (Ground Truth).
 
+### Regelparser (`src/extraction`)
+
+Nachbearbeitung der LLM-Extraktion für Formulare, die ein 4B-Modell
+nachweislich nicht zuverlässig liest: Es kann die zwölf Sparbeiträge eines
+Jahreskontoauszugs nicht summieren und ordnet Betragsspalten um eine Zeile
+versetzt zu. Beides ist aus dem Text exakt herleitbar — die Beitragssumme
+etwa aus der Bilanz (`Endsaldo - Saldovortrag - Zinsen + Steuern`) statt aus
+einer Summe, die schon an einer fehlenden OCR-Zeile scheitert.
+
+**Verbindliche Regeln für jeden Regelparser** (die App soll die Dokumente
+beliebiger Nutzer und Anbieter verarbeiten):
+
+1. Nur rechnen und beschriftete Werte lesen. **Niemals konstant setzen, was
+   das Dokument identifiziert** — Aussteller, Produktname, Datum. Ein
+   Muster, das für einen Anbieter geschrieben wurde, darf einem anderen
+   nicht dessen Aussteller ins Archiv schreiben.
+2. Anbieterabhängig ist ausschließlich die *Erkennung* des Layouts. Sie
+   gehört in eine Datenstruktur (`LAYOUTS`), nicht in die Leselogik.
+3. Bei unsicherem Layout `{}` zurückgeben, damit die LLM-Werte stehen
+   bleiben. Ein fehlendes Feld kostet einen Prüfklick, ein falsches Feld
+   ist eine falsche Tatsache in fremden Daten.
+4. `evaluate.py` misst den Bestand eines einzigen Nutzers und kann einen
+   Verstoß gegen 1.–3. **nicht bemerken** — im Gegenteil, es belohnt ihn
+   mit einer höheren Trefferquote. Vor weiterer Optimierung braucht es
+   einen zweiten Datensatz mit Dokumenten anderer Anbieter.
+
+Anbieterunabhängig lesbar sind amtlich normierte Formulare: die
+Steuerbescheinigung über Kapitalerträge etwa trägt nach § 45a EStG bei
+jeder Bank dieselben Beschriftungen.
+
 ### Watcher (`src/watcher`, `main.py`)
 
 Alt-Weg (Live-Überwachung der Inbox). Der zuverlässige Pfad ist der
