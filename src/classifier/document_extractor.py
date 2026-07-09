@@ -6,6 +6,7 @@ from src.core.config import load_config
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
+from src.extraction.pension_refiner import refine_pension_fields
 
 # Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
 # die Beträge (Lohnsteuer/Soli bzw. Zinsen/Salden beim Bauspar-Jahresauszug)
@@ -123,7 +124,16 @@ def extract_insurance(text):
 
 
 def extract_pension(text):
-    return _extract(PENSION, text, max_input_chars=PENSION_MAX_INPUT_CHARS)
+    data = _extract(PENSION, text, max_input_chars=PENSION_MAX_INPUT_CHARS)
+
+    # Regelbasierte Korrektur (Salden, Zinsen, Beitragssumme, amtliche
+    # Kapitalertragsfelder). Danach erneut whitelisten: der Parser kann den
+    # Subtyp setzen und damit andere Felder gültig machen.
+    refined = refine_pension_fields(text, data)
+    if refined is data:
+        return data
+
+    return enforce_amount_signs(whitelist_fields(PENSION, refined))
 
 
 def extract_bank(text):
