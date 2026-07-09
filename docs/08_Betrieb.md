@@ -9,12 +9,8 @@
 ## Start
 
 ```
-streamlit run app.py            # Bestand (Port 8501)
-python -m src.frontend.main     # NiceGUI, in Migration (Port 8081)
+python -m src.frontend.main     # GUI: http://localhost:8081
 ```
-
-Beide Oberflächen nutzen dieselben Services und dieselbe Datenbank
-(siehe [[10_NiceGUI_Migration]]).
 
 Neue Dokumente in `inbox/` legen (die Upload-Funktion tut nur das) und über
 die Import-Seite als Stapel verarbeiten — das ist der einzige zuverlässige
@@ -34,11 +30,11 @@ Regelmäßige Sicherung:
 - database/
 - exports/
 
-`static/pdf/` ist nur ein Anzeige-Cache (Kopien fürs Static Serving) und
-braucht kein Backup; Verwaistes wird beim App-Start aufgeräumt.
+`trash/` enthält gelöschte Original-Dokumente (Papierkorb) — bei Bedarf
+mitsichern, gelegentlich manuell leeren.
 
 ## Relevante Entscheidungen
 
 - [[002_ollama]]
-- [[003_streamlit]]
 - [[007_gemma3]]
+- [[010_nicegui]]

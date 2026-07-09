@@ -13,16 +13,18 @@ Neue Dokumente landen in einem Eingangsordner, werden per OCR gelesen, klassifiz
 - Dokumentklassifikation (Regeln zuerst, LLM für unklare Fälle)
 - Extraktion steuerrelevanter Felder je Dokumenttyp/-subtyp
 - Automatische Umbenennung und Archivierung nach Jahr/Kategorie
-- Prüf-Workflow in der App (GUI mit PDF-Ansicht neben dem Formular)
+- Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
+  Strg+Enter = Speichern & Freigeben & weiter)
 - Steuerübersicht pro Jahr mit Absetzbarkeit je Dokument + CSV-Export
 - Qualitätsmessung gegen geprüfte Dokumente (`evaluate.py`)
-- Vollständig lokaler Betrieb (Ollama, SQLite, Streamlit)
+- Löschen in den Papierkorb (`trash/`) statt endgültig
+- Vollständig lokaler Betrieb (Ollama, SQLite, NiceGUI)
 
 ## Schnellstart
 
 ```bash
 source ~/venvs/buerokrator/bin/activate
-streamlit run app.py          # App starten
+python -m src.frontend.main   # App starten: http://localhost:8081
 python -m pytest -q           # Tests
 python evaluate.py --limit 40 # Qualitätsmessung
 ```
@@ -73,9 +75,10 @@ Lokales LLM für Klassifikation und Extraktion
 
 Lokale Datenbank
 
-### Streamlit
+### NiceGUI
 
-Oberfläche (Multipage-App: `app.py` + `pages/`).
+Oberfläche (`src/frontend`, Start via `python -m src.frontend.main`);
+die Anwendungslogik dahinter liegt framework-frei in `src/services`.
 
 ## Datenschutz
 
@@ -88,5 +91,5 @@ Folgende Ordner sind von Git ausgeschlossen:
 - examples
 - temp
 - database (inkl. *.db)
-- static (PDF-Anzeige-Cache)
+- trash (Papierkorb)
 - logs

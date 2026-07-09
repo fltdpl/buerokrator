@@ -11,3 +11,4 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 - [[007_gemma3]]
 - [[008_rule_classifier_first]]
 - [[009_field_whitelist]]
+- [[010_nicegui]]

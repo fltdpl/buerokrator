@@ -14,7 +14,6 @@ Buerokrator/
 ├── todo.md
 ├── roadmap.md
 ├── requirements.txt
-├── app.py            (Streamlit-Einstieg / Dashboard)
 ├── main.py           (Live-Watcher, Alt-Weg)
 ├── evaluate.py       (Qualitätsmessung)
 │
@@ -25,15 +24,14 @@ Buerokrator/
 │ ├── decisions/
 │ └── ...
 │
-├── pages/            (Streamlit-Multipage-Seiten)
-│
 ├── src/
 │ ├── core/           (Dokumenttypen, Feld-Whitelist, Betrags-Utils)
 │ ├── ocr/
 │ ├── classifier/     (Regeln + LLM, Extraktion, Prompts)
 │ ├── organizer/
 │ ├── database/
-│ ├── gui/
+│ ├── services/       (framework-freie Anwendungslogik für die GUI)
+│ ├── frontend/       (NiceGUI; Start: python -m src.frontend.main)
 │ ├── tax/
 │ ├── evaluation/
 │ ├── processor/
@@ -43,9 +41,9 @@ Buerokrator/
 │
 ├── inbox/
 ├── archive/
+├── trash/            (Papierkorb gelöschter Dokumente)
 ├── exports/
 ├── database/
-├── static/           (pdf/ = Anzeige-Cache des Viewers)
 ├── logs/
 │
 └── examples/
