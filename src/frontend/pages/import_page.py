@@ -55,7 +55,7 @@ def import_page():
                     status_label.text = f"Verarbeite {index + 1}/{total}: {filename}"
 
                 # io_bound: OCR + LLM blockieren sonst die Event-Loop.
-                succeeded, failed = await run.io_bound(
+                succeeded, duplicates, failed = await run.io_bound(
                     import_inbox_documents, on_progress
                 )
 
@@ -75,6 +75,22 @@ def import_page():
                             f"• {result['source_name']} → {type_label} · "
                             f"{result['filename']}"
                         ).classes("text-sm text-gray-500")
+
+                    if duplicates:
+                        ui.label(
+                            f"♻️ {len(duplicates)} Dublette(n) übersprungen "
+                            "(liegen im Papierkorb):"
+                        ).classes("text-amber-700")
+
+                        for result in duplicates:
+                            with ui.row().classes("items-center gap-1"):
+                                ui.label(
+                                    f"• {result['source_name']} ist bereits archiviert als"
+                                ).classes("text-sm text-gray-500")
+                                ui.link(
+                                    result["duplicate_filename"],
+                                    f"/dokumente/{result['duplicate_of']}",
+                                ).classes("text-sm")
 
                     if failed:
                         ui.label(f"❌ {len(failed)} Dokument(e) fehlgeschlagen:").classes(

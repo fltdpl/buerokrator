@@ -32,13 +32,15 @@ def import_inbox_documents(progress_callback=None):
     """Verarbeitet alle Dokumente im Inbox-Ordner.
 
     progress_callback(index, total, filename) wird vor jeder Datei aufgerufen.
-    Gibt (erfolgreich, fehlgeschlagen) zurück: erfolgreich als Liste von
-    Ergebnis-dicts aus process() (erkannter Typ, neuer Name, Zielpfad,
-    Dokument-ID), fehlgeschlagen als Liste von Dateinamen.
+    Gibt (erfolgreich, dubletten, fehlgeschlagen) zurück: erfolgreich und
+    dubletten als Listen von Ergebnis-dicts aus process(), fehlgeschlagen als
+    Liste von Dateinamen. Dubletten sind kein Fehler — sie sind bereits
+    archiviert und werden nur gemeldet.
     """
     files = find_inbox_documents()
 
     succeeded = []
+    duplicates = []
     failed = []
 
     total = len(files)
@@ -49,10 +51,13 @@ def import_inbox_documents(progress_callback=None):
 
         result = process(str(path))
 
-        if result:
-            succeeded.append(result)
-
-        else:
+        if not result:
             failed.append(path.name)
 
-    return succeeded, failed
+        elif "duplicate_of" in result:
+            duplicates.append(result)
+
+        else:
+            succeeded.append(result)
+
+    return succeeded, duplicates, failed

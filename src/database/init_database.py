@@ -12,6 +12,9 @@ DOCUMENT_COLUMNS = {
     "document_text": "TEXT",
     "notes": "TEXT",
     "tax_year": "TEXT",
+    # SHA-256 des Originals; Dubletten-Erkennung beim Import. Altbestand hat
+    # NULL — dort greift die Erkennung erst nach einem Neu-Import.
+    "content_hash": "TEXT",
 }
 
 REQUIRED_EXISTING_COLUMNS = {
@@ -62,6 +65,12 @@ def create_indexes(cursor):
         """
         CREATE INDEX IF NOT EXISTS idx_documents_created_at
         ON documents (created_at)
+        """
+    )
+    cursor.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_documents_content_hash
+        ON documents (content_hash)
         """
     )
 

@@ -15,6 +15,7 @@ def insert_document(
     document_type,
     extracted_data,
     document_text=None,
+    content_hash=None,
 ):
 
     conn = get_connection()
@@ -33,11 +34,12 @@ def insert_document(
             document_text,
             created_at,
             verified,
-            tax_year
+            tax_year,
+            content_hash
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             filename,
@@ -51,6 +53,7 @@ def insert_document(
             datetime.now().isoformat(),
             verified,
             extract_year(extracted_data),
+            content_hash,
         ),
     )
 

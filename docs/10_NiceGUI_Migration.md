@@ -146,14 +146,15 @@ Regeln für die Trennung:
 - [x] `static/pdf`-Mechanik + `pdf_cache.py` entfernen, falls durch
       direktes Static Serving ersetzt.
 
-## Nach der Migration (bewusst zurückgestellt)
+## Nach der Migration (inzwischen umgesetzt)
 
-- Unsichere/leere Felder beim Prüfen hervorheben (das Formular-Schema wird
-  in Phase 0 so angelegt, dass es Feld-Metadaten dafür tragen kann).
-- Dubletten-Erkennung beim Import.
-- Einstellungen: installierte Ollama-Modelle abfragen statt fester Liste.
-- Papierkorb-UI (Wiederherstellen, automatisches Leeren).
-- Bulk-Aktionen in der Dokumentenliste.
+- [x] Leere Pflichtfelder beim Prüfen hervorheben — `required` im
+      Formular-Schema, `missing_required_fields`/`empty_fields`.
+- [x] Dubletten-Erkennung beim Import über den Inhalts-Hash (`content_hash`).
+- [x] Einstellungen: installierte Ollama-Modelle statt fester Liste.
+- [x] Papierkorb-UI (`/papierkorb`): Wiederherstellen in die Inbox, Leeren
+      mit Bestätigung. Automatisches Leeren gibt es bewusst nicht.
+- [x] Bulk-Aktionen in der Dokumentenliste (löschen, umklassifizieren).
 
 ## Risiken / offene Punkte
 

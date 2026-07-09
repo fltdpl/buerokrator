@@ -5,12 +5,14 @@ bearbeitbar sind. Frontends (Streamlit, NiceGUI) rendern nur noch dieses
 Schema; die Feldauswahl selbst ist damit testbar und konsistent zur
 Whitelist in `src/core/document_fields.py` (ein Test erzwingt das).
 
-Feld-Spezifikation: {"key", "label", "kind"} mit kind:
+Feld-Spezifikation: {"key", "label", "kind", "required"} mit kind:
 - "text": Freitext, wird unverändert übernommen
 - "amount": Betragsfeld, wird beim Übernehmen mit normalize_amount geparst
 
-Feld-Metadaten (z. B. "required" für das spätere Hervorheben leerer
-Pflichtfelder) können hier ergänzt werden, ohne die Frontends zu brechen.
+`required` markiert Felder, ohne die ein Dokument für Archiv und Steuer
+unbrauchbar ist. Es blockiert nichts — das Frontend hebt leere Pflichtfelder
+beim Prüfen nur hervor (`missing_required_fields`), damit sie nicht
+übersehen werden.
 """
 
 from src.core.amount_utils import normalize_amount
@@ -34,28 +36,30 @@ PENSION_SUBTYPE_LABELS = {
 }
 
 
-def _text(key, label):
-    return {"key": key, "label": label, "kind": "text"}
+def _text(key, label, required=False):
+    return {"key": key, "label": label, "kind": "text", "required": required}
 
 
-def _amount(key, label):
-    return {"key": key, "label": label, "kind": "amount"}
+def _amount(key, label, required=False):
+    return {"key": key, "label": label, "kind": "amount", "required": required}
 
 
 # Gemeinsame Felder aller Typen außer tax (tax hat eigene Felder je Subtyp).
+# Aussteller und Datum sind Pflicht: aus ihnen entstehen Dateiname und
+# Archivjahr.
 _COMMON_FIELDS = (
-    _text("issuer", "Aussteller"),
-    _text("document_date", "Datum"),
+    _text("issuer", "Aussteller", required=True),
+    _text("document_date", "Datum", required=True),
 )
 
 _TYPE_FIELDS = {
     INVOICE: (
         _text("invoice_number", "Rechnungsnummer"),
-        _amount("amount", "Betrag"),
+        _amount("amount", "Betrag", required=True),
     ),
     INSURANCE: (
         _text("policy_number", "Versicherungsnummer"),
-        _text("insurance_type", "Versicherungsart"),
+        _text("insurance_type", "Versicherungsart", required=True),
         _amount("amount", "Betrag (Jahresbeitrag)"),
     ),
     PENSION: (_text("product_name", "Produkt"),),
@@ -86,20 +90,20 @@ _PENSION_DEFAULT_FIELDS = (_amount("amount", "Betrag (Jahresbeitrag)"),)
 
 _TAX_SUBTYPE_FORM_FIELDS = {
     "lohnsteuerbescheinigung": (
-        _text("employer", "Arbeitgeber"),
-        _amount("gross_amount", "Bruttolohn"),
+        _text("employer", "Arbeitgeber", required=True),
+        _amount("gross_amount", "Bruttolohn", required=True),
         _amount("income_tax", "Lohnsteuer"),
         _amount("soli", "Solidaritätszuschlag"),
         _amount("church_tax", "Kirchensteuer"),
     ),
     "gehaltsabrechnung": (
-        _text("employer", "Arbeitgeber"),
-        _amount("gross_amount", "Bruttolohn"),
+        _text("employer", "Arbeitgeber", required=True),
+        _amount("gross_amount", "Bruttolohn", required=True),
         _text("month", "Monat"),
         _amount("net_amount", "Nettolohn"),
     ),
     "einkommensbescheinigung": (
-        _text("issuer", "Finanzamt"),
+        _text("issuer", "Finanzamt", required=True),
         _amount("income_tax", "Einkommensteuer"),
         _amount("soli", "Solidaritätszuschlag"),
         _amount("settlement_amount", "Abrechnungsbetrag (Erstattung negativ)"),
@@ -145,7 +149,7 @@ def form_fields(document_type, subtype=None):
     typspezifischen Felder anbieten; bestehende Werte bleiben erhalten.
     """
     if document_type == TAX:
-        fields = [_text("tax_year", "Steuerjahr")]
+        fields = [_text("tax_year", "Steuerjahr", required=True)]
 
         if is_known_subtype(TAX, subtype):
             fields.extend(_TAX_SUBTYPE_FORM_FIELDS[subtype])
@@ -164,6 +168,39 @@ def form_fields(document_type, subtype=None):
         )
 
     return fields
+
+
+def is_empty_value(value):
+    """Leer = nichts extrahiert. 0.0 ist ein Wert, keine Lücke."""
+    if value is None:
+        return True
+
+    if isinstance(value, str):
+        return not value.strip()
+
+    return False
+
+
+def empty_fields(document_type, data, subtype=None):
+    """Keys aller Formularfelder ohne Wert (für die Hervorhebung beim Prüfen)."""
+    data = data if isinstance(data, dict) else {}
+
+    return [
+        field["key"]
+        for field in form_fields(document_type, subtype)
+        if is_empty_value(data.get(field["key"]))
+    ]
+
+
+def missing_required_fields(document_type, data, subtype=None):
+    """Keys der leeren Pflichtfelder — Teilmenge von empty_fields."""
+    data = data if isinstance(data, dict) else {}
+
+    return [
+        field["key"]
+        for field in form_fields(document_type, subtype)
+        if field.get("required") and is_empty_value(data.get(field["key"]))
+    ]
 
 
 def merge_form_values(document_type, data, values, subtype=None):

@@ -5,17 +5,15 @@ kein Session-State. Frontends verdrahten hier nur noch Events.
 """
 
 import json
-import shutil
 from datetime import datetime
 from pathlib import Path
 
 from src.core.document_display import get_document_display_name
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
+from src.database.set_document_type import set_document_type
 from src.organizer.date_utils import year_from_archive_path
-from src.organizer.filename_builder import get_unique_target_path
-
-TRASH_DIR = Path("trash")
+from src.organizer.trash import TRASH_DIR, move_to_trash
 
 
 def parse_document_row(row):
@@ -54,19 +52,48 @@ def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
     if row is None:
         return None
 
-    source = Path(row[2])
-    trashed_path = None
-
-    if source.exists():
-        trash = Path(trash_dir)
-        trash.mkdir(parents=True, exist_ok=True)
-        target = get_unique_target_path(trash / source.name)
-        shutil.move(str(source), str(target))
-        trashed_path = target
+    trashed_path = move_to_trash(row[2], trash_dir=trash_dir)
 
     delete_document(document_id)
 
     return trashed_path
+
+
+def move_documents_to_trash(document_ids, trash_dir=TRASH_DIR):
+    """Mehrere Dokumente in den Papierkorb; liefert die Anzahl gelöschter Einträge.
+
+    Gezählt wird der gelöschte DB-Eintrag, nicht die verschobene Datei: fehlt
+    das Archiv-PDF bereits, ist das Dokument trotzdem gelöscht.
+    """
+    deleted = 0
+
+    for document_id in document_ids:
+        if get_document(document_id) is None:
+            continue
+
+        move_document_to_trash(document_id, trash_dir=trash_dir)
+        deleted += 1
+
+    return deleted
+
+
+def reclassify_documents(document_ids, document_type):
+    """Setzt den Dokumenttyp mehrerer Dokumente und markiert sie als ungeprüft.
+
+    Ungeprüft, weil ein Typwechsel andere Felder gültig macht: die Extraktion
+    muss von Hand nachgezogen werden. Die Datei wird NICHT umbenannt oder
+    verschoben — das passiert beim nächsten Speichern im Prüf-Workflow.
+    """
+    changed = 0
+
+    for document_id in document_ids:
+        if get_document(document_id) is None:
+            continue
+
+        set_document_type(document_id, document_type)
+        changed += 1
+
+    return changed
 
 
 def document_year(row):

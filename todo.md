@@ -6,14 +6,12 @@
 - [ ] **Zweiter Testdatensatz** (andere Anbieter, anonymisiert oder synthetisch) — ohne ihn misst `evaluate.py` nur den Bestand eines Nutzers, siehe Vermerk im HANDOVER. Voraussetzung für alles Weitere Richtung Mehrbenutzerbetrieb.
 - [ ] Regelmäßig messen: nach JEDER Prompt-/Regel-Änderung `python evaluate.py --limit 40` als Vergleichslauf.
 
-## Offen — zurückgestellt (aus GUI-Migration, siehe `docs/10_NiceGUI_Migration.md`)
-- [ ] Leere/unsichere Felder beim Prüfen hervorheben (Formular-Schema trägt schon Feld-Metadaten).
-- [ ] Dubletten-Erkennung beim Import.
-- [ ] Einstellungen: installierte Ollama-Modelle dynamisch abfragen statt fester Liste.
-- [ ] Papierkorb-UI (Wiederherstellen, automatisches Leeren von `trash/`).
-- [ ] Bulk-Aktionen in der Dokumentenliste (mehrere löschen/umklassifizieren).
-
 ## Erledigt
+- [x] Leere Pflichtfelder beim Prüfen hervorheben (`required` im Formular-Schema, `missing_required_fields`).
+- [x] Dubletten-Erkennung beim Import (SHA-256 des Originals, Spalte `content_hash`); Dublette wandert vor OCR/LLM in den Papierkorb und wird verlinkt gemeldet.
+- [x] Einstellungen: installierte Ollama-Modelle dynamisch (`model_service`, Fallback wenn Ollama nicht läuft).
+- [x] Papierkorb-UI unter `/papierkorb` (Wiederherstellen in die Inbox, Leeren mit Bestätigung).
+- [x] Bulk-Aktionen in der Dokumentenliste (Auswahl löschen, umklassifizieren → setzt auf ungeprüft).
 - [x] Regelparser für Jahreskontoauszug + Steuerbescheinigung (`src/extraction/`): Salden, Zinsen, Beitragssumme aus der Bilanz. Anbieterneutral — setzen nie Aussteller/Produkt/Datum, schweigen bei unbekanntem Layout.
 - [x] Dashboard-Zähler „0 ungeprüft · 1 geprüft": `get_verification_statistics` gab ein Dict zurück, die Aufrufer entpackten die Schlüssel statt der Anzahlen.
 - [x] GUI auf NiceGUI umgestellt — Phasen 0–4, `docs/10_NiceGUI_Migration.md`, ADR 010. Start: `python -m src.frontend.main`. Streamlit entfernt.

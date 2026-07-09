@@ -9,6 +9,7 @@ NAV_ITEMS = [
     ("Dokumente", "/dokumente"),
     ("Import", "/import"),
     ("Steuer", "/steuer"),
+    ("Papierkorb", "/papierkorb"),
     ("Einstellungen", "/einstellungen"),
 ]
 
