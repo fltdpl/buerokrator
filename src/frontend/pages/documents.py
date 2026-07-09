@@ -10,6 +10,8 @@ from src.services.document_service import (
     available_years,
     build_table_rows,
     filter_documents,
+    move_documents_to_trash,
+    reclassify_documents,
 )
 
 COLUMNS = [
@@ -115,12 +117,69 @@ def documents_page():
             rows=rows,
             row_key="id",
             pagination=25,
+            selection="multiple",
         ).classes("w-full")
 
+        # Zeilenklick öffnet das Detail; die Auswahl läuft über die Checkbox,
+        # damit ein Klick nicht beides bedeutet.
         table.on(
             "rowClick",
             lambda event: ui.navigate.to(f"/dokumente/{event.args[1]['id']}"),
         )
+
+        bulk_actions(table)
+
+    def bulk_actions(table):
+        """Aktionen für die ausgewählten Zeilen (nur sichtbar, wenn ausgewählt)."""
+        def selected_ids():
+            return [row["id"] for row in table.selected]
+
+        def delete_selected():
+            deleted = move_documents_to_trash(selected_ids())
+            delete_dialog.close()
+            ui.notify(f"{deleted} Dokument(e) in den Papierkorb verschoben.")
+            results.refresh()
+
+        def reclassify_selected(document_type):
+            changed = reclassify_documents(selected_ids(), document_type)
+            ui.notify(
+                f"{changed} Dokument(e) auf "
+                f"{DOCUMENT_TYPE_LABELS.get(document_type, document_type)} gesetzt "
+                "und zum erneuten Prüfen markiert."
+            )
+            results.refresh()
+
+        with ui.dialog() as delete_dialog, ui.card():
+            confirm_label = ui.label("")
+
+            with ui.row().classes("justify-end w-full"):
+                ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
+                ui.button("Ja, löschen", on_click=delete_selected).props(
+                    "color=negative"
+                )
+
+        def open_delete_dialog():
+            confirm_label.text = (
+                f"{len(table.selected)} Dokument(e) in den Papierkorb verschieben?"
+            )
+            delete_dialog.open()
+
+        with ui.row().classes("items-center gap-3").bind_visibility_from(
+            table, "selected", backward=bool
+        ):
+            ui.label().bind_text_from(
+                table, "selected", lambda rows: f"{len(rows)} ausgewählt"
+            ).classes("text-gray-500")
+
+            ui.select(
+                {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
+                label="Umklassifizieren nach",
+                on_change=lambda event: reclassify_selected(event.value),
+            ).props("dense").classes("w-56")
+
+            ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(
+                "flat dense color=negative"
+            )
 
     def set_filter(key, value):
         filters[key] = value

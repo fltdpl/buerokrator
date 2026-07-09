@@ -18,9 +18,11 @@ from src.services.document_service import (
     parse_document_row,
 )
 from src.services.form_schema import (
+    empty_fields,
     form_fields,
     is_known_subtype,
     merge_form_values,
+    missing_required_fields,
     subtype_config,
 )
 
@@ -153,17 +155,37 @@ def document_detail_page(document_id: int):
                     "Unbekannte Unterart — bestehende Felder bleiben unverändert."
                 ).classes("text-xs text-gray-500")
 
-        for field in form_fields(state["document_type"], state["subtype"] or None):
+        subtype = state["subtype"] or None
+        missing = set(missing_required_fields(state["document_type"], data, subtype))
+        empty = set(empty_fields(state["document_type"], data, subtype))
+
+        if missing:
+            ui.label(
+                f"⚠️ {len(missing)} Pflichtfeld(er) leer — bitte aus dem Dokument"
+                " ergänzen."
+            ).classes("text-sm text-orange-700")
+
+        for field in form_fields(state["document_type"], subtype):
+            key = field["key"]
+
             if field["kind"] == "amount":
-                default = _amount_input_value(data.get(field["key"]))
+                default = _amount_input_value(data.get(key))
 
             else:
-                default = data.get(field["key"]) or ""
+                default = data.get(key) or ""
 
-            inputs[field["key"]] = ui.input(
-                field["label"],
-                value=default,
-            ).classes("w-full")
+            label = f"{field['label']} *" if field.get("required") else field["label"]
+            element = ui.input(label, value=default).classes("w-full")
+
+            # Leere Pflichtfelder auffällig, sonstige Lücken dezent: beides
+            # ist eine Information, aber nur das eine hält das Dokument auf.
+            if key in missing:
+                element.props("error error-message=Pflichtfeld")
+
+            elif key in empty:
+                element.props('hint="nicht erkannt"')
+
+            inputs[key] = element
 
     def change_type(document_type):
         state["document_type"] = document_type

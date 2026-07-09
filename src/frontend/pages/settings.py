@@ -4,8 +4,7 @@ from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
 from src.frontend.layout import page_layout
 from src.services.log_service import LOG_LEVELS, read_log_tail
-
-MODEL_OPTIONS = ["gemma3:4b", "qwen3:1.7b", "llama3"]
+from src.services.model_service import list_installed_models
 
 
 @ui.page("/einstellungen")
@@ -19,9 +18,7 @@ def settings_page():
         # Konfiguration
         # ------------------------------------------------------------
         current_model = config["classifier"]["model"]
-        model_options = (
-            MODEL_OPTIONS if current_model in MODEL_OPTIONS else [current_model, *MODEL_OPTIONS]
-        )
+        model_options = list_installed_models(current_model)
 
         with ui.row().classes("gap-8 w-full items-start"):
             with ui.column().classes("gap-3 w-96"):

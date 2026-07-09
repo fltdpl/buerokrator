@@ -117,3 +117,36 @@ async def test_settings_page_renders(user: User):
     await user.open("/einstellungen")
     await user.should_see("Einstellungen")
     await user.should_see("Gefahrenzone")
+
+
+@pytest.mark.asyncio
+async def test_trash_page_renders_empty(user: User):
+    await user.open("/papierkorb")
+    await user.should_see("Der Papierkorb ist leer.")
+
+
+@pytest.mark.asyncio
+async def test_trash_page_lists_deleted_files(user: User, tmp_path):
+    trash = tmp_path / "trash"
+    trash.mkdir()
+    (trash / "geloescht.pdf").write_text("x", encoding="utf-8")
+
+    await user.open("/papierkorb")
+    await user.should_see("geloescht.pdf")
+    await user.should_see("Wiederherstellen")
+
+
+@pytest.mark.asyncio
+async def test_detail_marks_empty_required_field(user: User):
+    from src.database.document_repository import insert_document
+
+    # Ohne Aussteller: das Feld ist Pflicht und muss beim Prüfen auffallen.
+    document_id = insert_document(
+        "2024-01-01_unbekannt.pdf",
+        "archive/2024/Rechnungen/2024-01-01_unbekannt.pdf",
+        "invoice",
+        {"amount": 42.0, "document_date": "01.01.2024"},
+    )
+
+    await user.open(f"/dokumente/{document_id}")
+    await user.should_see("Pflichtfeld(er) leer")

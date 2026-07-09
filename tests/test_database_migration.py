@@ -14,6 +14,7 @@ EXPECTED_DOCUMENT_COLUMNS = {
     "document_text",
     "notes",
     "tax_year",
+    "content_hash",
 }
 
 

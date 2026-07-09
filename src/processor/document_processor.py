@@ -4,8 +4,11 @@ from pathlib import Path
 
 from src.classifier.document_classifier import classify
 from src.classifier.document_extractor import extract_document
+from src.core.file_hash import file_hash
 from src.core.logger import logger
 from src.database.document_repository import insert_document
+from src.database.find_duplicate import find_document_by_hash
+from src.organizer.trash import move_to_trash
 from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image_pdf
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
@@ -142,6 +145,7 @@ def archive_analyzed_document(
     classification,
     extracted_data,
     document_text=None,
+    content_hash=None,
 ):
 
     archive_path = archive_document(
@@ -156,6 +160,7 @@ def archive_analyzed_document(
         document_type=classification["document_type"],
         extracted_data=extracted_data,
         document_text=document_text,
+        content_hash=content_hash,
     )
 
     return archive_path, document_id
@@ -166,10 +171,34 @@ def process(file_path):
 
     Gibt bei Erfolg ein Ergebnis-dict zurück (truthy, für das Frontend:
     was wurde erkannt, wohin archiviert), bei Fehler None (falsy).
+    Ist die Datei eine Dublette eines bereits archivierten Dokuments, trägt
+    das Ergebnis `duplicate_of` und die Datei wandert unverarbeitet in den
+    Papierkorb.
     """
     logger.info(f"Verarbeitung gestartet: {file_path}")
     print(f"Verarbeite Dokument: {file_path}")
     try:
+        if not wait_for_file(file_path):
+            raise Exception(f"Datei konnte nicht geöffnet werden: {file_path}")
+
+        # Vor OCR und LLM: eine Dublette soll den Rechner nicht beschäftigen.
+        content_hash = file_hash(file_path)
+        duplicate = find_document_by_hash(content_hash)
+
+        if duplicate:
+            duplicate_id, duplicate_name = duplicate
+            trashed = move_to_trash(file_path)
+            logger.info(
+                f"Dublette von #{duplicate_id} ({duplicate_name}),"
+                f" in den Papierkorb verschoben: {trashed}"
+            )
+
+            return {
+                "source_name": Path(file_path).name,
+                "duplicate_of": duplicate_id,
+                "duplicate_filename": duplicate_name,
+            }
+
         result = analyze_document(file_path)
 
         archive_path, document_id = archive_analyzed_document(
@@ -177,6 +206,7 @@ def process(file_path):
             result["classification"],
             result["extracted_data"],
             document_text=result["document_text"],
+            content_hash=content_hash,
         )
 
         logger.info(f"Verarbeitung abgeschlossen: {file_path}")

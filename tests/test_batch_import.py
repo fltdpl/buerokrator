@@ -45,7 +45,9 @@ def test_find_inbox_documents_without_inbox_returns_empty(tmp_path, monkeypatch)
     assert batch_import.find_inbox_documents() == []
 
 
-def test_import_inbox_documents_splits_success_and_failure(tmp_path, monkeypatch):
+def test_import_inbox_documents_splits_success_duplicate_and_failure(
+    tmp_path, monkeypatch
+):
     write_config(tmp_path)
     monkeypatch.chdir(tmp_path)
 
@@ -53,11 +55,20 @@ def test_import_inbox_documents_splits_success_and_failure(tmp_path, monkeypatch
     inbox.mkdir()
     (inbox / "ok.pdf").write_text("x")
     (inbox / "bad.pdf").write_text("x")
+    (inbox / "dup.pdf").write_text("x")
 
-    # process durch ein Fake ersetzen: bad.pdf schlägt fehl.
+    # process durch ein Fake ersetzen: bad.pdf schlägt fehl, dup.pdf ist eine
+    # bereits archivierte Dublette.
     def fake_process(file_path):
         if file_path.endswith("bad.pdf"):
             return None
+
+        if file_path.endswith("dup.pdf"):
+            return {
+                "source_name": "dup.pdf",
+                "duplicate_of": 7,
+                "duplicate_filename": "2024-01-01_ok.pdf",
+            }
 
         return {
             "source_name": "ok.pdf",
@@ -70,14 +81,16 @@ def test_import_inbox_documents_splits_success_and_failure(tmp_path, monkeypatch
     monkeypatch.setattr(batch_import, "process", fake_process)
 
     calls = []
-    succeeded, failed = batch_import.import_inbox_documents(
+    succeeded, duplicates, failed = batch_import.import_inbox_documents(
         lambda index, total, name: calls.append((index, total, name))
     )
 
     # Erfolgreiche Importe liefern das Ergebnis-dict aus process().
     assert [result["source_name"] for result in succeeded] == ["ok.pdf"]
     assert succeeded[0]["document_type"] == "invoice"
+    # Eine Dublette ist kein Fehler, sondern ein eigenes Ergebnis.
+    assert [result["duplicate_of"] for result in duplicates] == [7]
     assert failed == ["bad.pdf"]
     # progress_callback für jede Datei aufgerufen.
-    assert len(calls) == 2
-    assert calls[0][1] == 2
+    assert len(calls) == 3
+    assert calls[0][1] == 3
