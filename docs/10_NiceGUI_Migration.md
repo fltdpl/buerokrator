@@ -1,7 +1,7 @@
 # Migrationsplan: Streamlit → NiceGUI
 
-Status: Plan (beschlossen: Wechsel auf NiceGUI mit klarer Trennung
-Frontend/Backend). Fortschritt wird hier abgehakt.
+Status: **abgeschlossen** (Phasen 0–4). NiceGUI ist die einzige GUI;
+Streamlit wurde entfernt. Bewusste Abweichungen siehe Paritäts-Notizen unten.
 
 ## Ziele
 
@@ -137,13 +137,13 @@ Regeln für die Trennung:
 
 ### Phase 4 — Ablösung
 
-- [ ] Paritäts-Check gegen die Bestandsaufnahme oben.
-- [ ] UI-Smoke-Tests mit dem NiceGUI-pytest-Plugin (Ersatz für `AppTest`).
-- [ ] Streamlit entfernen: `app.py`, `pages/`, `src/gui/`, Abhängigkeit;
+- [x] Paritäts-Check gegen die Bestandsaufnahme oben.
+- [x] UI-Smoke-Tests mit dem NiceGUI-pytest-Plugin (Ersatz für `AppTest`).
+- [x] Streamlit entfernen: `app.py`, `pages/`, `src/gui/`, Abhängigkeit;
       `src/frontend/main.py` wird der Einstieg.
-- [ ] Docs nachziehen (01, 08, README, HANDOVER); ADR 010 „NiceGUI statt
+- [x] Docs nachziehen (01, 08, README, HANDOVER); ADR 010 „NiceGUI statt
       Streamlit" (ersetzt 003).
-- [ ] `static/pdf`-Mechanik + `pdf_cache.py` entfernen, falls durch
+- [x] `static/pdf`-Mechanik + `pdf_cache.py` entfernen, falls durch
       direktes Static Serving ersetzt.
 
 ## Nach der Migration (bewusst zurückgestellt)
@@ -175,3 +175,16 @@ und JEDE Zeile daraus beiden GUIs zugutekommt — selbst wenn die Migration
 pausiert, bleibt ein sauberer geschnittenes System zurück. Der
 Prüf-Workflow kommt als erstes echtes NiceGUI-Stück, weil dort alle drei
 Schmerzpunkte (Shortcuts, PDF-Sync, Tempo) sitzen.
+
+## Paritäts-Notizen (bewusste Abweichungen)
+
+- Der Info-Tab mit der Rohansicht aller Felder entfällt — die Detailseite
+  zeigt direkt das bearbeitbare Formular (gleiche Felder, gleiche Quelle:
+  form_schema.py).
+- Notizen werden zusammen mit „Speichern" gespeichert, nicht mehr über
+  einen eigenen Button (Roadmap-Punkt „Notizen unabhängig speichern"
+  bleibt offen).
+- „Freigeben ohne Speichern" gibt es nicht mehr — Freigeben speichert
+  immer den Formularstand (beabsichtigt, siehe Phase 2).
+- Der Archivpfad wird nicht mehr angezeigt (war im Info-Tab); bei Bedarf
+  über Download bzw. Dateinamen ersichtlich.

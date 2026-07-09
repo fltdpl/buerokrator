@@ -1,7 +1,8 @@
 # Architektur
 
-Monolithische Python-Anwendung (siehe [[004_folder_structure]]). Alle
-Komponenten laufen lokal, keine externen Dienste.
+Monolithische Python-Anwendung (siehe [[004_folder_structure]]) mit klarer
+Trennung Frontend (NiceGUI) / Services / Kernmodule. Alle Komponenten
+laufen lokal, keine externen Dienste.
 
 ## Komponenten (`src/`)
 
@@ -30,10 +31,20 @@ Benennt Dateien typabhängig um und archiviert sie nach
 
 SQLite, Tabelle `documents`; Migration läuft automatisch beim ersten Zugriff.
 
-### GUI (`src/gui`, `app.py`, `pages/`)
+### Services (`src/services`)
 
-Streamlit-Multipage-App: Dashboard, Dokumentenliste mit Detailansicht und
-Prüf-Workflow, Stapel-Import, Steuer-Übersicht.
+Framework-freie Anwendungslogik zwischen GUI und Kernmodulen:
+Formular-Schemata je Typ/Subtyp (`form_schema.py`), Listen-Filter und
+Papierkorb-Löschen (`document_service.py`), Kennzahlen, Log-Zugriff.
+Nur Plain Data rein/raus — ohne GUI testbar.
+
+### Frontend (`src/frontend`, NiceGUI)
+
+Start: `python -m src.frontend.main` (Port 8081, nur localhost).
+Dashboard, Dokumentenliste, Detail-/Prüfseite (Formular + PDF⇄OCR-Panel,
+Shortcuts), Import, Steuer-Übersicht, Einstellungen mit Log-Ansicht.
+Enthält nur Darstellung und Event-Verdrahtung; PDFs kommen über die
+Route `/pdf/<id>` direkt aus dem Archiv (siehe [[010_nicegui]]).
 
 ### Steuer (`src/tax`)
 

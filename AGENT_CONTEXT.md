@@ -18,13 +18,18 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
 - SQLite
 - Ollama (Modell konfigurierbar in `config/settings.yaml`: Qwen oder gemma3:4b oder gemma4)
 - Tesseract OCR (+ Poppler für PDF→Bild)
-- Streamlit (Multipage: `app.py` + `pages/`)
+- NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081)
 
 ## Architektur / Pipeline
 
 `inbox` → OCR (`src/ocr`) → Klassifikation (`src/classifier`: Regel-Vorprüfung vor LLM) →
 Extraktion (typspezifische Prompts) → Organizer (Umbenennen/Archivieren, `src/organizer`) →
-Datenbank (`src/database`). GUI in `src/gui`, Steuer-Auswertung in `src/tax`.
+Datenbank (`src/database`). Steuer-Auswertung in `src/tax`.
+
+GUI klar getrennt: NiceGUI-Frontend (`src/frontend`, nur Darstellung/Events)
+über framework-freie Services (`src/services`: Formular-Schemata,
+Listen-Filter, Papierkorb-Löschen, Kennzahlen, Log). Löschen verschiebt
+Originale nach `trash/`.
 
 Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, unknown`.
 Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz).

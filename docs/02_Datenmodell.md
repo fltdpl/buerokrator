@@ -2,7 +2,7 @@
 
 ## Tabelle documents (einzige Tabelle)
 
-- id — eindeutige ID, in der GUI als `?doc=<id>` und für `static/pdf/<id>.pdf` genutzt
+- id — eindeutige ID, in der GUI als Route `/dokumente/<id>` und für das PDF-Serving (`/pdf/<id>`) genutzt
 - filename
 - archive_path
 - document_type

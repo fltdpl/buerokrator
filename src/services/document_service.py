@@ -12,7 +12,6 @@ from pathlib import Path
 from src.core.document_display import get_document_display_name
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
-from src.services.pdf_cache import remove_cached_pdf
 from src.organizer.date_utils import year_from_archive_path
 from src.organizer.filename_builder import get_unique_target_path
 
@@ -66,7 +65,6 @@ def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
         trashed_path = target
 
     delete_document(document_id)
-    remove_cached_pdf(document_id)
 
     return trashed_path
 

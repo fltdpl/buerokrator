@@ -12,4 +12,5 @@ Streamlit als Oberfläche
 
 ## Status
 
-Akzeptiert
+Ersetzt durch [[010_nicegui]] (Streamlits Rerun-Modell verhinderte
+Shortcuts, persistenten PDF-Viewer und flüssige Bedienung).
