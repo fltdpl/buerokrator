@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from nicegui import ui
 
+from src import __version__
 from src.frontend.theme import apply_theme
 
 # (Label, Route, Material-Icon)
@@ -12,6 +13,7 @@ NAV_ITEMS = [
     ("Dokumente", "/dokumente", "description"),
     ("Import", "/import", "file_upload"),
     ("Steuer", "/steuer", "account_balance"),
+    ("Anleitung", "/anleitung", "help_outline"),
     ("Einstellungen", "/einstellungen", "settings"),
 ]
 
@@ -56,6 +58,8 @@ def page_layout(title):
             with ui.link(target=route).classes(f"nav-item{active}"):
                 ui.icon(icon).classes("text-lg")
                 ui.label(label).classes("text-sm")
+
+        ui.label(f"v{__version__}").classes("text-xs muted p-4")
 
     with ui.column().classes("w-full max-w-7xl mx-auto p-6 gap-4"):
         yield

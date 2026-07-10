@@ -1,95 +1,87 @@
 # Buerokrator
 
-## Vision
+Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
+Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
 
-Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der Vorbereitung der jährlichen Steuererklärung.
+Neue Dokumente landen in einem Eingangsordner, werden per OCR gelesen,
+klassifiziert, automatisch umbenannt und archiviert; die relevanten Felder
+werden in einer lokalen Datenbank gespeichert und in der App geprüft. Keine
+Daten verlassen den Rechner — auch keine Web-Fonts.
 
-Neue Dokumente landen in einem Eingangsordner, werden per OCR gelesen, klassifiziert, automatisch umbenannt und archiviert; relevante Informationen werden in einer Datenbank gespeichert und in der App geprüft. Alles läuft lokal — keine Cloud.
+> Version 0.1.0 — erste öffentliche Vorabversion.
 
 ## Hauptfunktionen
 
-- Stapel-Import aus dem Inbox-Ordner (Scan-Eingang)
+- Stapel-Import aus dem `inbox`-Ordner, inklusive Dubletten-Erkennung
 - OCR für Bild- und PDF-Dokumente (Tesseract)
 - Dokumentklassifikation (Regeln zuerst, LLM für unklare Fälle)
 - Extraktion steuerrelevanter Felder je Dokumenttyp/-subtyp
-- Automatische Umbenennung und Archivierung nach Jahr/Kategorie
+- Automatische Umbenennung und Archivierung nach `archive/<Jahr>/<Kategorie>/`
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
 - Steuerübersicht pro Jahr mit Absetzbarkeit je Dokument + CSV-Export
-- Qualitätsmessung gegen geprüfte Dokumente (`evaluate.py`)
-- Löschen in den Papierkorb (`trash/`) statt endgültig
-- Vollständig lokaler Betrieb (Ollama, SQLite, NiceGUI)
+- Löschen in den Papierkorb statt endgültig
+- Backup von Datenbank + Archiv als ZIP auf Knopfdruck
 
-## Schnellstart
+## Voraussetzungen
+
+Alle Werkzeuge laufen lokal:
+
+- **Python 3.12+**
+- **[Ollama](https://ollama.com/)** mit einem Sprachmodell
+  (Standard `gemma3:4b`): `ollama pull gemma3:4b`
+- **Tesseract OCR** mit den Sprachpaketen `deu` und `eng`
+  (Ubuntu/Debian: `sudo apt install tesseract-ocr tesseract-ocr-deu`)
+- **Poppler** für die Umwandlung gescannter PDF-Seiten in Bilder
+  (Ubuntu/Debian: `sudo apt install poppler-utils`)
+
+Plattformabhängige Pfade zu Tesseract und Poppler stehen in
+`config/settings.yaml`. Ob alles verfügbar ist, zeigt in der App
+*Einstellungen → Konfiguration → Systemstatus*.
+
+## Installation
 
 ```bash
-source ~/venvs/buerokrator/bin/activate
-python -m src.frontend.main   # App starten: http://localhost:8081
-python -m pytest -q           # Tests
-python evaluate.py --limit 40 # Qualitätsmessung
+git clone <repo-url> buerokrator
+cd buerokrator
+
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-Details: [[08_Betrieb]]. Für Entwickler: HANDOVER.md (Projektstand) und AGENT_CONTEXT.md.
+## Start
 
-## Projektstatus
+```bash
+python -m src.frontend.main      # App unter http://localhost:8081
+```
 
-Pipeline, GUI und Steuerübersicht sind funktionsfähig; laufende Arbeit an
-Extraktionsqualität (Messung via `evaluate.py`) — offene Punkte in todo.md.
+Die Datenbank und die Datenordner werden beim ersten Lauf automatisch angelegt.
+Eine Kurzanleitung findest du in der App unter *Anleitung*.
 
-## Dokumentation
+## Entwicklung
 
-- [[00_Vision]]
-- [[01_Architektur]]
-- [[02_Datenmodell]]
-- [[03_Dokumenttypen]]
-- [[04_Lernsystem]] (Konzept, nicht umgesetzt)
-- [[05_Steuerlogik]]
-- [[06_Ordnerstruktur]]
-- [[08_Betrieb]]
-- [[09_Decisions]]
+```bash
+python -m pytest -q              # Testsuite
+python evaluate.py --limit 40    # Qualitätsmessung gegen geprüfte Dokumente
+```
 
-## Roadmap
+## Technik
 
-[[roadmap]]
+Pipeline: `inbox` → OCR (`src/ocr`) → Klassifikation (`src/classifier`) →
+Extraktion → Organizer (`src/organizer`) → Datenbank (`src/database`);
+Steuer-Auswertung in `src/tax`. Die Oberfläche (`src/frontend`, NiceGUI)
+enthält nur Darstellung und Event-Verdrahtung; die Anwendungslogik liegt
+framework-frei und getestet in `src/services`.
 
-## Externe Abhängigkeiten
-
-### Tesseract OCR
-
-Pfade je Plattform in `config/settings.yaml`. Benötigte Sprachen:
-
-- deu
-- eng
-
-### Poppler
-
-Wird für die Umwandlung von PDF-Seiten in Bilder verwendet.
-Benötigt für OCR von gescannten PDFs.
-
-### Ollama
-
-Lokales LLM für Klassifikation und Extraktion
-(Modell in `config/settings.yaml`, aktuell `gemma3:4b`).
-
-### SQLite
-
-Lokale Datenbank
-
-### NiceGUI
-
-Oberfläche (`src/frontend`, Start via `python -m src.frontend.main`);
-die Anwendungslogik dahinter liegt framework-frei in `src/services`.
+Weiterführende Dokumentation liegt im Ordner `docs/`.
 
 ## Datenschutz
 
-Persönliche Dokumente werden nicht versioniert.
-Folgende Ordner sind von Git ausgeschlossen:
+Persönliche Dokumente werden nicht versioniert. Von Git ausgeschlossen sind
+u. a. `inbox/`, `archive/`, `exports/`, `database/`, `trash/`, `backups/` und
+`logs/`.
 
-- inbox
-- archive
-- exports
-- examples
-- temp
-- database (inkl. *.db)
-- trash (Papierkorb)
-- logs
+## Lizenz
+
+[MIT](LICENSE)

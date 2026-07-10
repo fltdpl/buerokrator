@@ -5,6 +5,7 @@ from src.database.reset_database import reset_database_and_archive
 from src.frontend.layout import card, page_layout
 from src.frontend.pages.trash import render_trash
 from src.services.backup_service import run_backup
+from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
 from src.services.model_service import list_installed_models
 
@@ -44,7 +45,35 @@ def settings_page():
                 _render_log()
 
 
+def _render_dependency_status(config):
+    """Zeigt an, ob die externen Abhängigkeiten verfügbar sind."""
+
+    @ui.refreshable
+    def status_list():
+        for status in collect_dependency_status(config):
+            with ui.row().classes("items-center gap-3 w-full no-wrap"):
+                if status["ok"]:
+                    ui.icon("check_circle").classes("text-green-600")
+
+                else:
+                    ui.icon("cancel").classes("text-red-600")
+
+                ui.label(status["name"]).classes("w-40")
+                ui.label(status["detail"]).classes("text-sm muted")
+
+    with card("w-full gap-2"):
+        with ui.row().classes("items-center justify-between w-full"):
+            ui.label("Systemstatus").classes("text-xl page-title")
+            ui.button(icon="refresh", on_click=lambda: status_list.refresh()).props(
+                "flat dense round"
+            )
+
+        status_list()
+
+
 def _render_config(config):
+    _render_dependency_status(config)
+
     current_model = config["classifier"]["model"]
     model_options = list_installed_models(current_model)
 
