@@ -29,7 +29,7 @@ def get_existing_columns(cursor):
         """
     ).fetchall()
 
-    return {row[1] for row in rows}
+    return {row["name"] for row in rows}
 
 
 def migrate_documents_table(cursor):

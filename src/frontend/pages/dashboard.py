@@ -71,7 +71,9 @@ def dashboard_page():
             ui.label("Zuletzt archiviert").classes("text-xl page-title")
 
             for row in stats["recent"]:
-                document_id, filename, document_type = row[0], row[1], row[2]
+                document_id = row["id"]
+                filename = row["filename"]
+                document_type = row["document_type"]
                 type_label = DOCUMENT_TYPE_LABELS.get(document_type, document_type)
 
                 with ui.row().classes("gap-2 items-center"):

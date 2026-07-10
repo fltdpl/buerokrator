@@ -160,7 +160,7 @@ def available_tax_years(documents=None):
     if documents is None:
         documents = list_documents()
 
-    years = {year_from_archive_path(row[2]) for row in documents}
+    years = {year_from_archive_path(row["archive_path"]) for row in documents}
 
     return sorted(year for year in years if year is not None)
 
@@ -206,14 +206,14 @@ def build_tax_summary(year, documents=None):
     capital_income = {"interest": 0.0, "capital_gains_tax": 0.0, "count": 0}
 
     for row in documents:
-        if year_from_archive_path(row[2]) != year:
+        if year_from_archive_path(row["archive_path"]) != year:
             continue
 
-        document_type = row[3]
+        document_type = row["document_type"]
         category = tax_category_for_type(document_type)
-        data = _parse_data(row[4])
+        data = _parse_data(row["extracted_data"])
         amount = resolve_document_amount(document_type, data)
-        verified = bool(row[5])
+        verified = bool(row["verified"])
         deductibility = document_deductibility(document_type, data)
 
         # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
@@ -259,8 +259,8 @@ def build_tax_summary(year, documents=None):
 
         entry["documents"].append(
             {
-                "id": row[0],
-                "filename": row[1],
+                "id": row["id"],
+                "filename": row["filename"],
                 "document_type": document_type,
                 "amount": amount,
                 "verified": verified,

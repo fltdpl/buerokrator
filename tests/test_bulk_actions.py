@@ -79,9 +79,9 @@ def test_umklassifizieren_setzt_typ_und_prueffstatus_zurueck(tmp_path, monkeypat
     assert reclassify_documents([document_id], "housing") == 1
 
     row = get_document(document_id)
-    assert row[3] == "housing"
+    assert row["document_type"] == "housing"
     # Nach einem Typwechsel gelten andere Felder: erneut prüfen.
-    assert row[5] == 0
+    assert row["verified"] == 0
 
 
 def test_umklassifizieren_laesst_die_datei_wo_sie_ist(tmp_path, monkeypatch):

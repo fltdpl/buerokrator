@@ -23,4 +23,4 @@ def get_recent_documents(limit=10):
 
     conn.close()
 
-    return rows
+    return [dict(row) for row in rows]

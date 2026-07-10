@@ -19,7 +19,7 @@ from src.organizer.trash import TRASH_DIR, move_to_trash
 def parse_document_row(row):
     """DB-Zeile -> dict mit geparsten extracted_data (robust gegen kaputtes JSON)."""
     try:
-        data = json.loads(row[4])
+        data = json.loads(row["extracted_data"])
 
         if not isinstance(data, dict):
             data = {}
@@ -28,15 +28,15 @@ def parse_document_row(row):
         data = {}
 
     return {
-        "id": row[0],
-        "filename": row[1],
-        "archive_path": row[2],
-        "document_type": row[3],
+        "id": row["id"],
+        "filename": row["filename"],
+        "archive_path": row["archive_path"],
+        "document_type": row["document_type"],
         "data": data,
-        "verified": bool(row[5]),
-        "created_at": row[6],
-        "document_text": row[7] if len(row) > 7 else "",
-        "notes": row[8] if len(row) > 8 else "",
+        "verified": bool(row["verified"]),
+        "created_at": row["created_at"],
+        "document_text": row["document_text"] or "",
+        "notes": row["notes"] or "",
     }
 
 
@@ -52,7 +52,7 @@ def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
     if row is None:
         return None
 
-    trashed_path = move_to_trash(row[2], trash_dir=trash_dir)
+    trashed_path = move_to_trash(row["archive_path"], trash_dir=trash_dir)
 
     delete_document(document_id)
 
@@ -97,7 +97,7 @@ def reclassify_documents(document_ids, document_type):
 
 
 def document_year(row):
-    return year_from_archive_path(row[2])
+    return year_from_archive_path(row["archive_path"])
 
 
 def filter_documents(
@@ -111,10 +111,10 @@ def filter_documents(
 ):
     """Wendet die Listen-Filter an (alle optional, None = kein Filter)."""
     if document_type:
-        documents = [row for row in documents if row[3] == document_type]
+        documents = [row for row in documents if row["document_type"] == document_type]
 
     if verified is not None:
-        documents = [row for row in documents if bool(row[5]) == verified]
+        documents = [row for row in documents if bool(row["verified"]) == verified]
 
     if from_year is not None and to_year is not None and from_year > to_year:
         from_year, to_year = to_year, from_year
@@ -144,7 +144,7 @@ def filter_documents(
 
     if filename:
         needle = filename.lower().strip()
-        documents = [row for row in documents if needle in row[1].lower()]
+        documents = [row for row in documents if needle in row["filename"].lower()]
 
     return documents
 

@@ -36,4 +36,10 @@ def get_connection():
 
     _ensure_schema()
 
-    return sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path)
+    # Zeilen als sqlite3.Row: Zugriff per Spaltenname statt per Position.
+    # Schützt davor, dass ein neues Feld die Indizes aller Konsumenten
+    # verschiebt (die expliziten SELECTs und SELECT * hatten verified/created_at
+    # sogar in unterschiedlicher Reihenfolge).
+    conn.row_factory = sqlite3.Row
+    return conn
