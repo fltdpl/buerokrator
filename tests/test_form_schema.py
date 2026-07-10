@@ -8,6 +8,8 @@ from src.core.document_types import (
     TAX,
 )
 from src.services.form_schema import (
+    BANK_SUBTYPE_LABELS,
+    HOUSING_SUBTYPE_LABELS,
     PENSION_SUBTYPE_LABELS,
     TAX_SUBTYPE_LABELS,
     form_fields,
@@ -23,6 +25,8 @@ ALL_TYPE_SUBTYPE_COMBINATIONS = [
     (HOUSING, None),
     *[(TAX, subtype) for subtype in TAX_SUBTYPE_LABELS],
     *[(PENSION, subtype) for subtype in PENSION_SUBTYPE_LABELS],
+    *[(HOUSING, subtype) for subtype in HOUSING_SUBTYPE_LABELS],
+    *[(BANK, subtype) for subtype in BANK_SUBTYPE_LABELS],
 ]
 
 
@@ -51,6 +55,12 @@ def test_subtype_config_matches_labels():
 
     pension = subtype_config(PENSION)
     assert pension["options"] == list(PENSION_SUBTYPE_LABELS)
+
+    housing = subtype_config(HOUSING)
+    assert housing["options"] == list(HOUSING_SUBTYPE_LABELS)
+
+    bank = subtype_config(BANK)
+    assert bank["options"] == list(BANK_SUBTYPE_LABELS)
 
     assert subtype_config(INVOICE) is None
 

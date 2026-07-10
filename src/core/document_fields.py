@@ -138,11 +138,13 @@ KNOWN_SUBTYPES = {
         "mietvertrag",
         "mieterhoehung",
         "hausgeldabrechnung",
+        "sonstiges",
     },
     BANK: {
         "kontoauszug",
         "kreditkartenabrechnung",
         "depotuebersicht",
+        "sonstiges",
     },
 }
 

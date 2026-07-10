@@ -12,7 +12,6 @@ NAV_ITEMS = [
     ("Dokumente", "/dokumente", "description"),
     ("Import", "/import", "file_upload"),
     ("Steuer", "/steuer", "account_balance"),
-    ("Papierkorb", "/papierkorb", "delete_outline"),
     ("Einstellungen", "/einstellungen", "settings"),
 ]
 

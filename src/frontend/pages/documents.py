@@ -15,9 +15,10 @@ from src.services.document_service import (
 )
 
 COLUMNS = [
+    {"name": "id", "label": "ID", "field": "id", "sortable": True, "align": "left"},
     {"name": "status", "label": "", "field": "status", "align": "center"},
     {"name": "year", "label": "Jahr", "field": "year", "sortable": True, "align": "left"},
-    {"name": "display_name", "label": "Dokument", "field": "display_name", "sortable": True, "align": "left"},
+    {"name": "art_label", "label": "Dokument", "field": "art_label", "sortable": True, "align": "left"},
     {"name": "category", "label": "Kategorie", "field": "category", "sortable": True, "align": "left"},
     {"name": "issuer", "label": "Aussteller", "field": "issuer", "sortable": True, "align": "left"},
     {"name": "amount", "label": "Betrag", "field": "amount", "sortable": True, "align": "right", ":sort": "(a, b, rowA, rowB) => (rowA.amount_raw ?? -1) - (rowB.amount_raw ?? -1)"},
@@ -34,7 +35,7 @@ def _table_rows(documents):
                 "id": row["id"],
                 "status": "🟢" if row["verified"] else "🟡",
                 "year": str(row["year"]) if row["year"] else "-",
-                "display_name": row["display_name"],
+                "art_label": row["art_label"],
                 "category": DOCUMENT_TYPE_LABELS.get(
                     row["document_type"], row["document_type"]
                 ),
@@ -48,9 +49,8 @@ def _table_rows(documents):
     return rows
 
 
-@ui.page("/dokumente")
-def documents_page():
-    filters = {
+def _default_filters():
+    return {
         "search": "",
         "type": "Alle",
         "status": "Alle",
@@ -58,6 +58,17 @@ def documents_page():
         "issuer": "",
         "filename": "",
     }
+
+
+# Modul-global: die Filter bleiben beim Wechsel in die Detailansicht und zurück
+# erhalten (überleben Navigation, setzen sich beim App-Neustart zurück). Für
+# den lokalen Ein-Nutzer-Betrieb bewusst einfach gehalten.
+_FILTER_STATE = _default_filters()
+
+
+@ui.page("/dokumente")
+def documents_page():
+    filters = _FILTER_STATE
 
     all_years = available_years(list_documents())
 
@@ -185,51 +196,72 @@ def documents_page():
         filters[key] = value
         results.refresh()
 
-    unverified, verified = get_verification_statistics()
+    def reset_filters():
+        filters.update(_default_filters())
+        filter_bar.refresh()
+        results.refresh()
 
-    with page_layout("Dokumente"):
-        ui.label("Dokumente").classes("text-3xl page-title")
-        ui.label(f"🟡 {unverified} ungeprüft · 🟢 {verified} geprüft").classes("muted")
-
-        with card("w-full"), ui.row().classes("items-end gap-4 w-full"):
+    @ui.refreshable
+    def filter_bar():
+        with ui.row().classes("items-end gap-4 w-full"):
             ui.input(
                 "Volltext",
+                value=filters["search"],
                 on_change=lambda event: set_filter("search", event.value),
             ).props("dense clearable").classes("w-48")
 
             ui.select(
                 ["Alle", *DOCUMENT_TYPES],
-                value="Alle",
+                value=filters["type"],
                 label="Kategorie",
                 on_change=lambda event: set_filter("type", event.value),
             ).props("dense").classes("w-36")
 
             ui.select(
                 ["Alle", "Ungeprüft", "Geprüft"],
-                value="Alle",
+                value=filters["status"],
                 label="Status",
                 on_change=lambda event: set_filter("status", event.value),
             ).props("dense").classes("w-36")
 
             ui.input(
                 "Aussteller",
+                value=filters["issuer"],
                 on_change=lambda event: set_filter("issuer", event.value),
             ).props("dense clearable").classes("w-40")
 
             ui.input(
                 "Dateiname",
+                value=filters["filename"],
                 on_change=lambda event: set_filter("filename", event.value),
             ).props("dense clearable").classes("w-40")
 
             if len(all_years) > 1:
+                year_range = filters["year_range"] or {
+                    "min": all_years[0],
+                    "max": all_years[-1],
+                }
                 with ui.column().classes("w-56 gap-0"):
                     ui.label("Jahre").classes("text-xs muted")
                     ui.range(
                         min=all_years[0],
                         max=all_years[-1],
-                        value={"min": all_years[0], "max": all_years[-1]},
+                        value=year_range,
                         on_change=lambda event: set_filter("year_range", event.value),
                     ).props("label dense")
+
+            ui.button("Filter zurücksetzen", on_click=reset_filters).props(
+                "flat dense"
+            )
+
+    unverified, verified = get_verification_statistics()
+
+    with page_layout("Dokumente"):
+        ui.label("Dokumente").classes("text-3xl page-title")
+        ui.label(f"🟡 {unverified} ungeprüft · 🟢 {verified} geprüft").classes("muted")
+
+        with card("w-full"):
+            filter_bar()
 
         with card("w-full"):
             results()
