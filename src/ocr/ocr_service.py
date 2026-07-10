@@ -53,7 +53,6 @@ def extract_text_from_image_pdf(pdf_path):
         f"OCR abgeschlossen: {pdf_path}"
     )
 
-    #print(text)
     return text
 
 

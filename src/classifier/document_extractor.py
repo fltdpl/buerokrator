@@ -6,6 +6,7 @@ from src.core.config import load_config
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.core.json_utils import parse_llm_json
+from src.core.logger import logger
 from src.extraction.pension_refiner import refine_pension_fields
 
 # Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
@@ -40,9 +41,7 @@ def run_extractor(prompt_file, text, max_input_chars=None):
         },
     )
 
-    print("=== EXTRACTOR ANTWORT ===")
-    print(response.message.content)
-    print("=========================")
+    logger.debug(f"Extraktor-Antwort: {response.message.content}")
 
     return parse_llm_json(response.message.content)
 
@@ -96,7 +95,7 @@ def _extract(document_type, text, max_input_chars=None):
             break
 
         except Exception as e:
-            print(f"JSON Fehler (Versuch {attempt}): {e}")
+            logger.warning(f"JSON Fehler bei der Extraktion (Versuch {attempt}): {e}")
 
     if data is None:
         return {}

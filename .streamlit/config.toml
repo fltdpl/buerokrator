@@ -1,4 +1,0 @@
-[server]
-# Erlaubt das Ausliefern lokaler Dateien aus dem Ordner ./static/
-# (wird für die PDF-Vorschau genutzt, damit auch große PDFs angezeigt werden).
-enableStaticServing = true
