@@ -16,7 +16,7 @@ beim Prüfen nur hervor (`missing_required_fields`), damit sie nicht
 """
 
 from src.core.amount_utils import normalize_amount
-from src.core.document_types import INSURANCE, INVOICE, PENSION, TAX
+from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 
 TAX_SUBTYPE_LABELS = {
     "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
@@ -33,6 +33,23 @@ PENSION_SUBTYPE_LABELS = {
     "pension_information": "Renteninformation",
     "bauspar_jahresauszug": "Bauspar-Jahresauszug",
     "steuerbescheinigung": "Steuerbescheinigung",
+}
+
+# Wohnen und Bank: der Subtyp kategorisiert nur (er ändert die Formularfelder
+# nicht). "sonstiges" ist die Auffangkategorie für alles ohne eigene Art.
+HOUSING_SUBTYPE_LABELS = {
+    "nebenkostenabrechnung": "Nebenkostenabrechnung",
+    "mietvertrag": "Mietvertrag",
+    "mieterhoehung": "Mieterhöhung",
+    "hausgeldabrechnung": "Hausgeldabrechnung",
+    "sonstiges": "Sonstiges",
+}
+
+BANK_SUBTYPE_LABELS = {
+    "kontoauszug": "Kontoauszug",
+    "kreditkartenabrechnung": "Kreditkartenabrechnung",
+    "depotuebersicht": "Depotübersicht",
+    "sonstiges": "Sonstiges",
 }
 
 
@@ -63,6 +80,7 @@ _TYPE_FIELDS = {
         _amount("amount", "Betrag (Jahresbeitrag)"),
     ),
     PENSION: (_text("product_name", "Produkt"),),
+    HOUSING: (_amount("amount", "Betrag (Nachzahlung/Guthaben)"),),
 }
 
 # Die Steuerbescheinigung aggregiert je Anbieter über alle Verträge und hat
@@ -131,6 +149,18 @@ def subtype_config(document_type):
         return {
             "options": list(PENSION_SUBTYPE_LABELS),
             "labels": PENSION_SUBTYPE_LABELS,
+        }
+
+    if document_type == HOUSING:
+        return {
+            "options": list(HOUSING_SUBTYPE_LABELS),
+            "labels": HOUSING_SUBTYPE_LABELS,
+        }
+
+    if document_type == BANK:
+        return {
+            "options": list(BANK_SUBTYPE_LABELS),
+            "labels": BANK_SUBTYPE_LABELS,
         }
 
     return None

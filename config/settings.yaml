@@ -4,6 +4,8 @@ paths:
   exports: ./exports
 database:
   path: ./database/buerokrator.db
+backup:
+  target: ./backups
 ocr:
   language: deu+eng
   tesseract:

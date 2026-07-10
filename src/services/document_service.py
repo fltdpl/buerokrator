@@ -8,7 +8,10 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from src.core.document_display import get_document_display_name
+from src.core.document_display import (
+    get_document_art_label,
+    get_document_display_name,
+)
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
 from src.database.set_document_type import set_document_type
@@ -203,6 +206,10 @@ def build_table_rows(documents):
                     document["document_type"],
                     data,
                     year=year,
+                ),
+                "art_label": get_document_art_label(
+                    document["document_type"],
+                    data,
                 ),
                 "document_type": document["document_type"],
                 "issuer": data.get("issuer") or data.get("insurer") or "",
