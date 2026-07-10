@@ -26,6 +26,16 @@ COLUMNS = [
 ]
 
 
+def _truncate(text, max_length):
+    """Kürzt zu lange Zelleninhalte mit Auslassungszeichen."""
+    text = text or ""
+
+    if len(text) <= max_length:
+        return text
+
+    return text[: max_length - 1].rstrip() + "…"
+
+
 def _table_rows(documents):
     rows = []
 
@@ -35,11 +45,11 @@ def _table_rows(documents):
                 "id": row["id"],
                 "status": "🟢" if row["verified"] else "🟡",
                 "year": str(row["year"]) if row["year"] else "-",
-                "art_label": row["art_label"],
+                "art_label": _truncate(row["art_label"], 45),
                 "category": DOCUMENT_TYPE_LABELS.get(
                     row["document_type"], row["document_type"]
                 ),
-                "issuer": row["issuer"],
+                "issuer": _truncate(row["issuer"], 35),
                 "amount": format_euro(row["amount"]) if row["amount"] is not None else "",
                 "amount_raw": row["amount"],
                 "created_at": row["created_at"],
