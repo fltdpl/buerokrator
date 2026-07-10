@@ -25,7 +25,7 @@ exports/
 examples/
 temp/
 
-# Von Streamlit ausgelieferte PDF-Vorschauen (Kopien privater Dokumente)
+# Ausgelieferte PDF-Vorschauen (Kopien privater Dokumente)
 static/
 
 
@@ -45,3 +45,7 @@ HANDOVER.md
 
 # Papierkorb (verschobene Original-Dokumente)
 trash/
+
+# Backups (ZIPs mit Datenbank + komplettem Archiv)
+backups/
+*.zip

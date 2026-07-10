@@ -1,10 +1,10 @@
-"""NiceGUI-Frontend (Migrationsziel, läuft parallel zu Streamlit).
+"""NiceGUI-Frontend von Buerokrator.
 
 Start:
     python -m src.frontend.main        # http://localhost:8081
 
 Das Frontend enthält nur Darstellung und Event-Verdrahtung; alle Logik
-liegt in src/services (siehe docs/10_NiceGUI_Migration.md).
+liegt in src/services.
 """
 
 from pathlib import Path
@@ -17,6 +17,7 @@ from nicegui import app, ui
 import src.frontend.pages.dashboard  # noqa: F401
 import src.frontend.pages.document_detail  # noqa: F401
 import src.frontend.pages.documents  # noqa: F401
+import src.frontend.pages.help_page  # noqa: F401
 import src.frontend.pages.import_page  # noqa: F401
 import src.frontend.pages.settings  # noqa: F401
 import src.frontend.pages.tax  # noqa: F401
