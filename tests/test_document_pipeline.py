@@ -125,22 +125,22 @@ def test_process_archives_invoice_and_stores_document_metadata(
     assert len(documents) == 1
 
     row = documents[0]
-    assert row[1] == "2026-03-11_Amazon_RE-123_42EUR.pdf"
-    assert row[2] == str(
+    assert row["filename"] == "2026-03-11_Amazon_RE-123_42EUR.pdf"
+    assert row["archive_path"] == str(
         Path("archive")
         / "2026"
         / "Rechnungen"
         / "2026-03-11_Amazon_RE-123_42EUR.pdf"
     )
-    assert row[3] == "invoice"
-    assert json.loads(row[4]) == extracted_data
-    assert row[5] == 0
-    assert row[7] == document_text
+    assert row["document_type"] == "invoice"
+    assert json.loads(row["extracted_data"]) == extracted_data
+    assert row["verified"] == 0
+    assert row["document_text"] == document_text
 
-    archived_file = tmp_path / row[2]
+    archived_file = tmp_path / row["archive_path"]
     assert archived_file.exists()
     assert archived_file.read_bytes() == original_pdf_bytes
 
     search_results = search.search_documents("Amazon")
     assert len(search_results) == 1
-    assert search_results[0][1] == row[1]
+    assert search_results[0]["filename"] == row["filename"]

@@ -40,17 +40,17 @@ def make_row(
 ):
     filename = filename or f"{year}-01-01_dok.pdf"
 
-    return (
-        document_id,
-        filename,
-        f"archive/{year}/Kategorie/{filename}",
-        document_type,
-        json.dumps(data),
-        verified,
-        f"{year}-01-01T00:00:00",
-        "text",
-        "",
-    )
+    return {
+        "id": document_id,
+        "filename": filename,
+        "archive_path": f"archive/{year}/Kategorie/{filename}",
+        "document_type": document_type,
+        "extracted_data": json.dumps(data),
+        "verified": verified,
+        "created_at": f"{year}-01-01T00:00:00",
+        "document_text": "text",
+        "notes": "",
+    }
 
 
 def test_move_to_trash_keeps_file_and_removes_db_row(tmp_path, monkeypatch):
@@ -128,14 +128,14 @@ def test_filter_documents_combined():
         make_row(3, "insurance", 2024, {"insurer": "Debeka"}, verified=1),
     ]
 
-    assert [r[0] for r in filter_documents(docs, document_type="invoice")] == [1, 2]
-    assert [r[0] for r in filter_documents(docs, verified=True)] == [1, 3]
-    assert [r[0] for r in filter_documents(docs, from_year=2024)] == [2, 3]
+    assert [r["id"] for r in filter_documents(docs, document_type="invoice")] == [1, 2]
+    assert [r["id"] for r in filter_documents(docs, verified=True)] == [1, 3]
+    assert [r["id"] for r in filter_documents(docs, from_year=2024)] == [2, 3]
     # Vertauschte Grenzen werden korrigiert.
-    assert [r[0] for r in filter_documents(docs, from_year=2024, to_year=2023)] == [1, 2, 3]
+    assert [r["id"] for r in filter_documents(docs, from_year=2024, to_year=2023)] == [1, 2, 3]
     # Aussteller-Filter findet auch insurer.
-    assert [r[0] for r in filter_documents(docs, issuer="debeka")] == [3]
-    assert [r[0] for r in filter_documents(docs, filename="2023")] == [1]
+    assert [r["id"] for r in filter_documents(docs, issuer="debeka")] == [3]
+    assert [r["id"] for r in filter_documents(docs, filename="2023")] == [1]
 
 
 def test_available_years_and_parse_row():

@@ -25,4 +25,4 @@ def find_document_by_hash(content_hash):
 
     conn.close()
 
-    return row
+    return (row["id"], row["filename"]) if row is not None else None

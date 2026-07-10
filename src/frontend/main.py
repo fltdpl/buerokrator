@@ -39,7 +39,7 @@ def serve_pdf(document_id: int):
     if row is None:
         raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
 
-    path = Path(row[2])
+    path = Path(row["archive_path"])
 
     if not path.exists():
         raise HTTPException(status_code=404, detail="PDF-Datei nicht gefunden")

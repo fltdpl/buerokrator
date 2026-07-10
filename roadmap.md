@@ -162,9 +162,9 @@
 
 ### Hoch
 
-- [ ] Notizen vollständig integrieren
+- [x] Notizen vollständig integrieren
     
-- [ ] Notizen unabhängig von Freigaben speichern
+- [x] Notizen unabhängig von Freigaben speichern
     
 - [ ] Änderungsdatum (`updated_at`) speichern
     
@@ -173,7 +173,7 @@
 
 ### Mittel
 
-- [ ] Papierkorb statt endgültigem Löschen
+- [x] Papierkorb statt endgültigem Löschen
     
 - [ ] Dokument wiederherstellen
     
@@ -181,7 +181,7 @@
     
 - [ ] Dokumente manuell verschieben
     
-- [ ] Dokumente manuell umklassifizieren
+- [x] Dokumente manuell umklassifizieren
     
 
 ### Niedrig

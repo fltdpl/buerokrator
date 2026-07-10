@@ -5,14 +5,14 @@ from io import StringIO
 from src.database.export_csv import export_documents_csv
 
 
-def test_export_documents_csv_uses_list_document_row_order():
+def test_export_documents_csv_uses_named_columns():
     rows = [
-        (
-            7,
-            "2026-03-11_Amazon_RE-123_42EUR.pdf",
-            "archive/2026/Rechnungen/2026-03-11_Amazon_RE-123_42EUR.pdf",
-            "invoice",
-            json.dumps(
+        {
+            "id": 7,
+            "filename": "2026-03-11_Amazon_RE-123_42EUR.pdf",
+            "archive_path": "archive/2026/Rechnungen/2026-03-11_Amazon_RE-123_42EUR.pdf",
+            "document_type": "invoice",
+            "extracted_data": json.dumps(
                 {
                     "document_date": "11.03.2026",
                     "issuer": "Amazon",
@@ -21,11 +21,11 @@ def test_export_documents_csv_uses_list_document_row_order():
                     "policy_number": "",
                 }
             ),
-            0,
-            "2026-07-01T10:00:00",
-            "OCR text",
-            "notes",
-        )
+            "verified": 0,
+            "created_at": "2026-07-01T10:00:00",
+            "document_text": "OCR text",
+            "notes": "notes",
+        }
     ]
 
     csv_data = export_documents_csv(rows)

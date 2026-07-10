@@ -49,7 +49,7 @@ def test_save_document_strips_unknown_fields(tmp_path, monkeypatch):
         extracted_data={"issuer": "Alt", "amount": 10, "currency": "EUR"},
     )
 
-    document_id = list_documents()[0][0]
+    document_id = list_documents()[0]["id"]
 
     # Bearbeiten/Speichern: Datei existiert nicht -> rename_document gibt den
     # Pfad unverändert zurück; entscheidend ist die Filterung von extracted_data.
@@ -67,7 +67,7 @@ def test_save_document_strips_unknown_fields(tmp_path, monkeypatch):
         },
     )
 
-    stored = json.loads(get_document(document_id)[4])
+    stored = json.loads(get_document(document_id)["extracted_data"])
 
     assert set(stored.keys()) == {
         "issuer",

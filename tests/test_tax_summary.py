@@ -24,17 +24,17 @@ def make_row(
     filename = f"{year}-01-01_dok.pdf"
     archive_path = f"archive/{year}/{category_folder}/{filename}"
 
-    return (
-        document_id,
-        filename,
-        archive_path,
-        document_type,
-        json.dumps(extracted_data),
-        verified,
-        f"{year}-01-01T00:00:00",
-        "text",
-        "",
-    )
+    return {
+        "id": document_id,
+        "filename": filename,
+        "archive_path": archive_path,
+        "document_type": document_type,
+        "extracted_data": json.dumps(extracted_data),
+        "verified": verified,
+        "created_at": f"{year}-01-01T00:00:00",
+        "document_text": "text",
+        "notes": "",
+    }
 
 
 def sample_documents():

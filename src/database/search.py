@@ -1,4 +1,5 @@
 from src.database.database import get_connection
+from src.database.list_documents import _DOCUMENT_FIELDS
 
 
 def search_documents(search_term):
@@ -8,17 +9,8 @@ def search_documents(search_term):
     cursor = conn.cursor()
 
     rows = cursor.execute(
-        """
-        SELECT
-            id,
-            filename,
-            archive_path,
-            document_type,
-            extracted_data,
-            verified,
-            created_at,
-            document_text,
-            notes
+        f"""
+        SELECT {_DOCUMENT_FIELDS}
         FROM documents
         WHERE
 
@@ -41,4 +33,4 @@ def search_documents(search_term):
 
     conn.close()
 
-    return rows
+    return [dict(row) for row in rows]
