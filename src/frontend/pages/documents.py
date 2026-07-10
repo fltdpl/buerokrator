@@ -5,7 +5,7 @@ from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
-from src.frontend.layout import format_euro, page_layout
+from src.frontend.layout import card, format_euro, page_layout
 from src.services.document_service import (
     available_years,
     build_table_rows,
@@ -98,7 +98,7 @@ def documents_page():
         rows = _table_rows(documents)
 
         with ui.row().classes("items-center gap-4 w-full"):
-            ui.label(f"{len(rows)} Dokumente gefunden").classes("text-gray-500")
+            ui.label(f"{len(rows)} Dokumente gefunden").classes("muted")
 
             ui.button(
                 "📥 CSV Export",
@@ -169,7 +169,7 @@ def documents_page():
         ):
             ui.label().bind_text_from(
                 table, "selected", lambda rows: f"{len(rows)} ausgewählt"
-            ).classes("text-gray-500")
+            ).classes("muted")
 
             ui.select(
                 {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
@@ -188,12 +188,10 @@ def documents_page():
     unverified, verified = get_verification_statistics()
 
     with page_layout("Dokumente"):
-        ui.label("📂 Dokumente").classes("text-2xl font-bold")
-        ui.label(f"🟡 {unverified} ungeprüft · 🟢 {verified} geprüft").classes(
-            "text-gray-500"
-        )
+        ui.label("Dokumente").classes("text-3xl page-title")
+        ui.label(f"🟡 {unverified} ungeprüft · 🟢 {verified} geprüft").classes("muted")
 
-        with ui.row().classes("items-end gap-4 w-full"):
+        with card("w-full"), ui.row().classes("items-end gap-4 w-full"):
             ui.input(
                 "Volltext",
                 on_change=lambda event: set_filter("search", event.value),
@@ -225,7 +223,7 @@ def documents_page():
 
             if len(all_years) > 1:
                 with ui.column().classes("w-56 gap-0"):
-                    ui.label("Jahre").classes("text-xs text-gray-500")
+                    ui.label("Jahre").classes("text-xs muted")
                     ui.range(
                         min=all_years[0],
                         max=all_years[-1],
@@ -233,4 +231,5 @@ def documents_page():
                         on_change=lambda event: set_filter("year_range", event.value),
                     ).props("label dense")
 
-        results()
+        with card("w-full"):
+            results()

@@ -12,7 +12,7 @@ from src.database.document_repository import save_document
 from src.database.list_documents import get_document, get_next_unverified_id
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
-from src.frontend.layout import page_layout
+from src.frontend.layout import card, page_layout
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
@@ -153,7 +153,7 @@ def document_detail_page(document_id: int):
             ):
                 ui.label(
                     "Unbekannte Unterart — bestehende Felder bleiben unverändert."
-                ).classes("text-xs text-gray-500")
+                ).classes("text-xs muted")
 
         subtype = state["subtype"] or None
         missing = set(missing_required_fields(state["document_type"], data, subtype))
@@ -219,8 +219,8 @@ def document_detail_page(document_id: int):
     with page_layout(display_name):
         with ui.row().classes("items-center justify-between w-full"):
             with ui.column().classes("gap-0"):
-                ui.label(display_name).classes("text-2xl font-bold")
-                ui.label(f"{type_label} · {status_text}").classes("text-gray-500")
+                ui.label(display_name).classes("text-3xl page-title")
+                ui.label(f"{type_label} · {status_text}").classes("muted")
 
             with ui.row().classes("gap-2"):
                 if Path(document["archive_path"]).exists():
@@ -238,7 +238,7 @@ def document_detail_page(document_id: int):
 
         with ui.row().classes("w-full gap-6 flex-nowrap items-start"):
             # Links: Formular + Aktionen + Notizen
-            with ui.column().classes("w-1/2 gap-3"):
+            with card("w-1/2 gap-3"):
                 form_area()
 
                 with ui.row().classes("gap-2 w-full"):
@@ -257,7 +257,7 @@ def document_detail_page(document_id: int):
                 ui.label(
                     f"{progress_hint} · Strg+Enter = Speichern & Freigeben · "
                     "Esc = zurück zur Liste"
-                ).classes("text-xs text-gray-500")
+                ).classes("text-xs muted")
 
                 notes_area = ui.textarea(
                     "📝 Notizen",
@@ -266,7 +266,7 @@ def document_detail_page(document_id: int):
 
             # Rechts: umschaltbares Panel PDF ⇄ OCR-Text (persistent, lädt
             # beim Bearbeiten der Felder nicht neu).
-            with ui.column().classes("w-1/2 gap-2"):
+            with card("w-1/2 gap-2"):
                 panel_toggle = ui.toggle(
                     ["PDF", "OCR-Text"],
                     value="PDF",

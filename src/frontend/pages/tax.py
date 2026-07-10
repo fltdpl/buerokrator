@@ -19,8 +19,8 @@ DEDUCTIBILITY_HINTS = {
 
 def _metric(label, value):
     with ui.card().classes("items-center min-w-48"):
-        ui.label(value).classes("text-2xl font-bold")
-        ui.label(label).classes("text-sm text-gray-500")
+        ui.label(value).classes("text-3xl page-title")
+        ui.label(label).classes("text-sm muted")
 
 
 @ui.page("/steuer")
@@ -29,11 +29,11 @@ def tax_page():
     years = available_tax_years(documents)
 
     with page_layout("Steuer"):
-        ui.label("💰 Steuer").classes("text-2xl font-bold")
+        ui.label("💰 Steuer").classes("text-3xl page-title")
 
         if not years:
             ui.label("Noch keine archivierten Dokumente vorhanden.").classes(
-                "text-gray-500"
+                "muted"
             )
             return
 
@@ -45,7 +45,7 @@ def tax_page():
             totals = summary["totals"]
 
             ui.label(f"{totals['count']} Dokumente im Jahr {state['year']}").classes(
-                "text-gray-500"
+                "muted"
             )
 
             ungeprueft = (
@@ -109,7 +109,7 @@ def tax_page():
             if totals["income_tax"] or capital["count"]:
                 ui.separator()
                 ui.label("Weitere steuerrelevante Summen").classes(
-                    "text-xl font-bold"
+                    "text-xl page-title"
                 )
 
                 with ui.row().classes("gap-4"):
@@ -131,7 +131,7 @@ def tax_page():
                         f"Kapitalerträge aus {capital['count']} "
                         "Steuerbescheinigung(en). Bauspar-Kontoauszüge zählen "
                         "nicht mit (Steuerbescheinigung ist maßgeblich)."
-                    ).classes("text-xs text-gray-500")
+                    ).classes("text-xs muted")
 
             ui.separator()
 
@@ -148,7 +148,7 @@ def tax_page():
                             f"🟡 {category['count'] - category['verified_count']} "
                             "ungeprüft · geprüfte Summe: "
                             f"{format_euro(category['verified_amount'])}"
-                        ).classes("text-sm text-gray-500")
+                        ).classes("text-sm muted")
 
                     for document in category["documents"]:
                         status = "🟢" if document["verified"] else "🟡"
