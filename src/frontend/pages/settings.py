@@ -2,7 +2,7 @@ from nicegui import ui
 
 from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
-from src.frontend.layout import page_layout
+from src.frontend.layout import card, page_layout
 from src.services.log_service import LOG_LEVELS, read_log_tail
 from src.services.model_service import list_installed_models
 
@@ -12,7 +12,7 @@ def settings_page():
     config = load_config()
 
     with page_layout("Einstellungen"):
-        ui.label("⚙ Einstellungen").classes("text-2xl font-bold")
+        ui.label("Einstellungen").classes("text-3xl page-title")
 
         # ------------------------------------------------------------
         # Konfiguration
@@ -20,9 +20,9 @@ def settings_page():
         current_model = config["classifier"]["model"]
         model_options = list_installed_models(current_model)
 
-        with ui.row().classes("gap-8 w-full items-start"):
+        with card("w-full"), ui.row().classes("gap-8 w-full items-start"):
             with ui.column().classes("gap-3 w-96"):
-                ui.label("Klassifikation").classes("text-xl font-bold")
+                ui.label("Klassifikation").classes("text-xl page-title")
 
                 model = ui.select(
                     model_options,
@@ -46,7 +46,7 @@ def settings_page():
                     step=100,
                 ).classes("w-full")
 
-                ui.label("OCR").classes("text-xl font-bold")
+                ui.label("OCR").classes("text-xl page-title")
 
                 ocr_language = ui.input(
                     "OCR Sprache",
@@ -60,10 +60,10 @@ def settings_page():
                 ).classes("w-full")
 
             with ui.column().classes("gap-3 w-96"):
-                ui.label("Pfade").classes("text-xl font-bold")
+                ui.label("Pfade").classes("text-xl page-title")
                 ui.label(
                     "Änderungen wirken erst nach einem Neustart der Anwendung."
-                ).classes("text-xs text-gray-500")
+                ).classes("text-xs muted")
 
                 inbox_path = ui.input(
                     "Inbox", value=config["paths"]["inbox"]
@@ -91,13 +91,12 @@ def settings_page():
             save_config(config)
             ui.notify("Einstellungen gespeichert.")
 
-        ui.button("💾 Speichern", on_click=save).props("color=primary")
+        ui.button("💾 Speichern", on_click=save).props("color=primary unelevated")
 
         # ------------------------------------------------------------
         # Log-Ansicht
         # ------------------------------------------------------------
-        ui.separator()
-        ui.label("📜 Log").classes("text-xl font-bold")
+        ui.label("📜 Log").classes("text-xl page-title")
 
         log_state = {"level": "ALLE"}
 
@@ -106,11 +105,11 @@ def settings_page():
             lines = read_log_tail(max_lines=200, level=log_state["level"])
 
             if not lines:
-                ui.label("Keine Log-Einträge gefunden.").classes("text-gray-500")
+                ui.label("Keine Log-Einträge gefunden.").classes("muted")
                 return
 
             ui.label(f"{len(lines)} Zeilen (neueste zuerst)").classes(
-                "text-xs text-gray-500"
+                "text-xs muted"
             )
             ui.code("\n".join(lines), language=None).classes("w-full").style(
                 "max-height: 40vh; overflow: auto;"
@@ -129,17 +128,17 @@ def settings_page():
 
             ui.button("🔄 Aktualisieren", on_click=log_area.refresh).props("flat")
 
-        log_area()
+        with card("w-full"):
+            log_area()
 
         # ------------------------------------------------------------
         # Gefahrenzone
         # ------------------------------------------------------------
-        ui.separator()
-        ui.label("🚨 Gefahrenzone").classes("text-xl font-bold text-red-600")
+        ui.label("🚨 Gefahrenzone").classes("text-xl page-title text-red-600")
         ui.label(
             "Löscht alle archivierten Dokumente unwiderruflich und "
             "initialisiert die Datenbank neu."
-        ).classes("text-gray-500")
+        ).classes("muted")
 
         with ui.dialog() as reset_dialog, ui.card():
             ui.label("Wirklich alles löschen?").classes("font-bold")
