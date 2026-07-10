@@ -22,14 +22,20 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
 
 ## Architektur / Pipeline
 
-`inbox` → OCR (`src/ocr`) → Klassifikation (`src/classifier`: Regel-Vorprüfung vor LLM) →
-Extraktion (typspezifische Prompts) → Organizer (Umbenennen/Archivieren, `src/organizer`) →
-Datenbank (`src/database`). Steuer-Auswertung in `src/tax`.
+`inbox` → Dubletten-Prüfung (Inhalts-Hash) → OCR (`src/ocr`) → Klassifikation
+(`src/classifier`: Regel-Vorprüfung vor LLM) → Extraktion (typspezifische Prompts) →
+regelbasierte Nachbearbeitung (`src/extraction`) → Organizer (Umbenennen/Archivieren,
+`src/organizer`) → Datenbank (`src/database`). Steuer-Auswertung in `src/tax`.
+
+Regelparser in `src/extraction` dürfen nur rechnen und beschriftete Werte lesen —
+niemals Aussteller, Produktname oder Datum konstant setzen. Die App soll Dokumente
+beliebiger Anbieter und (später) mehrerer Nutzer verarbeiten.
 
 GUI klar getrennt: NiceGUI-Frontend (`src/frontend`, nur Darstellung/Events)
 über framework-freie Services (`src/services`: Formular-Schemata,
-Listen-Filter, Papierkorb-Löschen, Kennzahlen, Log). Löschen verschiebt
-Originale nach `trash/`.
+Listen-Filter, Papierkorb, Kennzahlen, Log, Ollama-Modelle). Löschen verschiebt
+Originale nach `trash/` (nie `unlink` auf Archivdateien). Farben und Layout
+zentral in `src/frontend/theme.py` und `layout.py`; keine Web-Fonts.
 
 Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, unknown`.
 Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz).

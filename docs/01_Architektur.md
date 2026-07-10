@@ -41,10 +41,12 @@ Nur Plain Data rein/raus — ohne GUI testbar.
 ### Frontend (`src/frontend`, NiceGUI)
 
 Start: `python -m src.frontend.main` (Port 8081, nur localhost).
-Dashboard, Dokumentenliste, Detail-/Prüfseite (Formular + PDF⇄OCR-Panel,
-Shortcuts), Import, Steuer-Übersicht, Einstellungen mit Log-Ansicht.
+Dashboard, Dokumentenliste (mit Bulk-Aktionen), Detail-/Prüfseite (Formular
++ PDF⇄OCR-Panel, Shortcuts), Import (mit Dubletten-Erkennung), Steuer-
+Übersicht, Papierkorb, Einstellungen mit Log-Ansicht.
 Enthält nur Darstellung und Event-Verdrahtung; PDFs kommen über die
 Route `/pdf/<id>` direkt aus dem Archiv (siehe [[010_nicegui]]).
+Layout und Farben zentral in `layout.py` / `theme.py` (siehe [[011_theme]]).
 
 ### Steuer (`src/tax`)
 

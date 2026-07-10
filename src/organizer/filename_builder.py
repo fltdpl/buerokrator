@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
 from src.organizer.category_mapper import get_archive_category
+from src.core.logger import logger
 from src.organizer.date_utils import extract_year, normalize_date, normalize_month
 from src.organizer.issuer_normalizer import normalize_issuer
 
@@ -79,9 +80,7 @@ def rename_document(
 
     target = get_unique_target_path(target)
 
-    print(f"Rename von: {current_path}")
-    print(f"Nach:       {target}")
-    print(f"Existiert:  {current_path.exists()}")
+    logger.info(f"Umbenennen: {current_path} -> {target}")
     if current_path.resolve() == target.resolve():
         return current_path
 

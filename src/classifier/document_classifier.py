@@ -5,6 +5,7 @@ from src.classifier.rule_classifier import match_rule
 from src.core.config import load_config
 from src.core.document_types import DOCUMENT_TYPE_SET, UNKNOWN
 from src.core.json_utils import parse_llm_json
+from src.core.logger import logger
 
 
 def classify(text):
@@ -13,7 +14,7 @@ def classify(text):
     # zu bemühen.
     rule_type = match_rule(text)
     if rule_type is not None:
-        print(f"Regel-Treffer: {rule_type}")
+        logger.info(f"Regel-Treffer: {rule_type}")
         return {"document_type": rule_type, "source": "rule"}
 
     config = load_config()
@@ -30,10 +31,6 @@ def classify(text):
     )
 
     try:
-        # print("=== RESPONSE ANTWORT ===")
-        # print(response.message.content)
-        # print("========================")
-
         result = parse_llm_json(response.message.content)
 
         document_type = result.get(
@@ -42,7 +39,7 @@ def classify(text):
         )
 
         if document_type not in DOCUMENT_TYPE_SET:
-            print(f"Ungültiger Dokumenttyp erkannt: {document_type}")
+            logger.warning(f"Ungültiger Dokumenttyp erkannt: {document_type}")
 
             result["document_type"] = UNKNOWN
 
@@ -51,6 +48,6 @@ def classify(text):
         return result
 
     except Exception as e:
-        print(f"JSON Fehler: {e}")
+        logger.error(f"JSON Fehler bei der Klassifikation: {e}")
 
         return {"document_type": UNKNOWN, "source": "llm"}

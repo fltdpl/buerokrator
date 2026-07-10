@@ -67,18 +67,15 @@ def extract_text(file_path):
 
         else:
             logger.info("PDF enthält keinen Text - OCR erforderlich")
-            print("OCR erforderlich")
             text = extract_text_from_image_pdf(file_path)
 
     elif file_type in [".png", ".jpg", ".jpeg"]:
         logger.info("Bilddatei erkannt - OCR erforderlich")
-        print("OCR erforderlich")
         text = extract_text_from_image(file_path)
 
     else:
         raise ValueError(f"Dateityp nicht unterstützt: {file_type}")
     logger.info(f"{len(text)} Zeichen extrahiert")
-    print(f"{len(text)} Zeichen extrahiert")
 
     return text
 
@@ -87,14 +84,13 @@ def classify_document(file_path, document_text):
 
     logger.info(f"Klassifikation gestartet: {file_path}")
     classification = classify(document_text)
-    print(f"Dokumenttyp: {classification['document_type']}")
     logger.info(f"Dokumenttyp erkannt: {classification['document_type']}")
     return classification
 
 
 def extract_document_data(classification, document_text):
     document_type = classification["document_type"]
-    print(f"{document_type} Daten extrahieren...")
+    logger.info(f"{document_type}: Daten extrahieren")
 
     return extract_document(document_type, document_text)
 
@@ -113,7 +109,6 @@ def archive_document(file_path, classification, extracted_data):
     shutil.move(str(source), str(target))
 
     logger.info(f"Datei archiviert: {target}")
-    print(f"Datei archiviert: {target}")
 
     return target
 
@@ -176,7 +171,6 @@ def process(file_path):
     Papierkorb.
     """
     logger.info(f"Verarbeitung gestartet: {file_path}")
-    print(f"Verarbeite Dokument: {file_path}")
     try:
         if not wait_for_file(file_path):
             raise Exception(f"Datei konnte nicht geöffnet werden: {file_path}")
@@ -223,6 +217,5 @@ def process(file_path):
         logger.error(
             f"{type(e).__name__}: Fehler bei der Verarbeitung des Dokuments {file_path}: {e}"
         )
-        print(f"Fehler bei der Verarbeitung: {e}")
 
         return None

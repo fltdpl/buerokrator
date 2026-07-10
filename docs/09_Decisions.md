@@ -12,3 +12,4 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 - [[008_rule_classifier_first]]
 - [[009_field_whitelist]]
 - [[010_nicegui]]
+- [[011_theme]]
