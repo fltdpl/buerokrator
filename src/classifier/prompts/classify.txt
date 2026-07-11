@@ -14,6 +14,7 @@ insurance
 pension
 bank
 housing
+legal
 unknown
 
 Verwende ausschließlich einen dieser Werte.
@@ -71,6 +72,12 @@ housing:
 - Schreiben der Hausverwaltung
 - Hausgeldabrechnungen
 
+legal:
+- Anwaltsschreiben
+- Gerichtsschreiben, Bescheide von Behörden ohne Bezug zu Steuer/Sozialversicherung
+- Mahnbescheide, Klagen, Vergleiche
+- Schriftverkehr mit Ämtern und Behörden zu Rechtsangelegenheiten
+
 unknown:
 - Dokumente, die keiner der Kategorien eindeutig zugeordnet werden können
 
@@ -85,6 +92,7 @@ Entscheidungsregeln bei Überschneidungen:
   gefordert wird.
 - Eine Rechnung VON einer Versicherung über Versicherungsbeiträge
   ist insurance.
+- Schreiben vom Finanzamt sind tax, NICHT legal.
 
 Dokument:
 

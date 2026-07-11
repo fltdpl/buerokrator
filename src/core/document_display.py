@@ -1,6 +1,14 @@
 import json
 
-from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
+from src.core.document_types import (
+    BANK,
+    HOUSING,
+    INSURANCE,
+    INVOICE,
+    LEGAL,
+    PENSION,
+    TAX,
+)
 
 # Kurzlabels je Subtyp — für die Dokumentenliste und den Detail-Header.
 # Bewusst hier (core) gehalten, damit document_display keine Service-Schicht
@@ -82,13 +90,20 @@ def get_document_art_label(document_type, extracted_data):
 
     if document_type == HOUSING:
         subtype = data.get("document_subtype")
+        if subtype == "sonstiges":
+            return data.get("subject") or "Sonstiges"
 
         return HOUSING_SUBTYPE_SHORT_LABELS.get(subtype) or "Wohnen"
 
     if document_type == BANK:
         subtype = data.get("document_subtype")
+        if subtype == "sonstiges":
+            return data.get("subject") or "Sonstiges"
 
         return BANK_SUBTYPE_SHORT_LABELS.get(subtype) or "Bank"
+
+    if document_type == LEGAL:
+        return data.get("subject") or "Recht"
 
     return "Dokument"
 

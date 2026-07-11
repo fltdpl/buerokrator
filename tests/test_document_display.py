@@ -2,7 +2,7 @@ from src.core.document_display import (
     get_document_art_label,
     get_document_display_name,
 )
-from src.core.document_types import BANK, HOUSING, INVOICE, PENSION
+from src.core.document_types import BANK, HOUSING, INVOICE, LEGAL, PENSION
 
 
 def test_art_label_uses_housing_subtype():
@@ -29,6 +29,20 @@ def test_art_label_accepts_json_string():
         get_document_art_label(HOUSING, '{"document_subtype": "mietvertrag"}')
         == "Mietvertrag"
     )
+
+
+def test_art_label_uses_subject_for_sonstiges_and_legal():
+    assert (
+        get_document_art_label(
+            HOUSING, {"document_subtype": "sonstiges", "subject": "Meldebestätigung"}
+        )
+        == "Meldebestätigung"
+    )
+    assert get_document_art_label(HOUSING, {"document_subtype": "sonstiges"}) == "Sonstiges"
+    assert (
+        get_document_art_label(LEGAL, {"subject": "Mahnbescheid"}) == "Mahnbescheid"
+    )
+    assert get_document_art_label(LEGAL, {}) == "Recht"
 
 
 def test_display_name_combines_year_issuer_and_art():
