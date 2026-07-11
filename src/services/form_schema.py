@@ -16,7 +16,15 @@ beim Prüfen nur hervor (`missing_required_fields`), damit sie nicht
 """
 
 from src.core.amount_utils import normalize_amount
-from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
+from src.core.document_types import (
+    BANK,
+    HOUSING,
+    INSURANCE,
+    INVOICE,
+    LEGAL,
+    PENSION,
+    TAX,
+)
 
 TAX_SUBTYPE_LABELS = {
     "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
@@ -82,6 +90,11 @@ _TYPE_FIELDS = {
     PENSION: (_text("product_name", "Produkt"),),
     HOUSING: (_amount("amount", "Betrag (Nachzahlung/Guthaben)"),),
 }
+
+# Auffangkategorie "sonstiges" (Wohnen/Bank): ohne eigene Beträge, deshalb
+# braucht es eine Freitextangabe, WAS das Dokument ist (z. B. amtliche
+# Meldebestätigung), sonst verschwindet diese Information im generischen Label.
+_SUBJECT_FIELD = _text("subject", "Betreff")
 
 # Die Steuerbescheinigung aggregiert je Anbieter über alle Verträge und hat
 # deshalb bewusst KEINE policy_number (siehe document_fields.py) — das Feld
@@ -186,6 +199,13 @@ def form_fields(document_type, subtype=None):
 
         return fields
 
+    if document_type == LEGAL:
+        return [
+            _text("issuer", "Korrespondenzpartner", required=True),
+            _text("document_date", "Datum", required=True),
+            _text("subject", "Betreff"),
+        ]
+
     fields = list(_COMMON_FIELDS)
     fields.extend(_TYPE_FIELDS.get(document_type, ()))
 
@@ -196,6 +216,9 @@ def form_fields(document_type, subtype=None):
         fields.extend(
             _PENSION_SUBTYPE_FIELDS.get(subtype, _PENSION_DEFAULT_FIELDS)
         )
+
+    if document_type in (HOUSING, BANK) and subtype == "sonstiges":
+        fields.append(_SUBJECT_FIELD)
 
     return fields
 

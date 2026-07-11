@@ -4,7 +4,15 @@ from src.classifier.prompt_loader import load_prompt
 from src.core.amount_utils import enforce_amount_signs, normalize_amount
 from src.core.config import load_config
 from src.core.document_fields import whitelist_fields
-from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
+from src.core.document_types import (
+    BANK,
+    HOUSING,
+    INSURANCE,
+    INVOICE,
+    LEGAL,
+    PENSION,
+    TAX,
+)
 from src.core.json_utils import parse_llm_json
 from src.core.logger import logger
 from src.extraction.pension_refiner import refine_pension_fields
@@ -78,6 +86,7 @@ PROMPT_FILES = {
     PENSION: "extract_pension.txt",
     BANK: "extract_bank.txt",
     HOUSING: "extract_housing.txt",
+    LEGAL: "extract_legal.txt",
 }
 
 
@@ -143,6 +152,10 @@ def extract_housing(text):
     return _extract(HOUSING, text)
 
 
+def extract_legal(text):
+    return _extract(LEGAL, text)
+
+
 def extract_document(
     document_type,
     text,
@@ -154,6 +167,7 @@ def extract_document(
         PENSION: extract_pension,
         BANK: extract_bank,
         HOUSING: extract_housing,
+        LEGAL: extract_legal,
     }
 
     extractor = extractors.get(document_type)

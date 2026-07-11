@@ -9,7 +9,8 @@ Schema:
   "issuer": "",
   "document_date": "",
   "document_subtype": "",
-  "amount": null
+  "amount": null,
+  "subject": ""
 }}
 
 issuer:
@@ -33,6 +34,11 @@ Bei Mietverträgen und Mieterhöhungen die monatliche Miete.
 
 amount muss eine Zahl sein. Keine Währungszeichen.
 Wenn kein Betrag gefunden wird, verwende null.
+
+subject:
+Nur ausfüllen, wenn keiner der obigen document_subtype-Werte passt:
+kurze Angabe, worum es sich handelt (z. B. "Meldebestätigung").
+Sonst leer lassen.
 
 Dokument:
 

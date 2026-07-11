@@ -1,0 +1,25 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "issuer": "",
+  "document_date": "",
+  "subject": ""
+}}
+
+issuer:
+Korrespondenzpartner (Anwalt, Gericht, Behörde, Gegenseite o. Ä.)
+
+document_date:
+Dokumentdatum im Format DD.MM.YYYY falls erkennbar
+
+subject:
+Kurze Angabe, worum es in dem Schreiben geht (z. B. Aktenzeichen, Betreffzeile)
+
+Dokument:
+
+{document_text}

@@ -5,6 +5,7 @@ from src.core.document_types import (
     HOUSING,
     INSURANCE,
     INVOICE,
+    LEGAL,
     PENSION,
     TAX,
 )
@@ -73,8 +74,9 @@ ALLOWED_FIELDS = {
         "opening_balance",
         "closing_balance",
     },
-    BANK: {"issuer", "document_date", "document_subtype"},
-    HOUSING: {"issuer", "document_date", "document_subtype", "amount"},
+    BANK: {"issuer", "document_date", "document_subtype", "subject"},
+    HOUSING: {"issuer", "document_date", "document_subtype", "amount", "subject"},
+    LEGAL: {"issuer", "document_date", "subject"},
 }
 
 # Pension-Subtypen: der Bauspar-Jahresauszug nutzt Kapitalertragsfelder statt

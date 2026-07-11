@@ -4,6 +4,7 @@ from src.core.document_types import (
     HOUSING,
     INSURANCE,
     INVOICE,
+    LEGAL,
     PENSION,
     TAX,
 )
@@ -23,6 +24,7 @@ ALL_TYPE_SUBTYPE_COMBINATIONS = [
     (INSURANCE, None),
     (BANK, None),
     (HOUSING, None),
+    (LEGAL, None),
     *[(TAX, subtype) for subtype in TAX_SUBTYPE_LABELS],
     *[(PENSION, subtype) for subtype in PENSION_SUBTYPE_LABELS],
     *[(HOUSING, subtype) for subtype in HOUSING_SUBTYPE_LABELS],
@@ -84,6 +86,23 @@ def test_pension_bauspar_uses_capital_fields_instead_of_amount():
 
     assert "amount" not in keys
     assert {"interest", "contributions_total", "opening_balance", "closing_balance"} <= set(keys)
+
+
+def test_legal_fields_use_korrespondenzpartner_label():
+    fields = form_fields(LEGAL)
+    labels = {field["key"]: field["label"] for field in fields}
+
+    assert labels["issuer"] == "Korrespondenzpartner"
+    assert "subject" in labels
+
+
+def test_sonstiges_subtype_offers_subject_field():
+    housing_keys = [field["key"] for field in form_fields(HOUSING, "sonstiges")]
+    bank_keys = [field["key"] for field in form_fields(BANK, "sonstiges")]
+
+    assert "subject" in housing_keys
+    assert "subject" in bank_keys
+    assert "subject" not in [field["key"] for field in form_fields(HOUSING, "mietvertrag")]
 
 
 def test_merge_form_values_normalizes_amounts_and_keeps_rest():

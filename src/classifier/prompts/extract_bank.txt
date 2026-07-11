@@ -8,7 +8,8 @@ Schema:
 {{
   "issuer": "",
   "document_date": "",
-  "document_subtype": ""
+  "document_subtype": "",
+  "subject": ""
 }}
 
 issuer:
@@ -22,6 +23,10 @@ z.B.
 Kontoauszug
 Kreditkartenabrechnung
 Depotübersicht
+
+subject:
+Nur ausfüllen, wenn document_subtype nicht passt: kurze Angabe,
+worum es sich handelt. Sonst leer lassen.
 
 Dokument:
 

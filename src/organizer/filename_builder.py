@@ -1,6 +1,14 @@
 from pathlib import Path
 
-from src.core.document_types import BANK, HOUSING, INSURANCE, INVOICE, PENSION, TAX
+from src.core.document_types import (
+    BANK,
+    HOUSING,
+    INSURANCE,
+    INVOICE,
+    LEGAL,
+    PENSION,
+    TAX,
+)
 from src.organizer.category_mapper import get_archive_category
 from src.core.logger import logger
 from src.organizer.date_utils import extract_year, normalize_date, normalize_month
@@ -32,6 +40,7 @@ def build_filename(classification, extracted_data, original_file_path):
         PENSION: build_pension_filename,
         BANK: build_bank_filename,
         HOUSING: build_housing_filename,
+        LEGAL: build_legal_filename,
     }
 
     builder = builders.get(document_type)
@@ -250,3 +259,24 @@ def build_housing_filename(
     )
 
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
+
+
+def build_legal_filename(
+    extracted_data,
+    suffix,
+):
+
+    document_date = normalize_date(
+        extracted_data.get(
+            "document_date",
+            "unknown_date",
+        )
+    )
+
+    issuer = extracted_data.get("issuer") or "unknown_issuer"
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_").replace("/", "_")
+
+    subject = _clean_name(extracted_data.get("subject"), "Recht")
+
+    return f"{document_date}_{issuer}_{subject}{suffix}"
