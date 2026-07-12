@@ -9,6 +9,7 @@ from src.processor.batch_import import (
     find_inbox_documents,
     import_inbox_documents,
 )
+from src.services import import_job
 
 
 @ui.page("/import")
@@ -24,11 +25,108 @@ def import_page():
             ui.label(
                 "Verarbeitet alle Dateien im Inbox-Ordner automatisch: "
                 "klassifizieren, umbenennen, archivieren. Die Korrektur der "
-                "erkannten Werte passiert danach im Prüf-Workflow."
+                "erkannten Werte passiert danach im Prüf-Workflow. Der Import "
+                "läuft im Hintergrund weiter, auch wenn du die Seite wechselst."
             ).classes("muted")
+
+            def render_result(result):
+                ui.label(
+                    f"✅ {len(result['succeeded'])} Dokument(e) archiviert."
+                ).classes("text-green-700")
+
+                for entry in result["succeeded"]:
+                    type_label = DOCUMENT_TYPE_LABELS.get(
+                        entry["document_type"], entry["document_type"]
+                    )
+                    ui.label(
+                        f"• {entry['source_name']} → {type_label} · "
+                        f"{entry['filename']}"
+                    ).classes("text-sm muted")
+
+                if result["duplicates"]:
+                    ui.label(
+                        f"♻️ {len(result['duplicates'])} Dublette(n) übersprungen "
+                        "(liegen im Papierkorb):"
+                    ).classes("text-amber-700")
+
+                    for entry in result["duplicates"]:
+                        with ui.row().classes("items-center gap-1"):
+                            ui.label(
+                                f"• {entry['source_name']} ist bereits"
+                                " archiviert als"
+                            ).classes("text-sm muted")
+                            ui.link(
+                                entry["duplicate_filename"],
+                                f"/dokumente/{entry['duplicate_of']}",
+                            ).classes("text-sm")
+
+                if result["failed"]:
+                    ui.label(
+                        f"❌ {len(result['failed'])} Dokument(e) fehlgeschlagen:"
+                    ).classes("text-red-600")
+
+                    for name in result["failed"]:
+                        ui.label(f"• {name}").classes("text-sm text-red-600")
+
+                next_id = get_next_unverified_id()
+
+                with ui.row().classes("gap-2"):
+                    if next_id is not None:
+                        ui.button(
+                            "✅ Jetzt prüfen",
+                            on_click=lambda: ui.navigate.to(f"/dokumente/{next_id}"),
+                        ).props("color=primary unelevated")
+
+                    ui.button(
+                        "Neuer Import",
+                        on_click=lambda: (
+                            import_job.clear_result(),
+                            import_area.refresh(),
+                        ),
+                    ).props("flat")
 
             @ui.refreshable
             def import_area():
+                state = import_job.get_state()
+
+                # Läuft der Import bereits (von dieser oder einer anderen
+                # Seite gestartet): Fortschritt anzeigen und per Timer aus
+                # dem geteilten Job-State aktuell halten.
+                if state["running"]:
+                    total = state["total"]
+                    index = state["index"]
+
+                    ui.label(
+                        f"Import läuft: {index + 1}/{total}" if total else "Import läuft …"
+                    )
+                    progress_bar = ui.linear_progress(
+                        value=(index / total) if total else 0.0,
+                        show_value=False,
+                    ).classes("w-full")
+                    status_label = ui.label(state["current_filename"])
+
+                    def poll():
+                        current = import_job.get_state()
+
+                        if not current["running"]:
+                            import_area.refresh()
+                            return
+
+                        current_total = current["total"]
+                        current_index = current["index"]
+                        progress_bar.value = (
+                            (current_index / current_total) if current_total else 0.0
+                        )
+                        status_label.text = current["current_filename"]
+
+                    ui.timer(0.5, poll)
+                    return
+
+                # Zuletzt beendeter Lauf: Ergebnis zeigen, bis "Neuer Import".
+                if state["result"] is not None:
+                    render_result(state["result"])
+                    return
+
                 pending = find_inbox_documents()
 
                 if not pending:
@@ -40,79 +138,30 @@ def import_page():
                 for path in pending:
                     ui.label(f"• {path.name}").classes("text-sm muted")
 
-                progress_bar = ui.linear_progress(value=0, show_value=False).classes(
-                    "w-full"
-                )
-                progress_bar.set_visibility(False)
-                status_label = ui.label("")
-                results_column = ui.column().classes("gap-1 w-full")
-
                 async def start_import():
-                    start_button.disable()
-                    progress_bar.set_visibility(True)
+                    try:
+                        import_job.start()
+                    except RuntimeError:
+                        ui.notify("Es läuft bereits ein Import.")
+                        import_area.refresh()
+                        return
+
+                    import_area.refresh()
 
                     def on_progress(index, total, filename):
-                        progress_bar.value = index / total if total else 0.0
-                        status_label.text = f"Verarbeite {index + 1}/{total}: {filename}"
+                        import_job.update_progress(index, total, filename)
 
                     # io_bound: OCR + LLM blockieren sonst die Event-Loop.
+                    # Läuft in NiceGUIs app-globalem Hintergrund-Task, also
+                    # unabhängig vom Client, der ihn gestartet hat.
                     succeeded, duplicates, failed = await run.io_bound(
                         import_inbox_documents, on_progress
                     )
 
-                    progress_bar.value = 1.0
-                    status_label.text = ""
+                    import_job.finish(succeeded, duplicates, failed)
+                    import_area.refresh()
 
-                    with results_column:
-                        ui.label(
-                            f"✅ {len(succeeded)} Dokument(e) archiviert."
-                        ).classes("text-green-700")
-
-                        for result in succeeded:
-                            type_label = DOCUMENT_TYPE_LABELS.get(
-                                result["document_type"], result["document_type"]
-                            )
-                            ui.label(
-                                f"• {result['source_name']} → {type_label} · "
-                                f"{result['filename']}"
-                            ).classes("text-sm muted")
-
-                        if duplicates:
-                            ui.label(
-                                f"♻️ {len(duplicates)} Dublette(n) übersprungen "
-                                "(liegen im Papierkorb):"
-                            ).classes("text-amber-700")
-
-                            for result in duplicates:
-                                with ui.row().classes("items-center gap-1"):
-                                    ui.label(
-                                        f"• {result['source_name']} ist bereits"
-                                        " archiviert als"
-                                    ).classes("text-sm muted")
-                                    ui.link(
-                                        result["duplicate_filename"],
-                                        f"/dokumente/{result['duplicate_of']}",
-                                    ).classes("text-sm")
-
-                        if failed:
-                            ui.label(
-                                f"❌ {len(failed)} Dokument(e) fehlgeschlagen:"
-                            ).classes("text-red-600")
-
-                            for name in failed:
-                                ui.label(f"• {name}").classes("text-sm text-red-600")
-
-                        next_id = get_next_unverified_id()
-
-                        if next_id is not None:
-                            ui.button(
-                                "✅ Jetzt prüfen",
-                                on_click=lambda: ui.navigate.to(
-                                    f"/dokumente/{next_id}"
-                                ),
-                            ).props("color=primary unelevated")
-
-                start_button = ui.button(
+                ui.button(
                     "Alle importieren",
                     on_click=start_import,
                 ).props("color=primary unelevated")
