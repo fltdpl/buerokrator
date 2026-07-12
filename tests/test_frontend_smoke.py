@@ -49,6 +49,8 @@ def isolated_project(tmp_path, monkeypatch):
                 "    pension: Vorsorge",
                 "    bank: Bank",
                 "    housing: Wohnen",
+                "    employment: Arbeit",
+                "    legal: Recht",
                 "    unknown: Sonstiges",
             ]
         ),
@@ -91,6 +93,28 @@ async def test_document_detail_renders(user: User):
     await user.open(f"/dokumente/{document_id}")
     await user.should_see("Speichern & Freigeben")
     await user.should_see("Aussteller")
+
+
+@pytest.mark.asyncio
+async def test_employment_detail_shows_subject_and_tax_relevant(user: User):
+    from src.database.document_repository import insert_document
+
+    document_id = insert_document(
+        "2024-03-01_ACME_Kuendigung.pdf",
+        "archive/2024/Arbeit/2024-03-01_ACME_Kuendigung.pdf",
+        "employment",
+        {
+            "document_subtype": "kuendigung",
+            "issuer": "ACME AG",
+            "document_date": "01.03.2024",
+            "subject": "Ordentliche Kündigung",
+        },
+    )
+
+    await user.open(f"/dokumente/{document_id}")
+    await user.should_see("Arbeit")
+    await user.should_see("Betreff")
+    await user.should_see("Steuerrelevant")
 
 
 @pytest.mark.asyncio

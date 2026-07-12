@@ -1,0 +1,92 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "document_subtype": "",
+  "employer": "",
+  "issuer": "",
+  "subject": "",
+  "document_date": "",
+  "tax_year": "",
+  "month": "",
+  "gross_amount": null,
+  "net_amount": null,
+  "income_tax": null,
+  "soli": null,
+  "church_tax": null
+}}
+
+Bestimme zuerst document_subtype:
+
+"lohnsteuerbescheinigung"
+  = Lohnsteuerbescheinigung vom Arbeitgeber.
+  Entscheidend ist der TITEL des Dokuments: Steht dort
+  "Lohnsteuerbescheinigung", ist es IMMER lohnsteuerbescheinigung —
+  auch wenn sie nur einen Monat oder Teilzeitraum bescheinigt.
+
+"gehaltsabrechnung"
+  = Gehalts-, Entgelt- oder Lohnabrechnung vom Arbeitgeber
+  (Titel z. B. "Gehaltsabrechnung", "Entgeltabrechnung",
+  "Verdienstabrechnung", "Abrechnung der Brutto-Netto-Bezüge")
+
+"arbeitsvertrag"
+  = Arbeitsvertrag, Anstellungsvertrag, Änderungsvertrag
+
+"kuendigung"
+  = Kündigung, Aufhebungsvertrag, Entlassungsschreiben
+
+"arbeitszeugnis"
+  = Arbeitszeugnis, Zwischenzeugnis
+
+"sonstiges"
+  = sonstige Mitteilung des Arbeitgebers ohne eigene Beträge
+
+Extrahiere je nach Subtyp:
+
+- employer = Arbeitgeber
+  (nur bei lohnsteuerbescheinigung und gehaltsabrechnung)
+
+- issuer = Aussteller / Arbeitgeber
+  (bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges)
+
+- subject = kurze Angabe, worum es geht
+  (nur bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges;
+   sonst "")
+
+- document_date = Datum im Format DD.MM.YYYY
+  (bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges)
+
+- tax_year = Jahr, vierstellig
+  (bei lohnsteuerbescheinigung und gehaltsabrechnung)
+
+- month = Monat als Zahl 01 bis 12
+  (nur bei gehaltsabrechnung, sonst "")
+
+- gross_amount = Bruttoarbeitslohn / Bruttoentgelt
+- net_amount = Nettoentgelt / Auszahlungsbetrag
+- income_tax = Lohnsteuer
+- soli = Solidaritätszuschlag
+- church_tax = Kirchensteuer
+
+Beträge müssen Zahlen sein.
+Keine Währungszeichen.
+
+Beispiele:
+2450.00
+1834.72
+
+Steht ein Betrag als 0,00 im Dokument (z. B. Lohnsteuer 0,00
+bei geringfügiger Beschäftigung), verwende 0.0 — nicht null.
+Bei lohnsteuerbescheinigung IMMER income_tax, soli und
+church_tax angeben (notfalls 0.0).
+
+Wenn ein Textfeld nicht gefunden wird, verwende "".
+Wenn ein Betrag nicht im Dokument steht, verwende null.
+
+Dokument:
+
+{document_text}

@@ -6,6 +6,7 @@ from src.core.config import load_config
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -22,6 +23,7 @@ from src.extraction.pension_refiner import refine_pension_fields
 # stehen oft weiter unten.
 TAX_MAX_INPUT_CHARS = 6000
 PENSION_MAX_INPUT_CHARS = 6000
+EMPLOYMENT_MAX_INPUT_CHARS = 6000
 
 
 def run_extractor(prompt_file, text, max_input_chars=None):
@@ -77,6 +79,13 @@ AMOUNT_FIELDS = {
         "net_amount",
         "settlement_amount",
     ),
+    EMPLOYMENT: (
+        "gross_amount",
+        "income_tax",
+        "soli",
+        "church_tax",
+        "net_amount",
+    ),
 }
 
 PROMPT_FILES = {
@@ -86,6 +95,7 @@ PROMPT_FILES = {
     PENSION: "extract_pension.txt",
     BANK: "extract_bank.txt",
     HOUSING: "extract_housing.txt",
+    EMPLOYMENT: "extract_employment.txt",
     LEGAL: "extract_legal.txt",
 }
 
@@ -156,6 +166,10 @@ def extract_legal(text):
     return _extract(LEGAL, text)
 
 
+def extract_employment(text):
+    return _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
+
+
 def extract_document(
     document_type,
     text,
@@ -167,6 +181,7 @@ def extract_document(
         PENSION: extract_pension,
         BANK: extract_bank,
         HOUSING: extract_housing,
+        EMPLOYMENT: extract_employment,
         LEGAL: extract_legal,
     }
 

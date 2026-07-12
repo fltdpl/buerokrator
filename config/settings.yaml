@@ -33,6 +33,7 @@ supported_document_types:
   - pension
   - bank
   - housing
+  - employment
   - legal
   - unknown
 archive:
@@ -43,5 +44,6 @@ archive:
     pension: Vorsorge
     bank: Bank
     housing: Wohnen
+    employment: Arbeit
     legal: Recht
     unknown: Sonstiges

@@ -15,6 +15,9 @@ DOCUMENT_COLUMNS = {
     # SHA-256 des Originals; Dubletten-Erkennung beim Import. Altbestand hat
     # NULL — dort greift die Erkennung erst nach einem Neu-Import.
     "content_hash": "TEXT",
+    # Steuerrelevanz (0/1). NULL = noch nicht gesetzt: dann gilt der aus
+    # Typ/Subtyp abgeleitete Default (siehe src/tax/tax_relevance.py).
+    "tax_relevant": "INTEGER",
 }
 
 REQUIRED_EXISTING_COLUMNS = {

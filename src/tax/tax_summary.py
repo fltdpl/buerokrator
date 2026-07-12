@@ -5,6 +5,7 @@ from io import StringIO
 from src.core.amount_utils import normalize_amount
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -14,6 +15,7 @@ from src.core.document_types import (
 )
 from src.database.list_documents import list_documents
 from src.organizer.date_utils import year_from_archive_path
+from src.tax.tax_relevance import resolve_tax_relevance
 
 # Zuordnung Dokumenttyp -> Steuer-/Übersichtskategorie.
 # Bewusst grobe erste Zuordnung (die Steuerlogik-Doku ist WIP), zentral und
@@ -23,6 +25,9 @@ TAX_CATEGORY_BY_TYPE = {
     INSURANCE: "vorsorgeaufwendungen",
     PENSION: "altersvorsorge",
     TAX: "einkommen",
+    # Lohnsteuerbescheinigung/Gehaltsabrechnung liegen jetzt unter employment,
+    # zählen aber weiterhin zum steuerlichen Einkommen.
+    EMPLOYMENT: "einkommen",
     HOUSING: "wohnen",
     INVOICE: "rechnungen",
     BANK: "bank",
@@ -109,10 +114,10 @@ def document_deductibility(document_type, data):
 
     return UNCLEAR
 
-# tax-Dokumente haben kein generisches amount — ihre Beträge liegen in
-# benannten Feldern. Pro Subtyp das aussagekräftigste Feld für die Übersicht
-# (Prioritätenliste, das erste vorhandene Feld gewinnt). "bescheinigung"
-# fehlt bewusst: dort gibt es keine Beträge.
+# tax-/employment-Dokumente haben kein generisches amount — ihre Beträge
+# liegen in benannten Feldern. Pro Subtyp das aussagekräftigste Feld für die
+# Übersicht (Prioritätenliste, das erste vorhandene Feld gewinnt).
+# "bescheinigung" fehlt bewusst: dort gibt es keine Beträge.
 TAX_AMOUNT_FIELDS = {
     "lohnsteuerbescheinigung": ("income_tax",),
     "einkommensbescheinigung": ("settlement_amount", "income_tax"),
@@ -127,7 +132,7 @@ def resolve_document_amount(document_type, data):
     if amount is not None:
         return amount
 
-    if document_type == TAX:
+    if document_type in (TAX, EMPLOYMENT):
         fields = TAX_AMOUNT_FIELDS.get(data.get("document_subtype"), ())
 
         for field in fields:
@@ -201,6 +206,9 @@ def build_tax_summary(year, documents=None):
         "deductible_unclear_count": 0,
         # gezahlte Lohn-/Einkommensteuer (aus tax-Dokumenten)
         "income_tax": 0.0,
+        # als steuerrelevant markierte Dokumente (Flag mit Default, siehe
+        # tax_relevance.py) — quer über alle Kategorien.
+        "tax_relevant_count": 0,
     }
     # Kapitalerträge (Anlage KAP), z. B. aus Bauspar-Jahresauszügen.
     capital_income = {"interest": 0.0, "capital_gains_tax": 0.0, "count": 0}
@@ -215,6 +223,11 @@ def build_tax_summary(year, documents=None):
         amount = resolve_document_amount(document_type, data)
         verified = bool(row["verified"])
         deductibility = document_deductibility(document_type, data)
+        tax_relevant = resolve_tax_relevance(
+            document_type, data, row["tax_relevant"]
+        )
+        if tax_relevant:
+            totals["tax_relevant_count"] += 1
 
         # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
         income_tax = normalize_amount(data.get("income_tax"))
@@ -265,6 +278,7 @@ def build_tax_summary(year, documents=None):
                 "amount": amount,
                 "verified": verified,
                 "deductibility": deductibility,
+                "tax_relevant": tax_relevant,
                 "document_date": data.get("document_date", ""),
                 "issuer": (
                     data.get("issuer")
@@ -309,6 +323,7 @@ def export_tax_summary_csv(summary):
             "Datum",
             "Kategorie",
             "Betrag",
+            "Steuerrelevant",
             "Absetzbar",
             "Geprueft",
             "Dokumentreferenz",
@@ -324,6 +339,7 @@ def export_tax_summary_csv(summary):
                     document["document_date"],
                     category["label"],
                     "" if amount is None else f"{amount:.2f}",
+                    "ja" if document.get("tax_relevant") else "nein",
                     deductibility_labels.get(document["deductibility"], "unklar"),
                     "ja" if document["verified"] else "nein",
                     document["filename"],

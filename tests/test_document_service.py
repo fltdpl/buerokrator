@@ -50,6 +50,7 @@ def make_row(
         "created_at": f"{year}-01-01T00:00:00",
         "document_text": "text",
         "notes": "",
+        "tax_relevant": None,
     }
 
 

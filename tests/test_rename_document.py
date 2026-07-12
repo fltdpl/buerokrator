@@ -17,6 +17,7 @@ def write_config(tmp_path):
                 "  category_mapping:",
                 "    tax: Steuern",
                 "    insurance: Versicherungen",
+                "    employment: Arbeit",
             ]
         ),
         encoding="utf-8",
@@ -41,12 +42,12 @@ def test_rename_moves_to_year_from_data_on_reclassification(tmp_path, monkeypatc
 
     new_path = rename_document(
         "archive/1985/Versicherungen/1985-03-14_Alt.pdf",
-        "tax",
+        "employment",
         extracted,
     )
 
     # Zielordner nach Dokumentjahr (2009), nicht nach altem Pfad (1985).
-    assert new_path == Path("archive") / "2009" / "Steuern" / (
+    assert new_path == Path("archive") / "2009" / "Arbeit" / (
         "2009-11_ACME_Gehaltsabrechnung.pdf"
     )
     assert (tmp_path / new_path).exists()

@@ -59,6 +59,10 @@ def tax_page():
                 )
                 _metric("davon ungeprüft", format_euro(ungeprueft))
                 _metric("Erfasste Beträge gesamt", format_euro(totals["amount"]))
+                _metric(
+                    "Steuerrelevante Dokumente",
+                    str(totals["tax_relevant_count"]),
+                )
 
             if ungeprueft > 0:
                 ui.label(

@@ -11,7 +11,8 @@ _DOCUMENT_FIELDS = """
     verified,
     created_at,
     document_text,
-    notes
+    notes,
+    tax_relevant
 """
 
 

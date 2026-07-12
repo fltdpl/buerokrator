@@ -2,6 +2,7 @@ from difflib import get_close_matches
 
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -12,26 +13,13 @@ from src.core.document_types import (
 
 # Steuer-Subtypen und ihre jeweils gültigen Felder. Jeder Subtyp hat ein
 # eigenes Feldset, damit nur passende Felder erfasst/gespeichert werden.
+#
+# Lohnsteuerbescheinigung und Gehaltsabrechnung sind in die Kategorie
+# EMPLOYMENT ("Arbeit") umgezogen (Aussteller = Arbeitgeber, kein Steuer-,
+# sondern Arbeits-Lebensbereich). Sie bleiben hier bewusst als Whitelist
+# (nicht mehr im Formular, siehe form_schema) erhalten, damit noch nicht
+# umsortierte Bestandsdokumente beim Speichern keine Felder verlieren.
 TAX_SUBTYPE_FIELDS = {
-    # jährliche Lohnsteuerbescheinigung vom Arbeitgeber
-    "lohnsteuerbescheinigung": {
-        "document_subtype",
-        "employer",
-        "tax_year",
-        "gross_amount",
-        "income_tax",
-        "soli",
-        "church_tax",
-    },
-    # monatliche Gehalts-/Entgeltabrechnung vom Arbeitgeber
-    "gehaltsabrechnung": {
-        "document_subtype",
-        "employer",
-        "tax_year",
-        "month",
-        "gross_amount",
-        "net_amount",
-    },
     # Einkommensbescheinigung / Bescheid vom Finanzamt
     "einkommensbescheinigung": {
         "document_subtype",
@@ -49,6 +37,52 @@ TAX_SUBTYPE_FIELDS = {
         "tax_year",
         "description",
     },
+    # Übergang: von tax nach employment gewandert (nur noch Whitelist).
+    "lohnsteuerbescheinigung": {
+        "document_subtype",
+        "employer",
+        "tax_year",
+        "gross_amount",
+        "income_tax",
+        "soli",
+        "church_tax",
+    },
+    "gehaltsabrechnung": {
+        "document_subtype",
+        "employer",
+        "tax_year",
+        "month",
+        "gross_amount",
+        "net_amount",
+    },
+}
+
+# Arbeit-Subtypen. Die beiden Lohn-Subtypen behalten exakt die früheren
+# tax-Felder, damit das Umsortieren von Bestandsdokumenten ein reiner
+# Typwechsel ist (Feldwerte bleiben gültig). Vertrag/Kündigung/Zeugnis/
+# Sonstiges tragen nur Aussteller, Datum und einen Freitext-Betreff.
+EMPLOYMENT_SUBTYPE_FIELDS = {
+    "lohnsteuerbescheinigung": {
+        "document_subtype",
+        "employer",
+        "tax_year",
+        "gross_amount",
+        "income_tax",
+        "soli",
+        "church_tax",
+    },
+    "gehaltsabrechnung": {
+        "document_subtype",
+        "employer",
+        "tax_year",
+        "month",
+        "gross_amount",
+        "net_amount",
+    },
+    "arbeitsvertrag": {"document_subtype", "issuer", "document_date", "subject"},
+    "kuendigung": {"document_subtype", "issuer", "document_date", "subject"},
+    "arbeitszeugnis": {"document_subtype", "issuer", "document_date", "subject"},
+    "sonstiges": {"document_subtype", "issuer", "document_date", "subject"},
 }
 
 # Erlaubte Felder je Dokumenttyp (muss dem jeweiligen Prompt-Schema entsprechen).
@@ -76,6 +110,7 @@ ALLOWED_FIELDS = {
     },
     BANK: {"issuer", "document_date", "document_subtype", "subject"},
     HOUSING: {"issuer", "document_date", "document_subtype", "amount", "subject"},
+    EMPLOYMENT: set().union(*EMPLOYMENT_SUBTYPE_FIELDS.values()),
     LEGAL: {"issuer", "document_date", "subject"},
 }
 
@@ -148,6 +183,7 @@ KNOWN_SUBTYPES = {
         "depotuebersicht",
         "sonstiges",
     },
+    EMPLOYMENT: set(EMPLOYMENT_SUBTYPE_FIELDS),
 }
 
 # Aliasse für frei eingegebene oder vom LLM erfundene Subtypen.
@@ -169,6 +205,16 @@ SUBTYPE_ALIASES = {
     },
     BANK: {
         "depotübersicht": "depotuebersicht",
+    },
+    EMPLOYMENT: {
+        "entgeltabrechnung": "gehaltsabrechnung",
+        "lohnabrechnung": "gehaltsabrechnung",
+        "verdienstbescheinigung": "gehaltsabrechnung",
+        "bezügemitteilung": "gehaltsabrechnung",
+        "bezuegemitteilung": "gehaltsabrechnung",
+        "vertrag": "arbeitsvertrag",
+        "kündigung": "kuendigung",
+        "zeugnis": "arbeitszeugnis",
     },
 }
 
@@ -223,6 +269,11 @@ def whitelist_fields(document_type, data):
     if document_type == PENSION:
         subtype = data.get("document_subtype")
         allowed = PENSION_SUBTYPE_FIELDS.get(subtype, PENSION_BASE_FIELDS)
+        return {key: value for key, value in data.items() if key in allowed}
+
+    if document_type == EMPLOYMENT:
+        subtype = data.get("document_subtype")
+        allowed = EMPLOYMENT_SUBTYPE_FIELDS.get(subtype, ALLOWED_FIELDS[EMPLOYMENT])
         return {key: value for key, value in data.items() if key in allowed}
 
     if document_type not in ALLOWED_FIELDS:

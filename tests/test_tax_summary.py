@@ -34,6 +34,7 @@ def make_row(
         "created_at": f"{year}-01-01T00:00:00",
         "document_text": "text",
         "notes": "",
+        "tax_relevant": None,
     }
 
 
@@ -98,7 +99,9 @@ def test_export_tax_summary_csv_has_header_and_rows():
 
     lines = [line for line in csv_text.splitlines() if line]
 
-    assert lines[0] == "Datum;Kategorie;Betrag;Absetzbar;Geprueft;Dokumentreferenz"
+    assert lines[0] == (
+        "Datum;Kategorie;Betrag;Steuerrelevant;Absetzbar;Geprueft;Dokumentreferenz"
+    )
     # Eine Zeile pro Dokument des Jahres (5 Dokumente 2019).
     assert len(lines) == 1 + 5
 

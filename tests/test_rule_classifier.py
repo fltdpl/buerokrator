@@ -12,9 +12,10 @@ def test_bauspar_beats_einkommensteuer_mention():
     assert match_rule(text) == "pension"
 
 
-def test_payslip_with_contribution_lines_stays_tax():
+def test_payslip_with_contribution_lines_stays_employment():
     # Gehaltsabrechnungen listen Renten-/Kranken-/Arbeitslosenversicherung
-    # und betriebliche Altersvorsorge als Beitragszeilen auf.
+    # und betriebliche Altersvorsorge als Beitragszeilen auf — sie sind aber
+    # Arbeitgeber-Dokumente (employment), nicht insurance.
     text = (
         "Gehaltsabrechnung März 2024\n"
         "Rentenversicherung 450,00\n"
@@ -22,7 +23,7 @@ def test_payslip_with_contribution_lines_stays_tax():
         "Betriebliche Altersvorsorge 100,00\n"
         "VBL-Umlage 50,00\n"
     )
-    assert match_rule(text) == "tax"
+    assert match_rule(text) == "employment"
 
 
 def test_generic_versicherung_alone_is_not_insurance():

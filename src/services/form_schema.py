@@ -18,19 +18,31 @@ beim Prüfen nur hervor (`missing_required_fields`), damit sie nicht
 from src.core.amount_utils import normalize_amount
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
     LEGAL,
     PENSION,
     TAX,
+    UNKNOWN,
 )
 
+# Lohnsteuerbescheinigung und Gehaltsabrechnung sind in die Kategorie
+# "Arbeit" (EMPLOYMENT) umgezogen — hier bleiben nur die Finanzamt- und
+# Auffang-Subtypen.
 TAX_SUBTYPE_LABELS = {
-    "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
-    "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
     "einkommensbescheinigung": "Einkommensbescheinigung (Finanzamt)",
     "bescheinigung": "Bescheinigung / Sonstiges",
+}
+
+EMPLOYMENT_SUBTYPE_LABELS = {
+    "arbeitsvertrag": "Arbeitsvertrag",
+    "kuendigung": "Kündigung",
+    "arbeitszeugnis": "Zeugnis",
+    "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
+    "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
+    "sonstiges": "Sonstiges",
 }
 
 PENSION_SUBTYPE_LABELS = {
@@ -91,10 +103,13 @@ _TYPE_FIELDS = {
     HOUSING: (_amount("amount", "Betrag (Nachzahlung/Guthaben)"),),
 }
 
-# Auffangkategorie "sonstiges" (Wohnen/Bank): ohne eigene Beträge, deshalb
-# braucht es eine Freitextangabe, WAS das Dokument ist (z. B. amtliche
-# Meldebestätigung), sonst verschwindet diese Information im generischen Label.
+# Auffangkategorie "sonstiges" (Wohnen/Bank) bzw. der Dokumenttyp "Sonstiges"
+# (unknown) selbst: ohne eigene Beträge, deshalb braucht es eine
+# Freitextangabe, WAS das Dokument ist (z. B. amtliche Meldebestätigung),
+# sonst verschwindet diese Information im generischen Label.
 _SUBJECT_FIELD = _text("subject", "Betreff")
+
+_TYPE_FIELDS[UNKNOWN] = (_SUBJECT_FIELD,)
 
 # Die Steuerbescheinigung aggregiert je Anbieter über alle Verträge und hat
 # deshalb bewusst KEINE policy_number (siehe document_fields.py) — das Feld
@@ -120,19 +135,6 @@ _PENSION_SUBTYPE_FIELDS = {
 _PENSION_DEFAULT_FIELDS = (_amount("amount", "Betrag (Jahresbeitrag)"),)
 
 _TAX_SUBTYPE_FORM_FIELDS = {
-    "lohnsteuerbescheinigung": (
-        _text("employer", "Arbeitgeber", required=True),
-        _amount("gross_amount", "Bruttolohn", required=True),
-        _amount("income_tax", "Lohnsteuer"),
-        _amount("soli", "Solidaritätszuschlag"),
-        _amount("church_tax", "Kirchensteuer"),
-    ),
-    "gehaltsabrechnung": (
-        _text("employer", "Arbeitgeber", required=True),
-        _amount("gross_amount", "Bruttolohn", required=True),
-        _text("month", "Monat"),
-        _amount("net_amount", "Nettolohn"),
-    ),
     "einkommensbescheinigung": (
         _text("issuer", "Finanzamt", required=True),
         _amount("income_tax", "Einkommensteuer"),
@@ -144,6 +146,34 @@ _TAX_SUBTYPE_FORM_FIELDS = {
         _text("description", "Art der Bescheinigung"),
     ),
 }
+
+# Arbeit: die beiden Lohn-Subtypen tragen (Steuerjahr-basierte) Lohnfelder wie
+# früher unter Steuer; Vertrag/Kündigung/Zeugnis/Sonstiges nur Aussteller,
+# Datum und einen Freitext-Betreff.
+_EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
+    "lohnsteuerbescheinigung": (
+        _text("tax_year", "Steuerjahr", required=True),
+        _text("employer", "Arbeitgeber", required=True),
+        _amount("gross_amount", "Bruttolohn", required=True),
+        _amount("income_tax", "Lohnsteuer"),
+        _amount("soli", "Solidaritätszuschlag"),
+        _amount("church_tax", "Kirchensteuer"),
+    ),
+    "gehaltsabrechnung": (
+        _text("tax_year", "Steuerjahr", required=True),
+        _text("employer", "Arbeitgeber", required=True),
+        _text("month", "Monat"),
+        _amount("gross_amount", "Bruttolohn", required=True),
+        _amount("net_amount", "Nettolohn"),
+    ),
+}
+
+# Textbasierte Arbeit-Subtypen (Vertrag/Kündigung/Zeugnis/Sonstiges).
+_EMPLOYMENT_TEXT_FIELDS = (
+    _text("issuer", "Arbeitgeber", required=True),
+    _text("document_date", "Datum", required=True),
+    _text("subject", "Betreff"),
+)
 
 
 def subtype_config(document_type):
@@ -176,6 +206,12 @@ def subtype_config(document_type):
             "labels": BANK_SUBTYPE_LABELS,
         }
 
+    if document_type == EMPLOYMENT:
+        return {
+            "options": list(EMPLOYMENT_SUBTYPE_LABELS),
+            "labels": EMPLOYMENT_SUBTYPE_LABELS,
+        }
+
     return None
 
 
@@ -205,6 +241,14 @@ def form_fields(document_type, subtype=None):
             _text("document_date", "Datum", required=True),
             _text("subject", "Betreff"),
         ]
+
+    if document_type == EMPLOYMENT:
+        # Lohn-Subtypen: Steuerjahr-basierte Lohnfelder (wie früher tax).
+        # Alle anderen (auch unbekannte): Aussteller/Datum/Betreff.
+        if subtype in _EMPLOYMENT_SUBTYPE_FORM_FIELDS:
+            return list(_EMPLOYMENT_SUBTYPE_FORM_FIELDS[subtype])
+
+        return list(_EMPLOYMENT_TEXT_FIELDS)
 
     fields = list(_COMMON_FIELDS)
     fields.extend(_TYPE_FIELDS.get(document_type, ()))
