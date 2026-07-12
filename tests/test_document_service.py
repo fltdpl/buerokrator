@@ -9,7 +9,9 @@ from src.services.document_service import (
     filter_documents,
     move_document_to_trash,
     parse_document_row,
+    set_documents_subtype,
 )
+from src.database.list_documents import get_document
 
 
 def write_config(tmp_path):
@@ -166,6 +168,39 @@ def test_build_table_rows_contains_display_fields():
     assert rows[0]["created_at"] == "01.01.2023"
     # Datei existiert nicht -> Größe "-" statt Exception.
     assert rows[0]["file_size"] == "-"
+
+
+def test_set_documents_subtype_changes_subtype_and_unverifies(tmp_path, monkeypatch):
+    write_config(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    init_database()
+
+    doc_id = insert_document(
+        "sv.pdf",
+        "archive/2021/Arbeit/sv.pdf",
+        "employment",
+        {
+            "document_subtype": "sonstiges",
+            "issuer": "ACME AG",
+            "document_date": "01.01.2021",
+            "subject": "Bescheinigung - Sozialversicherung nach § 25 DEÜV",
+        },
+    )
+    # Nach dem Import verifizieren wir es (simuliert Bestandsdokument).
+    from src.database.set_document_verified import set_document_verified
+
+    set_document_verified(doc_id, 1)
+
+    changed = set_documents_subtype([doc_id], "sv_meldung")
+    assert changed == 1
+
+    row = get_document(doc_id)
+    data = json.loads(row["extracted_data"])
+    # Subtyp gesetzt, übrige Felder unangetastet, zurück in den Prüf-Workflow.
+    assert data["document_subtype"] == "sv_meldung"
+    assert data["subject"] == "Bescheinigung - Sozialversicherung nach § 25 DEÜV"
+    assert data["issuer"] == "ACME AG"
+    assert row["verified"] == 0
 
 
 def test_build_table_rows_uses_employer_as_issuer():

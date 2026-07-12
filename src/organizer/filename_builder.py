@@ -142,23 +142,64 @@ def build_tax_filename(extracted_data, suffix):
     return f"{tax_year}_{issuer}_Bescheinigung{suffix}"
 
 
+def _period_prefix(extracted_data):
+    """Datumsteil aus dem Zeitraum (von–bis) oder None.
+
+    Beide Daten -> "YYYY-MM-DD_bis_YYYY-MM-DD", nur Start -> "YYYY-MM-DD".
+    Nach dem Startdatum sortierbar; unterscheidet Teilzeiträume.
+    """
+    start = extracted_data.get("period_start")
+    end = extracted_data.get("period_end")
+
+    if start and end:
+        return f"{normalize_date(start)}_bis_{normalize_date(end)}"
+    if start:
+        return normalize_date(start)
+
+    return None
+
+
 def build_employment_filename(extracted_data, suffix):
 
     subtype = (extracted_data.get("document_subtype") or "").lower()
     tax_year = extracted_data.get("tax_year") or "unknown_year"
+    period_prefix = _period_prefix(extracted_data)
 
     if subtype == "gehaltsabrechnung":
         employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
+
+        if period_prefix:
+            return f"{period_prefix}_{employer}_Gehaltsabrechnung{suffix}"
+
+        # Fallback (Altbestand ohne Zeitraum): Jahr-Monat wie bisher.
         month = normalize_month(extracted_data.get("month"))
         return f"{tax_year}-{month}_{employer}_Gehaltsabrechnung{suffix}"
 
     if subtype == "lohnsteuerbescheinigung":
-        # Jährlich; Datum möglichst als YYYY-MM, ohne Monat auf Jahresende.
         employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
+
+        # Mit Dienstverhältnis-Zeitraum: unterscheidet Teilzeiträume eines
+        # Jahres (verhindert Namenskollision mehrerer Bescheinigungen).
+        if period_prefix:
+            return f"{period_prefix}_{employer}_Lohnsteuerbescheinigung{suffix}"
+
+        # Fallback: jährlich, Datum als YYYY-MM, ohne Monat auf Jahresende.
         month = normalize_month(extracted_data.get("month"))
         if month == "00":
             month = "12"
         return f"{tax_year}-{month}_{employer}_Lohnsteuerbescheinigung{suffix}"
+
+    if subtype == "sv_meldung":
+        # SV-Meldung (§ 25 DEÜV): Meldezeitraum + Arbeitgeber + Betreff.
+        issuer = _clean_name(
+            normalize_issuer(extracted_data.get("issuer") or "unknown_issuer"),
+            "unknown_issuer",
+        )
+        subject = _clean_name(extracted_data.get("subject"), "SV-Meldung")
+        prefix = period_prefix or normalize_date(
+            extracted_data.get("document_date", "unknown_date")
+        )
+        return f"{prefix}_{issuer}_{subject}{suffix}"
 
     # Arbeitsvertrag / Kündigung / Zeugnis / Sonstiges: Datum + Aussteller +
     # Betreff (Freitext).

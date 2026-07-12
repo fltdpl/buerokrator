@@ -14,6 +14,7 @@ from src.core.document_display import (
 )
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
+from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
 from src.organizer.date_utils import year_from_archive_path
 from src.organizer.trash import TRASH_DIR, move_to_trash
@@ -98,6 +99,22 @@ def reclassify_documents(document_ids, document_type):
 
         set_document_type(document_id, document_type)
         changed += 1
+
+    return changed
+
+
+def set_documents_subtype(document_ids, subtype):
+    """Setzt den Subtyp (Unterart) mehrerer Dokumente, markiert sie ungeprüft.
+
+    Für die Umsortierung von Bestandsdokumenten (z. B. viele gleichartige
+    SV-Meldungen auf einen eigenen Subtyp). Ändert nur die Unterart; die
+    Whitelist greift erst beim nächsten Speichern.
+    """
+    changed = 0
+
+    for document_id in document_ids:
+        if set_document_subtype(document_id, subtype):
+            changed += 1
 
     return changed
 

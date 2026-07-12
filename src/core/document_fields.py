@@ -66,15 +66,33 @@ EMPLOYMENT_SUBTYPE_FIELDS = {
         "document_subtype",
         "employer",
         "tax_year",
+        # Bescheinigungszeitraum (vom–bis); unterscheidet mehrere
+        # Teilzeit-Bescheinigungen desselben Jahres. tax_year bleibt maßgeblich
+        # für die Jahres-Aggregation.
+        "period_start",
+        "period_end",
         "gross_amount",
         "income_tax",
         "soli",
         "church_tax",
     },
+    # SV-Meldung (§ 25 DEÜV): Meldung zur Sozialversicherung vom Arbeitgeber,
+    # inkl. Stornierungen. Nie steuerrelevant.
+    "sv_meldung": {
+        "document_subtype",
+        "issuer",
+        "period_start",
+        "period_end",
+        "subject",
+    },
     "gehaltsabrechnung": {
         "document_subtype",
         "employer",
         "tax_year",
+        # Abrechnungszeitraum (von–bis). "month" bleibt als Alt-Feld erhalten,
+        # damit Bestandsabrechnungen beim Speichern nichts verlieren.
+        "period_start",
+        "period_end",
         "month",
         "gross_amount",
         "net_amount",
@@ -215,6 +233,11 @@ SUBTYPE_ALIASES = {
         "vertrag": "arbeitsvertrag",
         "kündigung": "kuendigung",
         "zeugnis": "arbeitszeugnis",
+        "sozialversicherungsmeldung": "sv_meldung",
+        "meldung zur sozialversicherung": "sv_meldung",
+        "meldebescheinigung zur sozialversicherung": "sv_meldung",
+        "deuev": "sv_meldung",
+        "deüv": "sv_meldung",
     },
 }
 

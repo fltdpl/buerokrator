@@ -29,7 +29,7 @@ def test_payslip_with_contribution_lines_stays_employment():
 def test_generic_versicherung_alone_is_not_insurance():
     # "Versicherung" als bloßes Wort (z. B. "Sozialversicherung") reicht
     # nicht mehr für insurance.
-    assert match_rule("Meldung zur Sozialversicherung ohne weitere Merkmale") is None
+    assert match_rule("Ein Hinweis auf die Sozialversicherung ohne weitere Merkmale") is None
 
 
 def test_insurance_title_documents_match():

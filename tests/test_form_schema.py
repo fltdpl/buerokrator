@@ -96,6 +96,14 @@ def test_pension_bauspar_uses_capital_fields_instead_of_amount():
     assert {"interest", "contributions_total", "opening_balance", "closing_balance"} <= set(keys)
 
 
+def test_gehaltsabrechnung_form_uses_period_not_month():
+    keys = [field["key"] for field in form_fields(EMPLOYMENT, "gehaltsabrechnung")]
+
+    assert "period_start" in keys
+    assert "period_end" in keys
+    assert "month" not in keys
+
+
 def test_legal_fields_use_korrespondenzpartner_label():
     fields = form_fields(LEGAL)
     labels = {field["key"]: field["label"] for field in fields}

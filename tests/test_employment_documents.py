@@ -19,6 +19,11 @@ def test_match_rule_employment_beats_insurance_keyword():
     assert match_rule(text) == "employment"
 
 
+def test_match_rule_sv_meldung_is_employment():
+    assert match_rule("Meldebescheinigung zur Sozialversicherung") == "employment"
+    assert match_rule("Meldung zur Sozialversicherung nach § 25 DEÜV") == "employment"
+
+
 def test_classify_uses_rule_precheck_without_llm():
     # Trifft eine Regel, wird das LLM nicht bemüht (kein Ollama nötig).
     result = classify("Ausdruck der elektronischen Lohnsteuerbescheinigung 2024")
@@ -52,7 +57,35 @@ def test_build_employment_filename_lohnsteuer_uses_month_when_present():
     )
 
 
-def test_build_employment_filename_gehaltsabrechnung_uses_year_month():
+def test_build_employment_filename_gehaltsabrechnung_uses_period():
+    data = {
+        "document_subtype": "gehaltsabrechnung",
+        "employer": "ACME AG",
+        "tax_year": "2021",
+        "period_start": "01.01.2021",
+        "period_end": "31.07.2021",
+    }
+    assert (
+        build_employment_filename(data, ".pdf")
+        == "2021-01-01_bis_2021-07-31_ACME_AG_Gehaltsabrechnung.pdf"
+    )
+
+
+def test_build_employment_filename_gehaltsabrechnung_period_start_only():
+    data = {
+        "document_subtype": "gehaltsabrechnung",
+        "employer": "ACME AG",
+        "tax_year": "2021",
+        "period_start": "01.03.2021",
+    }
+    assert (
+        build_employment_filename(data, ".pdf")
+        == "2021-03-01_ACME_AG_Gehaltsabrechnung.pdf"
+    )
+
+
+def test_build_employment_filename_gehaltsabrechnung_falls_back_to_month():
+    # Altbestand ohne Zeitraum: Jahr-Monat wie bisher.
     data = {
         "document_subtype": "gehaltsabrechnung",
         "employer": "ACME AG",
@@ -62,6 +95,35 @@ def test_build_employment_filename_gehaltsabrechnung_uses_year_month():
     assert (
         build_employment_filename(data, ".pdf")
         == "2024-03_ACME_AG_Gehaltsabrechnung.pdf"
+    )
+
+
+def test_build_employment_filename_lohnsteuer_with_period():
+    # Teilzeitraum-Bescheinigung: Zeitraum im Namen verhindert Kollision.
+    data = {
+        "document_subtype": "lohnsteuerbescheinigung",
+        "employer": "Fraunhofer",
+        "tax_year": "2021",
+        "period_start": "01.01.2021",
+        "period_end": "30.06.2021",
+    }
+    assert (
+        build_employment_filename(data, ".pdf")
+        == "2021-01-01_bis_2021-06-30_Fraunhofer_Lohnsteuerbescheinigung.pdf"
+    )
+
+
+def test_build_employment_filename_sv_meldung():
+    data = {
+        "document_subtype": "sv_meldung",
+        "issuer": "ACME AG",
+        "period_start": "01.01.2021",
+        "period_end": "31.12.2021",
+        "subject": "Jahresmeldung",
+    }
+    assert (
+        build_employment_filename(data, ".pdf")
+        == "2021-01-01_bis_2021-12-31_ACME_AG_Jahresmeldung.pdf"
     )
 
 

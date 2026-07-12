@@ -16,6 +16,8 @@ def test_default_employment_only_annual_lohnsteuer():
     assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "gehaltsabrechnung"})
     assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "arbeitsvertrag"})
     assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "kuendigung"})
+    # SV-Meldungen (§ 25 DEÜV) gehören zur Sozialversicherung, nicht zur Steuer.
+    assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "sv_meldung"})
 
 
 def test_default_tax_and_pension():

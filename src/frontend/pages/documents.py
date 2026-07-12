@@ -12,7 +12,9 @@ from src.services.document_service import (
     filter_documents,
     move_documents_to_trash,
     reclassify_documents,
+    set_documents_subtype,
 )
+from src.services.form_schema import all_subtype_labels
 
 COLUMNS = [
     {"name": "id", "label": "ID", "field": "id", "sortable": True, "align": "left"},
@@ -170,6 +172,17 @@ def documents_page():
             )
             results.refresh()
 
+        subtype_labels = all_subtype_labels()
+
+        def set_subtype_selected(subtype):
+            label = subtype_labels.get(subtype, subtype)
+            changed = set_documents_subtype(selected_ids(), subtype)
+            ui.notify(
+                f"{changed} Dokument(e) auf Unterart '{label}' gesetzt "
+                "und zum erneuten Prüfen markiert."
+            )
+            results.refresh()
+
         with ui.dialog() as delete_dialog, ui.card():
             confirm_label = ui.label("")
 
@@ -196,6 +209,13 @@ def documents_page():
                 {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
                 label="Umklassifizieren nach",
                 on_change=lambda event: reclassify_selected(event.value),
+            ).props("dense").classes("w-56")
+
+            ui.select(
+                subtype_labels,
+                label="Unterart setzen",
+                with_input=True,
+                on_change=lambda event: set_subtype_selected(event.value),
             ).props("dense").classes("w-56")
 
             ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(

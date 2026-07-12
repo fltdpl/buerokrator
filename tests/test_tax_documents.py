@@ -8,10 +8,6 @@ def test_match_rule_recognizes_finanzamt_documents():
     assert match_rule("Einkommensteuerbescheid 2024") == "tax"
 
 
-def test_match_rule_meldebescheinigung_is_tax():
-    assert match_rule("Meldebescheinigung zur Sozialversicherung") == "tax"
-
-
 def test_match_rule_returns_none_without_match():
     assert match_rule("Ein beliebiger Text ohne Schlüsselwort") is None
 

@@ -42,6 +42,7 @@ EMPLOYMENT_SUBTYPE_LABELS = {
     "arbeitszeugnis": "Zeugnis",
     "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
     "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
+    "sv_meldung": "SV-Meldung (§ 25 DEÜV)",
     "sonstiges": "Sonstiges",
 }
 
@@ -147,13 +148,15 @@ _TAX_SUBTYPE_FORM_FIELDS = {
     ),
 }
 
-# Arbeit: die beiden Lohn-Subtypen tragen (Steuerjahr-basierte) Lohnfelder wie
-# früher unter Steuer; Vertrag/Kündigung/Zeugnis/Sonstiges nur Aussteller,
-# Datum und einen Freitext-Betreff.
+# Arbeit: Lohn-Subtypen tragen Lohnfelder (Steuerjahr-basiert); die
+# SV-Meldung Aussteller + Meldezeitraum + Betreff; Vertrag/Kündigung/Zeugnis/
+# Sonstiges nur Aussteller, Datum und einen Freitext-Betreff.
 _EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
     "lohnsteuerbescheinigung": (
         _text("tax_year", "Steuerjahr", required=True),
         _text("employer", "Arbeitgeber", required=True),
+        _text("period_start", "Bescheinigungszeitraum von"),
+        _text("period_end", "Bescheinigungszeitraum bis"),
         _amount("gross_amount", "Bruttolohn", required=True),
         _amount("income_tax", "Lohnsteuer"),
         _amount("soli", "Solidaritätszuschlag"),
@@ -162,9 +165,16 @@ _EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
     "gehaltsabrechnung": (
         _text("tax_year", "Steuerjahr", required=True),
         _text("employer", "Arbeitgeber", required=True),
-        _text("month", "Monat"),
+        _text("period_start", "Abrechnungszeitraum von"),
+        _text("period_end", "Abrechnungszeitraum bis"),
         _amount("gross_amount", "Bruttolohn", required=True),
         _amount("net_amount", "Nettolohn"),
+    ),
+    "sv_meldung": (
+        _text("issuer", "Arbeitgeber", required=True),
+        _text("period_start", "Meldezeitraum von"),
+        _text("period_end", "Meldezeitraum bis"),
+        _text("subject", "Betreff / Meldegrund"),
     ),
 }
 
@@ -219,6 +229,25 @@ def is_known_subtype(document_type, subtype):
     config = subtype_config(document_type)
 
     return bool(config) and subtype in config["options"]
+
+
+def all_subtype_labels():
+    """Alle bekannten Subtypen über alle Typen als {wert: label}.
+
+    Für die Bulk-Aktion „Unterart setzen". Gleichnamige Subtypen (z. B.
+    „sonstiges") teilen sich ein Label — das ist gewollt.
+    """
+    merged = {}
+    for labels in (
+        TAX_SUBTYPE_LABELS,
+        PENSION_SUBTYPE_LABELS,
+        HOUSING_SUBTYPE_LABELS,
+        BANK_SUBTYPE_LABELS,
+        EMPLOYMENT_SUBTYPE_LABELS,
+    ):
+        merged.update(labels)
+
+    return merged
 
 
 def form_fields(document_type, subtype=None):

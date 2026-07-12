@@ -71,6 +71,16 @@ def test_art_label_employment_subtypes():
         == "Bonusmitteilung"
     )
     assert get_document_art_label(EMPLOYMENT, {}) == "Arbeit"
+    assert (
+        get_document_art_label(
+            EMPLOYMENT, {"document_subtype": "sv_meldung", "subject": "Stornierung"}
+        )
+        == "SV-Meldung · Stornierung"
+    )
+    assert (
+        get_document_art_label(EMPLOYMENT, {"document_subtype": "sv_meldung"})
+        == "SV-Meldung"
+    )
 
 
 def test_display_name_combines_year_issuer_and_art():
