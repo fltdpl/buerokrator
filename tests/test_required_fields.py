@@ -1,6 +1,6 @@
 """Leere und leere Pflichtfelder im Formular-Schema."""
 
-from src.core.document_types import INVOICE, PENSION, TAX
+from src.core.document_types import EMPLOYMENT, INVOICE, PENSION, TAX
 from src.services.form_schema import (
     empty_fields,
     form_fields,
@@ -54,7 +54,9 @@ def test_pflichtfelder_haengen_am_subtyp():
 
     # Ohne bekannten Subtyp bietet tax nur das Steuerjahr an.
     assert missing_required_fields(TAX, data) == []
-    assert missing_required_fields(TAX, data, subtype="gehaltsabrechnung") == [
+    # Die Gehaltsabrechnung ist ein Arbeit-Subtyp; Steuerjahr ist vorhanden,
+    # Arbeitgeber und Bruttolohn fehlen.
+    assert missing_required_fields(EMPLOYMENT, data, subtype="gehaltsabrechnung") == [
         "employer",
         "gross_amount",
     ]

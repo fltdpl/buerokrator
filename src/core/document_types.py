@@ -4,6 +4,7 @@ INSURANCE = "insurance"
 PENSION = "pension"
 BANK = "bank"
 HOUSING = "housing"
+EMPLOYMENT = "employment"
 LEGAL = "legal"
 UNKNOWN = "unknown"
 
@@ -14,6 +15,7 @@ DOCUMENT_TYPES = (
     PENSION,
     BANK,
     HOUSING,
+    EMPLOYMENT,
     LEGAL,
     UNKNOWN,
 )
@@ -27,6 +29,7 @@ DOCUMENT_TYPE_LABELS = {
     PENSION: "Vorsorge",
     BANK: "Bank",
     HOUSING: "Wohnen",
+    EMPLOYMENT: "Arbeit",
     LEGAL: "Recht",
     UNKNOWN: "Sonstiges",
 }
@@ -38,6 +41,7 @@ ARCHIVE_CATEGORY_LABELS = {
     PENSION: "Vorsorge",
     BANK: "Bank",
     HOUSING: "Wohnen",
+    EMPLOYMENT: "Arbeit",
     LEGAL: "Recht",
     UNKNOWN: "Sonstiges",
 }

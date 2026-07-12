@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -40,6 +41,7 @@ def build_filename(classification, extracted_data, original_file_path):
         PENSION: build_pension_filename,
         BANK: build_bank_filename,
         HOUSING: build_housing_filename,
+        EMPLOYMENT: build_employment_filename,
         LEGAL: build_legal_filename,
     }
 
@@ -130,29 +132,45 @@ def build_tax_filename(extracted_data, suffix):
     tax_year = extracted_data.get("tax_year") or "unknown_year"
     subtype = (extracted_data.get("document_subtype") or "").lower()
 
-    if subtype == "gehaltsabrechnung":
-        employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
-        month = normalize_month(extracted_data.get("month"))
-        return f"{tax_year}-{month}_{employer}_Gehaltsabrechnung{suffix}"
-
     if subtype == "einkommensbescheinigung":
         # Finanzamt-Bescheinigung: jährlich, Aussteller = Finanzamt.
         issuer = _clean_name(extracted_data.get("issuer"), "Finanzamt")
         return f"{tax_year}-12_{issuer}_Einkommensbescheinigung{suffix}"
 
-    if subtype == "bescheinigung":
-        # Meldebescheinigung / Informationsschreiben.
-        issuer = _clean_name(extracted_data.get("issuer"), "unknown_issuer")
-        return f"{tax_year}_{issuer}_Bescheinigung{suffix}"
+    # Standard/Default: Meldebescheinigung / Informationsschreiben.
+    issuer = _clean_name(extracted_data.get("issuer"), "unknown_issuer")
+    return f"{tax_year}_{issuer}_Bescheinigung{suffix}"
 
-    # Standard/Default: Lohnsteuerbescheinigung (jährlich). Datum möglichst
-    # vollständig als YYYY-MM; ohne konkreten Monat auf Jahresende (12).
-    employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
-    month = normalize_month(extracted_data.get("month"))
-    if month == "00":
-        month = "12"
 
-    return f"{tax_year}-{month}_{employer}_Lohnsteuerbescheinigung{suffix}"
+def build_employment_filename(extracted_data, suffix):
+
+    subtype = (extracted_data.get("document_subtype") or "").lower()
+    tax_year = extracted_data.get("tax_year") or "unknown_year"
+
+    if subtype == "gehaltsabrechnung":
+        employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
+        month = normalize_month(extracted_data.get("month"))
+        return f"{tax_year}-{month}_{employer}_Gehaltsabrechnung{suffix}"
+
+    if subtype == "lohnsteuerbescheinigung":
+        # Jährlich; Datum möglichst als YYYY-MM, ohne Monat auf Jahresende.
+        employer = _clean_name(extracted_data.get("employer"), "unknown_employer")
+        month = normalize_month(extracted_data.get("month"))
+        if month == "00":
+            month = "12"
+        return f"{tax_year}-{month}_{employer}_Lohnsteuerbescheinigung{suffix}"
+
+    # Arbeitsvertrag / Kündigung / Zeugnis / Sonstiges: Datum + Aussteller +
+    # Betreff (Freitext).
+    document_date = normalize_date(
+        extracted_data.get("document_date", "unknown_date")
+    )
+    issuer = extracted_data.get("issuer") or "unknown_issuer"
+    issuer = normalize_issuer(issuer)
+    issuer = issuer.replace(" ", "_").replace("/", "_")
+    subject = _clean_name(extracted_data.get("subject"), subtype or "Arbeit")
+
+    return f"{document_date}_{issuer}_{subject}{suffix}"
 
 
 def build_insurance_filename(extracted_data, suffix):

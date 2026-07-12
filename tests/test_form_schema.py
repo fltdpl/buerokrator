@@ -1,15 +1,18 @@
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
     LEGAL,
     PENSION,
     TAX,
+    UNKNOWN,
 )
 from src.services.form_schema import (
     BANK_SUBTYPE_LABELS,
+    EMPLOYMENT_SUBTYPE_LABELS,
     HOUSING_SUBTYPE_LABELS,
     PENSION_SUBTYPE_LABELS,
     TAX_SUBTYPE_LABELS,
@@ -25,10 +28,12 @@ ALL_TYPE_SUBTYPE_COMBINATIONS = [
     (BANK, None),
     (HOUSING, None),
     (LEGAL, None),
+    (UNKNOWN, None),
     *[(TAX, subtype) for subtype in TAX_SUBTYPE_LABELS],
     *[(PENSION, subtype) for subtype in PENSION_SUBTYPE_LABELS],
     *[(HOUSING, subtype) for subtype in HOUSING_SUBTYPE_LABELS],
     *[(BANK, subtype) for subtype in BANK_SUBTYPE_LABELS],
+    *[(EMPLOYMENT, subtype) for subtype in EMPLOYMENT_SUBTYPE_LABELS],
 ]
 
 
@@ -64,6 +69,9 @@ def test_subtype_config_matches_labels():
     bank = subtype_config(BANK)
     assert bank["options"] == list(BANK_SUBTYPE_LABELS)
 
+    employment = subtype_config(EMPLOYMENT)
+    assert employment["options"] == list(EMPLOYMENT_SUBTYPE_LABELS)
+
     assert subtype_config(INVOICE) is None
 
 
@@ -94,6 +102,12 @@ def test_legal_fields_use_korrespondenzpartner_label():
 
     assert labels["issuer"] == "Korrespondenzpartner"
     assert "subject" in labels
+
+
+def test_unknown_type_offers_subject_field():
+    keys = [field["key"] for field in form_fields(UNKNOWN)]
+
+    assert "subject" in keys
 
 
 def test_sonstiges_subtype_offers_subject_field():
@@ -130,7 +144,7 @@ def test_merge_form_values_normalizes_amounts_and_keeps_rest():
 
 def test_merge_form_values_sets_subtype_and_empty_amount_is_none():
     updated = merge_form_values(
-        TAX,
+        EMPLOYMENT,
         {},
         {"tax_year": "2024", "income_tax": ""},
         subtype="lohnsteuerbescheinigung",

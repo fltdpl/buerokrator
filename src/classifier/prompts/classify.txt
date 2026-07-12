@@ -14,6 +14,7 @@ insurance
 pension
 bank
 housing
+employment
 legal
 unknown
 
@@ -33,13 +34,7 @@ invoice:
 - Beitragsquittungen (Verein, Gewerkschaft, Mitgliedschaft)
 
 tax:
-- Lohnsteuerbescheinigungen
-- Gehaltsabrechnungen
-- Entgeltabrechnungen
-- Lohnabrechnungen
-- Verdienstbescheinigungen
-- Einkommensbescheinigungen
-- Bezügemitteilungen
+- Einkommensbescheinigungen (vom Finanzamt)
 - Steuerbescheide
 - Schreiben vom Finanzamt
 - ELSTER-Unterlagen
@@ -72,6 +67,15 @@ housing:
 - Schreiben der Hausverwaltung
 - Hausgeldabrechnungen
 
+employment:
+- Arbeitsverträge, Anstellungsverträge, Änderungsverträge
+- Kündigungen, Aufhebungsverträge, Entlassungsschreiben
+- Arbeitszeugnisse und Zwischenzeugnisse
+- Lohnsteuerbescheinigungen (vom Arbeitgeber)
+- Gehalts-, Entgelt- und Lohnabrechnungen
+- Verdienstbescheinigungen, Bezügemitteilungen
+- sonstige Mitteilungen des Arbeitgebers
+
 legal:
 - Anwaltsschreiben
 - Gerichtsschreiben, Bescheide von Behörden ohne Bezug zu Steuer/Sozialversicherung
@@ -86,8 +90,11 @@ Entscheidungsregeln bei Überschneidungen:
 - Rentenversicherung -> pension. Lebensversicherung -> insurance.
 - Kommt der Auszug von einer Bausparkasse (z. B. "Jahreskontoauszug"
   zum Bausparvertrag), dann pension, NICHT bank.
+- Lohnsteuerbescheinigungen und Gehalts-/Lohn-/Entgeltabrechnungen vom
+  Arbeitgeber sind employment, NICHT tax. Nur Schreiben VOM FINANZAMT
+  (Bescheide, Einkommensbescheinigungen) sind tax.
 - Gehalts-/Lohnabrechnungen erwähnen Renten-, Kranken- und
-  Sozialversicherung als Beitragszeilen: trotzdem tax, NICHT insurance.
+  Sozialversicherung als Beitragszeilen: trotzdem employment, NICHT insurance.
 - Nebenkostenabrechnungen sind housing, auch wenn ein Betrag
   gefordert wird.
 - Eine Rechnung VON einer Versicherung über Versicherungsbeiträge

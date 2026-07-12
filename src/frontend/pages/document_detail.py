@@ -17,6 +17,7 @@ from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
 )
+from src.tax.tax_relevance import resolve_tax_relevance
 from src.services.form_schema import (
     empty_fields,
     form_fields,
@@ -54,6 +55,12 @@ def document_detail_page(document_id: int):
     }
     inputs = {}
 
+    # Effektive Steuerrelevanz: gespeicherter Wert, sonst der aus Typ/Subtyp
+    # abgeleitete Default. Die Checkbox unten überstimmt ihn beim Speichern.
+    initial_tax_relevant = resolve_tax_relevance(
+        state["document_type"], data, document["tax_relevant"]
+    )
+
     def goto_next_or_list():
         next_id = get_next_unverified_id(exclude_id=document_id)
 
@@ -79,6 +86,7 @@ def document_detail_page(document_id: int):
             document_type=state["document_type"],
             extracted_data=updated,
             notes=notes_area.value,
+            tax_relevant=tax_relevant_checkbox.value,
         )
 
         if verify:
@@ -240,6 +248,15 @@ def document_detail_page(document_id: int):
             # Links: Formular + Aktionen + Notizen
             with card("w-1/2 gap-3"):
                 form_area()
+
+                tax_relevant_checkbox = ui.checkbox(
+                    "Steuerrelevant",
+                    value=initial_tax_relevant,
+                )
+                ui.label(
+                    "Vorbelegt aus Art/Unterart — bei Bedarf ändern "
+                    "(z. B. absetzbare Rechnung)."
+                ).classes("text-xs muted")
 
                 with ui.row().classes("gap-2 w-full"):
                     ui.button("💾 Speichern", on_click=lambda: save(verify=False))

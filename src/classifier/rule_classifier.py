@@ -1,5 +1,6 @@
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -16,20 +17,32 @@ from src.core.document_types import (
 # Hinweise. Treffer im ersten Textdrittel zählen doppelt (Titel stehen oben).
 KEYWORD_WEIGHTS = {
     TAX: (
-        ("lohnsteuerbescheinigung", 3),
-        ("gehaltsabrechnung", 3),
-        ("entgeltabrechnung", 3),
-        ("lohnabrechnung", 3),
-        ("verdienstbescheinigung", 3),
+        # Nur noch Finanzamt-/Sozialversicherungs-Dokumente: die Lohn- und
+        # Gehaltsdokumente vom Arbeitgeber sind nach employment gewandert.
         ("einkommensbescheinigung", 3),
         ("meldebescheinigung", 3),
-        ("bezügemitteilung", 3),
-        ("bezuegemitteilung", 3),
         ("einkommensteuerbescheid", 3),
         # bewusst schwach: taucht als Nebensatz in vielen Dokumenten auf
         # ("für Ihre Einkommensteuererklärung ...")
         ("einkommensteuer", 1),
         ("finanzamt", 1),
+    ),
+    EMPLOYMENT: (
+        ("lohnsteuerbescheinigung", 3),
+        ("gehaltsabrechnung", 3),
+        ("entgeltabrechnung", 3),
+        ("lohnabrechnung", 3),
+        ("verdienstbescheinigung", 3),
+        ("bezügemitteilung", 3),
+        ("bezuegemitteilung", 3),
+        ("arbeitsvertrag", 3),
+        ("arbeitszeugnis", 3),
+        ("zwischenzeugnis", 3),
+        # bewusst schwach: "Kündigung" kommt auch bei Versicherungen/Verträgen
+        # vor; "arbeitgeber" ist nur ein Indiz.
+        ("kündigung", 1),
+        ("kuendigung", 1),
+        ("arbeitgeber", 1),
     ),
     PENSION: (
         # kein bloßes "bauspar": die Debeka-Tagline "Versichern · Bausparen"

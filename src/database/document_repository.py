@@ -7,6 +7,7 @@ from src.database.database import get_connection
 from src.database.update_document import update_document
 from src.organizer.date_utils import extract_year
 from src.organizer.filename_builder import rename_document
+from src.tax.tax_relevance import default_tax_relevance
 
 
 def insert_document(
@@ -35,11 +36,12 @@ def insert_document(
             created_at,
             verified,
             tax_year,
-            content_hash
+            content_hash,
+            tax_relevant
 
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             filename,
@@ -54,6 +56,7 @@ def insert_document(
             verified,
             extract_year(extracted_data),
             content_hash,
+            int(default_tax_relevance(document_type, extracted_data)),
         ),
     )
 
@@ -72,6 +75,7 @@ def save_document(
     document_type,
     extracted_data,
     notes="",
+    tax_relevant=None,
 ):
 
     # Auf die für den Dokumenttyp erlaubten Felder begrenzen, damit auch beim
@@ -94,6 +98,7 @@ def save_document(
         document_type=document_type,
         extracted_data=extracted_data,
         notes=notes,
+        tax_relevant=tax_relevant,
     )
 
     return new_path

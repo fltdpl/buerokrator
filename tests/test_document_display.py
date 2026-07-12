@@ -2,7 +2,15 @@ from src.core.document_display import (
     get_document_art_label,
     get_document_display_name,
 )
-from src.core.document_types import BANK, HOUSING, INVOICE, LEGAL, PENSION
+from src.core.document_types import (
+    BANK,
+    EMPLOYMENT,
+    HOUSING,
+    INVOICE,
+    LEGAL,
+    PENSION,
+    UNKNOWN,
+)
 
 
 def test_art_label_uses_housing_subtype():
@@ -43,6 +51,26 @@ def test_art_label_uses_subject_for_sonstiges_and_legal():
         get_document_art_label(LEGAL, {"subject": "Mahnbescheid"}) == "Mahnbescheid"
     )
     assert get_document_art_label(LEGAL, {}) == "Recht"
+    assert get_document_art_label(UNKNOWN, {"subject": "Vereinssatzung"}) == "Vereinssatzung"
+    assert get_document_art_label(UNKNOWN, {}) == "Sonstiges"
+
+
+def test_art_label_employment_subtypes():
+    assert (
+        get_document_art_label(EMPLOYMENT, {"document_subtype": "arbeitsvertrag"})
+        == "Arbeitsvertrag"
+    )
+    assert (
+        get_document_art_label(EMPLOYMENT, {"document_subtype": "lohnsteuerbescheinigung"})
+        == "Lohnsteuer"
+    )
+    assert (
+        get_document_art_label(
+            EMPLOYMENT, {"document_subtype": "sonstiges", "subject": "Bonusmitteilung"}
+        )
+        == "Bonusmitteilung"
+    )
+    assert get_document_art_label(EMPLOYMENT, {}) == "Arbeit"
 
 
 def test_display_name_combines_year_issuer_and_art():

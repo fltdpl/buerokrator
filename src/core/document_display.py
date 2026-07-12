@@ -2,12 +2,14 @@ import json
 
 from src.core.document_types import (
     BANK,
+    EMPLOYMENT,
     HOUSING,
     INSURANCE,
     INVOICE,
     LEGAL,
     PENSION,
     TAX,
+    UNKNOWN,
 )
 
 # Kurzlabels je Subtyp — für die Dokumentenliste und den Detail-Header.
@@ -42,6 +44,15 @@ BANK_SUBTYPE_SHORT_LABELS = {
     "kontoauszug": "Kontoauszug",
     "kreditkartenabrechnung": "Kreditkartenabrechnung",
     "depotuebersicht": "Depotübersicht",
+    "sonstiges": "Sonstiges",
+}
+
+EMPLOYMENT_SUBTYPE_SHORT_LABELS = {
+    "arbeitsvertrag": "Arbeitsvertrag",
+    "kuendigung": "Kündigung",
+    "arbeitszeugnis": "Zeugnis",
+    "lohnsteuerbescheinigung": "Lohnsteuer",
+    "gehaltsabrechnung": "Gehaltsabrechnung",
     "sonstiges": "Sonstiges",
 }
 
@@ -102,8 +113,18 @@ def get_document_art_label(document_type, extracted_data):
 
         return BANK_SUBTYPE_SHORT_LABELS.get(subtype) or "Bank"
 
+    if document_type == EMPLOYMENT:
+        subtype = data.get("document_subtype")
+        if subtype == "sonstiges":
+            return data.get("subject") or "Sonstiges"
+
+        return EMPLOYMENT_SUBTYPE_SHORT_LABELS.get(subtype) or "Arbeit"
+
     if document_type == LEGAL:
         return data.get("subject") or "Recht"
+
+    if document_type == UNKNOWN:
+        return data.get("subject") or "Sonstiges"
 
     return "Dokument"
 

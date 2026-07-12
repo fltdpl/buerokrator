@@ -40,6 +40,9 @@ def parse_document_row(row):
         "created_at": row["created_at"],
         "document_text": row["document_text"] or "",
         "notes": row["notes"] or "",
+        # Rohwert (0/1/None); die effektive Relevanz löst resolve_tax_relevance
+        # mit dem Typ/Subtyp-Default auf.
+        "tax_relevant": row["tax_relevant"],
     }
 
 
