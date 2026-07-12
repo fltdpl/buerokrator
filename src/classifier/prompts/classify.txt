@@ -38,7 +38,6 @@ tax:
 - Steuerbescheide
 - Schreiben vom Finanzamt
 - ELSTER-Unterlagen
-- Meldebescheinigungen zur Sozialversicherung
 
 insurance:
 - Versicherungsscheine und -policen (Unfall, Haftpflicht, Hausrat, Kfz, Rechtsschutz, Kranken)
@@ -74,6 +73,7 @@ employment:
 - Lohnsteuerbescheinigungen (vom Arbeitgeber)
 - Gehalts-, Entgelt- und Lohnabrechnungen
 - Verdienstbescheinigungen, Bezügemitteilungen
+- Meldungen zur Sozialversicherung (§ 25 DEÜV), auch Stornierungen
 - sonstige Mitteilungen des Arbeitgebers
 
 legal:

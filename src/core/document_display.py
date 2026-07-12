@@ -53,6 +53,7 @@ EMPLOYMENT_SUBTYPE_SHORT_LABELS = {
     "arbeitszeugnis": "Zeugnis",
     "lohnsteuerbescheinigung": "Lohnsteuer",
     "gehaltsabrechnung": "Gehaltsabrechnung",
+    "sv_meldung": "SV-Meldung",
     "sonstiges": "Sonstiges",
 }
 
@@ -117,6 +118,11 @@ def get_document_art_label(document_type, extracted_data):
         subtype = data.get("document_subtype")
         if subtype == "sonstiges":
             return data.get("subject") or "Sonstiges"
+
+        if subtype == "sv_meldung":
+            # Betreff (z. B. "Stornierung") zeigt, um welche Meldung es geht.
+            subject = data.get("subject")
+            return f"SV-Meldung · {subject}" if subject else "SV-Meldung"
 
         return EMPLOYMENT_SUBTYPE_SHORT_LABELS.get(subtype) or "Arbeit"
 

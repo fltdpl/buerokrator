@@ -17,10 +17,9 @@ from src.core.document_types import (
 # Hinweise. Treffer im ersten Textdrittel zählen doppelt (Titel stehen oben).
 KEYWORD_WEIGHTS = {
     TAX: (
-        # Nur noch Finanzamt-/Sozialversicherungs-Dokumente: die Lohn- und
-        # Gehaltsdokumente vom Arbeitgeber sind nach employment gewandert.
+        # Nur noch Finanzamt-Dokumente: Lohn-/Gehaltsdokumente und die
+        # SV-Meldungen vom Arbeitgeber sind nach employment gewandert.
         ("einkommensbescheinigung", 3),
-        ("meldebescheinigung", 3),
         ("einkommensteuerbescheid", 3),
         # bewusst schwach: taucht als Nebensatz in vielen Dokumenten auf
         # ("für Ihre Einkommensteuererklärung ...")
@@ -38,6 +37,11 @@ KEYWORD_WEIGHTS = {
         ("arbeitsvertrag", 3),
         ("arbeitszeugnis", 3),
         ("zwischenzeugnis", 3),
+        # SV-Meldungen (§ 25 DEÜV), inkl. Stornierungen
+        ("deüv", 3),
+        ("deuev", 3),
+        ("meldung zur sozialversicherung", 3),
+        ("meldebescheinigung zur sozialversicherung", 3),
         # bewusst schwach: "Kündigung" kommt auch bei Versicherungen/Verträgen
         # vor; "arbeitgeber" ist nur ein Indiz.
         ("kündigung", 1),

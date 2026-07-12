@@ -26,8 +26,9 @@ def _year_from_value(value):
 def extract_year(extracted_data, fallback_year=None):
     """Ermittelt das Dokumentjahr aus den extrahierten Daten.
 
-    Reihenfolge: tax_year, document_date. Fällt auf fallback_year zurück
-    (Standard: aktuelles Jahr), wenn kein plausibles Jahr gefunden wird.
+    Reihenfolge: tax_year, document_date, period_start. Fällt auf
+    fallback_year zurück (Standard: aktuelles Jahr), wenn kein plausibles Jahr
+    gefunden wird.
     """
     if fallback_year is None:
         fallback_year = str(datetime.now().year)
@@ -35,7 +36,7 @@ def extract_year(extracted_data, fallback_year=None):
     if not isinstance(extracted_data, dict):
         return fallback_year
 
-    for key in ("tax_year", "document_date"):
+    for key in ("tax_year", "document_date", "period_start"):
         year = _year_from_value(extracted_data.get(key))
         if year:
             return year

@@ -12,7 +12,8 @@ Schema:
   "subject": "",
   "document_date": "",
   "tax_year": "",
-  "month": "",
+  "period_start": "",
+  "period_end": "",
   "gross_amount": null,
   "net_amount": null,
   "income_tax": null,
@@ -42,6 +43,10 @@ Bestimme zuerst document_subtype:
 "arbeitszeugnis"
   = Arbeitszeugnis, Zwischenzeugnis
 
+"sv_meldung"
+  = Meldung zur Sozialversicherung nach § 25 DEÜV
+  (Jahresmeldung, An-/Abmeldung, Unterbrechung, auch Stornierungen)
+
 "sonstiges"
   = sonstige Mitteilung des Arbeitgebers ohne eigene Beträge
 
@@ -51,10 +56,11 @@ Extrahiere je nach Subtyp:
   (nur bei lohnsteuerbescheinigung und gehaltsabrechnung)
 
 - issuer = Aussteller / Arbeitgeber
-  (bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges)
+  (bei arbeitsvertrag, kuendigung, arbeitszeugnis, sv_meldung, sonstiges)
 
 - subject = kurze Angabe, worum es geht
-  (nur bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges;
+  (bei arbeitsvertrag, kuendigung, arbeitszeugnis, sonstiges;
+   bei sv_meldung der Meldegrund, z. B. "Jahresmeldung" oder "Stornierung";
    sonst "")
 
 - document_date = Datum im Format DD.MM.YYYY
@@ -63,8 +69,12 @@ Extrahiere je nach Subtyp:
 - tax_year = Jahr, vierstellig
   (bei lohnsteuerbescheinigung und gehaltsabrechnung)
 
-- month = Monat als Zahl 01 bis 12
-  (nur bei gehaltsabrechnung, sonst "")
+- period_start = Beginn des Zeitraums im Format DD.MM.YYYY
+  (bei gehaltsabrechnung der Abrechnungszeitraum, bei lohnsteuerbescheinigung
+   der Bescheinigungszeitraum (vom–bis, z. B. 01.01.–31.12.), bei sv_meldung
+   der Meldezeitraum; z. B. "01.01.2021", sonst "")
+- period_end = Ende des Zeitraums im Format DD.MM.YYYY
+  (analog period_start, z. B. "31.12.2021", sonst "")
 
 - gross_amount = Bruttoarbeitslohn / Bruttoentgelt
 - net_amount = Nettoentgelt / Auszahlungsbetrag
