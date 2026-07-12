@@ -166,3 +166,19 @@ def test_build_table_rows_contains_display_fields():
     assert rows[0]["created_at"] == "01.01.2023"
     # Datei existiert nicht -> Größe "-" statt Exception.
     assert rows[0]["file_size"] == "-"
+
+
+def test_build_table_rows_uses_employer_as_issuer():
+    # Lohnsteuer/Gehalt legen den Arbeitgeber in "employer" ab, nicht "issuer".
+    rows = build_table_rows(
+        [
+            make_row(
+                2,
+                "employment",
+                2024,
+                {"document_subtype": "gehaltsabrechnung", "employer": "ACME AG"},
+            )
+        ]
+    )
+
+    assert rows[0]["issuer"] == "ACME AG"

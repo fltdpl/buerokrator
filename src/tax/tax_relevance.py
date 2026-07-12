@@ -24,9 +24,13 @@ def default_tax_relevance(document_type, data):
     subtype = data.get("document_subtype")
 
     if document_type == EMPLOYMENT:
-        # Lohn-/Gehaltsdokumente sind Einkommensnachweise; Vertrag/Kündigung/
-        # Zeugnis in der Regel nicht steuerrelevant.
-        return subtype in ("lohnsteuerbescheinigung", "gehaltsabrechnung")
+        # Die jährliche Lohnsteuerbescheinigung ist das Dokument für die
+        # Steuererklärung. Monatliche Gehaltsabrechnungen enthalten dieselben
+        # Beträge anteilig (redundant) und sind Einkommensnachweise fürs
+        # Archiv — daher NICHT steuerrelevant per Default, sonst würde die
+        # gezahlte Lohnsteuer doppelt gezählt. Vertrag/Kündigung/Zeugnis
+        # ebenfalls nicht.
+        return subtype == "lohnsteuerbescheinigung"
 
     if document_type == TAX:
         # Finanzamt-Dokumente sind relevant; reine Melde-/Infobescheinigungen

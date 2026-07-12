@@ -9,9 +9,11 @@ from src.core.document_types import (
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 
 
-def test_default_employment_only_salary_documents():
+def test_default_employment_only_annual_lohnsteuer():
+    # Nur die jährliche Lohnsteuerbescheinigung ist Default-steuerrelevant;
+    # monatliche Gehaltsabrechnungen sind redundant (Doppelzählung vermeiden).
     assert default_tax_relevance(EMPLOYMENT, {"document_subtype": "lohnsteuerbescheinigung"})
-    assert default_tax_relevance(EMPLOYMENT, {"document_subtype": "gehaltsabrechnung"})
+    assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "gehaltsabrechnung"})
     assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "arbeitsvertrag"})
     assert not default_tax_relevance(EMPLOYMENT, {"document_subtype": "kuendigung"})
 

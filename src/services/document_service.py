@@ -215,7 +215,12 @@ def build_table_rows(documents):
                     data,
                 ),
                 "document_type": document["document_type"],
-                "issuer": data.get("issuer") or data.get("insurer") or "",
+                "issuer": (
+                    data.get("issuer")
+                    or data.get("insurer")
+                    or data.get("employer")
+                    or ""
+                ),
                 "amount": data.get("amount"),
                 "created_at": _format_created_at(document["created_at"]),
                 "file_size": _format_file_size(document["archive_path"]),

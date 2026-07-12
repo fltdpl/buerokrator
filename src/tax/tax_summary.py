@@ -229,9 +229,17 @@ def build_tax_summary(year, documents=None):
         if tax_relevant:
             totals["tax_relevant_count"] += 1
 
+        # Einkommensdokumente (Arbeit/Steuer) zählen für die Steuersummen nur,
+        # wenn sie als steuerrelevant markiert sind. So zählt die jährliche
+        # Lohnsteuerbescheinigung, nicht aber die zwölf (redundanten)
+        # Monats-Gehaltsabrechnungen — die Lohnsteuer würde sonst mehrfach in
+        # die Summe fließen. Für andere Typen (Versicherung etc.) bleibt die
+        # Aggregation unverändert, damit die "unklar"-Ausweisung greift.
+        counts_money = document_type not in (EMPLOYMENT, TAX) or tax_relevant
+
         # Benannte Steuerfelder aufsummieren (unabhängig vom generischen amount).
         income_tax = normalize_amount(data.get("income_tax"))
-        if income_tax is not None:
+        if income_tax is not None and counts_money:
             totals["income_tax"] += income_tax
 
         # Nur die Steuerbescheinigung ist maßgeblich (aggregiert je Anbieter
@@ -252,7 +260,7 @@ def build_tax_summary(year, documents=None):
         if verified:
             entry["verified_count"] += 1
 
-        if amount is not None:
+        if amount is not None and counts_money:
             entry["amount"] += amount
             totals["amount"] += amount
 
