@@ -172,6 +172,13 @@ def tax_page():
                             )
                             deductibility = f" · {deductibility}" if deductibility else ""
 
+                        # Nicht steuerrelevante Dokumente (z. B. redundante
+                        # Monats-Gehaltsabrechnungen) sind gelistet, zählen aber
+                        # nicht in die Summe — kenntlich machen.
+                        relevance = (
+                            "" if document.get("tax_relevant") else " · nicht steuerrelevant"
+                        )
+
                         with ui.row().classes("gap-2 items-center"):
                             ui.label(
                                 f"{status} {document['document_date'] or 'ohne Datum'}"
@@ -180,7 +187,7 @@ def tax_page():
                                 document["issuer"] or type_label,
                                 f"/dokumente/{document['id']}",
                             )
-                            ui.label(f"{amount_text}{deductibility}").classes(
+                            ui.label(f"{amount_text}{deductibility}{relevance}").classes(
                                 "text-sm font-bold"
                             )
 

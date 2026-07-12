@@ -27,10 +27,17 @@ def test_insert_sets_default_tax_relevance(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     init_database()
 
-    # Gehaltsabrechnung -> Default steuerrelevant (1).
+    # Jährliche Lohnsteuerbescheinigung -> Default steuerrelevant (1).
     insert_document(
-        filename="lohn.pdf",
-        archive_path="archive/2024/Arbeit/lohn.pdf",
+        filename="lohnsteuer.pdf",
+        archive_path="archive/2024/Arbeit/lohnsteuer.pdf",
+        document_type="employment",
+        extracted_data={"document_subtype": "lohnsteuerbescheinigung", "employer": "ACME"},
+    )
+    # Monatliche Gehaltsabrechnung -> redundant, Default NICHT steuerrelevant (0).
+    insert_document(
+        filename="gehalt.pdf",
+        archive_path="archive/2024/Arbeit/gehalt.pdf",
         document_type="employment",
         extracted_data={"document_subtype": "gehaltsabrechnung", "employer": "ACME"},
     )
@@ -44,7 +51,8 @@ def test_insert_sets_default_tax_relevance(tmp_path, monkeypatch):
 
     by_name = {row["filename"]: row for row in list_documents()}
 
-    assert by_name["lohn.pdf"]["tax_relevant"] == 1
+    assert by_name["lohnsteuer.pdf"]["tax_relevant"] == 1
+    assert by_name["gehalt.pdf"]["tax_relevant"] == 0
     assert by_name["vertrag.pdf"]["tax_relevant"] == 0
 
 

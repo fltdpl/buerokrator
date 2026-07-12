@@ -232,6 +232,67 @@ def test_build_tax_summary_sums_named_tax_amounts():
     assert einkommen["verified_amount"] == 8000.0
 
 
+def test_income_tax_ignores_non_relevant_monthly_payslips():
+    # Jahres-Lohnsteuerbescheinigung (steuerrelevant) + 12 Monatsabrechnungen
+    # (redundant, Default nicht steuerrelevant). Die Lohnsteuer darf nur einmal
+    # zählen, nicht 13-fach.
+    docs = [
+        make_row(
+            0,
+            "employment",
+            2023,
+            {"document_subtype": "lohnsteuerbescheinigung", "income_tax": 8000.0},
+            verified=1,
+        ),
+    ]
+    for i in range(1, 13):
+        docs.append(
+            make_row(
+                i,
+                "employment",
+                2023,
+                {
+                    "document_subtype": "gehaltsabrechnung",
+                    "income_tax": 650.0,
+                    "net_amount": 2500.0,
+                    "month": f"{i:02d}",
+                },
+                verified=1,
+            )
+        )
+
+    summary = build_tax_summary(2023, docs)
+
+    # Nur die Jahresbescheinigung zählt für die gezahlte Lohnsteuer.
+    assert summary["totals"]["income_tax"] == 8000.0
+    # Einkommen-Kategorie summiert nur das steuerrelevante Dokument (8000),
+    # nicht die Netto-Beträge der Monatsabrechnungen.
+    einkommen = {c["category"]: c for c in summary["categories"]}["einkommen"]
+    assert einkommen["amount"] == 8000.0
+    # Alle 13 Dokumente sind trotzdem erfasst und gelistet.
+    assert einkommen["count"] == 13
+    assert summary["totals"]["tax_relevant_count"] == 1
+
+
+def test_income_tax_counts_override_relevant_payslip():
+    # Ohne Jahresbescheinigung kann der Nutzer eine Monatsabrechnung manuell
+    # als steuerrelevant markieren (tax_relevant = 1).
+    docs = [
+        make_row(
+            1,
+            "employment",
+            2023,
+            {"document_subtype": "gehaltsabrechnung", "income_tax": 650.0},
+            verified=1,
+        ),
+    ]
+    docs[0]["tax_relevant"] = 1
+
+    summary = build_tax_summary(2023, docs)
+
+    assert summary["totals"]["income_tax"] == 650.0
+
+
 def test_capital_income_counts_only_steuerbescheinigung():
     docs = [
         make_row(
