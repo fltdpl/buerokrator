@@ -1,26 +1,23 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def get_recent_documents(limit=10):
 
-    conn = get_connection()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor = conn.cursor()
-
-    rows = cursor.execute(
-        """
-        SELECT
-            id,
-            filename,
-            document_type,
-            created_at
-        FROM documents
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-
-    conn.close()
+        rows = cursor.execute(
+            """
+            SELECT
+                id,
+                filename,
+                document_type,
+                created_at
+            FROM documents
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
 
     return [dict(row) for row in rows]

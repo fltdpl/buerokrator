@@ -35,39 +35,34 @@ bestätigt oder plausibel. Reihenfolge = Priorität.
 - [x] `parse_llm_json`: Regex-Fallback auf den ersten `{...}`-Block bei
       Prosa ums JSON. Tests in `tests/test_json_utils.py`.
 
-## P2 — Robustheit
+## P2 — Robustheit — ERLEDIGT 13.07.2026
 
-- [ ] **DB-Zugriff härten**: Connection-Context-Manager (try/finally bzw.
-      `contextlib`), `PRAGMA journal_mode=WAL`, `timeout=` beim Connect.
-      Schützt gegen „database is locked" (Import-Thread schreibt, UI liest).
-- [ ] **Import-Job absichern**: `try/finally` um `import_inbox_documents` in
-      `import_page.start_import` — bei Exception `import_job` zurücksetzen
-      (`finish([], [], [])` o. Ä.) und den Fehler in der UI anzeigen. Sonst
-      blockiert `running=True` jeden weiteren Import bis zum Neustart.
-      (Hinweis: die Abschluss-Logik hängt NICHT am Browser-Tab — Eventhandler
-      laufen app-global; nur der Fehlerfall ist das Problem.)
-- [ ] **Upload-Pfad aus der Config**: `import_page.handle_upload` schreibt
-      hart nach `Path("inbox")`, der Stapel-Import liest
-      `config["paths"]["inbox"]` — vereinheitlichen (Config gewinnt).
-- [ ] **Archiv-Pfad aus der Config**: `document_processor.py` und
-      `filename_builder.rename_document` nutzen hart `Path("archive")` statt
-      `paths.archive`.
-- [ ] Nicht-atomare Trash-Operation dokumentieren oder Reihenfolge drehen
-      (erst DB-Eintrag löschen? — abwägen, Notiz in `move_document_to_trash`).
-- [ ] `ocr_service.py`: Config-Load von Modulebene in Funktion verschieben
-      (Import-Zeit-Crash bei fehlendem Key; steht schon als Altlast im
-      HANDOVER).
+- [x] **DB-Zugriff gehärtet**: `open_connection()`-Context-Manager
+      (garantiertes close), `PRAGMA journal_mode=WAL`, `timeout=10` —
+      komplette `src/database`-Schicht + `evaluation/ground_truth` migriert.
+- [x] **Import-Job abgesichert**: try/except um den Lauf; neue
+      `import_job.abort()` gibt den Job frei und merkt den Fehler, die
+      /import-Seite zeigt „Import abgebrochen: …" mit Neustart-Button.
+- [x] **Upload-Pfad aus der Config** (`paths.inbox` statt hart `inbox/`).
+- [x] **Archiv-Pfad aus der Config**: neues `get_archive_root()`
+      (`category_mapper`), genutzt von `document_processor` und
+      `rename_document`. (`backup_service` nutzt `Path("archive")` nur als
+      ZIP-internen Namen — korrekt so.)
+- [x] Trash-Reihenfolge dokumentiert (Datei-zuerst ist gewollt: sichtbarer
+      Defekt schlägt unsichtbare Waisen-Datei).
+- [x] `ocr_service.py`: Config-Load in Funktion (`_configure_ocr`), toter
+      `POPPLER_PATH` entfernt, OCR-Sprache kommt jetzt aus `ocr.language`.
 
-## P3 — UX (Prüf-Workflow)
+## P3 — UX (Prüf-Workflow) — ERLEDIGT 13.07.2026
 
-- [ ] **Dirty-Check im Prüf-Screen**: Escape/Pfeiltasten/Navigation verwerfen
-      ungespeicherte Formularänderungen kommentarlos. Änderungsindikator +
-      Rückfrage vor dem Verlassen; Escape sollte nicht mitten im Tippen
-      greifen.
-- [ ] **Steuerrelevanz-Checkbox bei Typ-/Subtypwechsel neu ableiten**
-      (aktuell nur beim Seitenaufbau berechnet).
-- [ ] Filter debouncen (aktuell eine DB-Abfrage pro Tastenanschlag).
-- [ ] Status zusätzlich als Text (nicht nur 🟢/🟡).
+- [x] **Dirty-Check im Prüf-Screen**: Rückfrage-Dialog („Ungespeicherte
+      Änderungen gehen verloren") vor Escape/Pfeiltasten/←→-Buttons;
+      Escape/Pfeile greifen nicht mehr in Eingabefeldern (eigene Tastatur
+      mit Standard-ignore), Strg+Enter weiterhin überall.
+- [x] **Steuerrelevanz-Checkbox** wird bei Typ-/Subtypwechsel aus dem
+      Default neu abgeleitet (vor dem Speichern weiter umschaltbar).
+- [x] Textfilter debounced (400 ms, Quasar-`debounce`).
+- [x] Status als Text („🟢 Geprüft" / „🟡 Ungeprüft"), Spalte sortierbar.
 
 ## P4 — Härtung (Datenschutz at rest)
 

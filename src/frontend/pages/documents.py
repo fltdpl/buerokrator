@@ -19,7 +19,7 @@ from src.services.form_schema import subtype_config
 
 COLUMNS = [
     {"name": "id", "label": "ID", "field": "id", "sortable": True, "align": "left"},
-    {"name": "status", "label": "", "field": "status", "align": "center"},
+    {"name": "status", "label": "Status", "field": "status", "sortable": True, "align": "left"},
     {"name": "year", "label": "Jahr", "field": "year", "sortable": True, "align": "left"},
     {"name": "art_label", "label": "Dokument", "field": "art_label", "sortable": True, "align": "left"},
     {"name": "category", "label": "Kategorie", "field": "category", "sortable": True, "align": "left"},
@@ -49,7 +49,8 @@ def _table_rows(documents):
                 # In der Zeile mitgeführt (keine eigene Spalte): die
                 # Bulk-Aktion „Unterart setzen" braucht den Typ der Auswahl.
                 "document_type": row["document_type"],
-                "status": "🟢" if row["verified"] else "🟡",
+                # Emoji + Text: Status auch ohne Farb-/Emoji-Darstellung lesbar.
+                "status": "🟢 Geprüft" if row["verified"] else "🟡 Ungeprüft",
                 "year": str(row["year"]) if row["year"] else "-",
                 "art_label": _truncate(row["art_label"], 45),
                 "category": DOCUMENT_TYPE_LABELS.get(
@@ -290,11 +291,12 @@ def documents_page():
     @ui.refreshable
     def filter_bar():
         with ui.row().classes("items-end gap-4 w-full"):
+            # debounce: eine DB-Abfrage pro Tipp-Pause statt pro Tastenanschlag.
             ui.input(
                 "Volltext",
                 value=filters["search"],
                 on_change=lambda event: set_filter("search", event.value),
-            ).props("dense clearable").classes("w-48")
+            ).props("dense clearable debounce=400").classes("w-48")
 
             ui.select(
                 ["Alle", *DOCUMENT_TYPES],
@@ -314,13 +316,13 @@ def documents_page():
                 "Aussteller",
                 value=filters["issuer"],
                 on_change=lambda event: set_filter("issuer", event.value),
-            ).props("dense clearable").classes("w-40")
+            ).props("dense clearable debounce=400").classes("w-40")
 
             ui.input(
                 "Dateiname",
                 value=filters["filename"],
                 on_change=lambda event: set_filter("filename", event.value),
-            ).props("dense clearable").classes("w-40")
+            ).props("dense clearable debounce=400").classes("w-40")
 
             if len(all_years) > 1:
                 year_range = filters["year_range"] or {

@@ -1,4 +1,4 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def find_document_by_hash(content_hash):
@@ -9,20 +9,18 @@ def find_document_by_hash(content_hash):
     if not content_hash:
         return None
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    row = cursor.execute(
-        """
-        SELECT id, filename
-        FROM documents
-        WHERE content_hash = ?
-        ORDER BY id ASC
-        LIMIT 1
-        """,
-        (content_hash,),
-    ).fetchone()
-
-    conn.close()
+        row = cursor.execute(
+            """
+            SELECT id, filename
+            FROM documents
+            WHERE content_hash = ?
+            ORDER BY id ASC
+            LIMIT 1
+            """,
+            (content_hash,),
+        ).fetchone()
 
     return (row["id"], row["filename"]) if row is not None else None

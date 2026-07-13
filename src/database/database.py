@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
 
 from src.core.config import load_config
@@ -36,10 +37,34 @@ def get_connection():
 
     _ensure_schema()
 
-    conn = sqlite3.connect(db_path)
+    # timeout: wartet bei gesperrter DB, statt sofort "database is locked"
+    # zu werfen (der Stapel-Import schreibt in einem Thread, die UI liest
+    # parallel).
+    conn = sqlite3.connect(db_path, timeout=10)
     # Zeilen als sqlite3.Row: Zugriff per Spaltenname statt per Position.
     # Schützt davor, dass ein neues Feld die Indizes aller Konsumenten
     # verschiebt (die expliziten SELECTs und SELECT * hatten verified/created_at
     # sogar in unterschiedlicher Reihenfolge).
     conn.row_factory = sqlite3.Row
+    # WAL: Leser blockieren Schreiber nicht (und umgekehrt). Der Modus ist
+    # in der DB-Datei persistent; das PRAGMA pro Verbindung ist billig.
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
+
+
+@contextmanager
+def open_connection():
+    """get_connection mit garantiertem close — auch im Fehlerfall.
+
+    Für alle DB-Zugriffe der Persistenzschicht: `with open_connection() as
+    conn:` statt manuellem conn.close(), damit eine Exception zwischen
+    Öffnen und Schließen keine Verbindung (und damit ggf. eine Schreibsperre)
+    offen hält.
+    """
+    conn = get_connection()
+
+    try:
+        yield conn
+
+    finally:
+        conn.close()

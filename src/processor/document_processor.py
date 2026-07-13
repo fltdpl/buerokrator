@@ -12,7 +12,7 @@ from src.organizer.trash import move_to_trash
 from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image_pdf
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
-from src.organizer.category_mapper import get_archive_category
+from src.organizer.category_mapper import get_archive_category, get_archive_root
 from src.organizer.date_utils import extract_year
 from src.organizer.filename_builder import (
     build_filename,
@@ -100,7 +100,7 @@ def archive_document(file_path, classification, extracted_data):
     document_type = classification["document_type"]
     category = get_archive_category(document_type)
     year = extract_year(extracted_data)
-    target_folder = Path("archive") / year / category
+    target_folder = get_archive_root() / year / category
     target_folder.mkdir(parents=True, exist_ok=True)
     new_filename = build_filename(classification, extracted_data, file_path)
     source = Path(file_path)

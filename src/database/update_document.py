@@ -1,6 +1,6 @@
 import json
 
-from src.database.database import get_connection
+from src.database.database import open_connection
 from src.organizer.date_utils import extract_year
 
 
@@ -14,39 +14,36 @@ def update_document(
     tax_relevant=None,
 ):
 
-    conn = get_connection()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        UPDATE documents
-        SET
-            filename = ?,
-            archive_path = ?,
-            document_type = ?,
-            extracted_data = ?,
-            notes = ?,
-            verified = 1,
-            tax_year = ?,
-            tax_relevant = ?
-        WHERE id = ?
-        """,
-        (
-            filename,
-            archive_path,
-            document_type,
-            json.dumps(
-                extracted_data,
-                ensure_ascii=False,
+        cursor.execute(
+            """
+            UPDATE documents
+            SET
+                filename = ?,
+                archive_path = ?,
+                document_type = ?,
+                extracted_data = ?,
+                notes = ?,
+                verified = 1,
+                tax_year = ?,
+                tax_relevant = ?
+            WHERE id = ?
+            """,
+            (
+                filename,
+                archive_path,
+                document_type,
+                json.dumps(
+                    extracted_data,
+                    ensure_ascii=False,
+                ),
+                notes,
+                extract_year(extracted_data),
+                None if tax_relevant is None else int(bool(tax_relevant)),
+                document_id,
             ),
-            notes,
-            extract_year(extracted_data),
-            None if tax_relevant is None else int(bool(tax_relevant)),
-            document_id,
-        ),
-    )
+        )
 
-    conn.commit()
-
-    conn.close()
+        conn.commit()

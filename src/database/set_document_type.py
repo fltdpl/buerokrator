@@ -1,4 +1,4 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def set_document_type(document_id, document_type):
@@ -8,17 +8,16 @@ def set_document_type(document_id, document_type):
     Typwechsel gelten andere Felder, das Dokument gehört erneut in den
     Prüf-Workflow.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        UPDATE documents
-        SET document_type = ?, verified = 0
-        WHERE id = ?
-        """,
-        (document_type, document_id),
-    )
+        cursor.execute(
+            """
+            UPDATE documents
+            SET document_type = ?, verified = 0
+            WHERE id = ?
+            """,
+            (document_type, document_id),
+        )
 
-    conn.commit()
-    conn.close()
+        conn.commit()

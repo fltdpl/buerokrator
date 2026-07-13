@@ -2,7 +2,9 @@ from pathlib import Path
 
 from nicegui import run, ui
 
+from src.core.config import load_config
 from src.core.document_types import DOCUMENT_TYPE_LABELS
+from src.core.logger import logger
 from src.database.list_documents import get_next_unverified_id
 from src.frontend.layout import card, page_layout
 from src.processor.batch_import import (
@@ -122,6 +124,20 @@ def import_page():
                     ui.timer(0.5, poll)
                     return
 
+                # Fehlgeschlagener Lauf: Fehler anzeigen, Neustart anbieten.
+                if state["error"]:
+                    ui.label(
+                        f"❌ Import abgebrochen: {state['error']}"
+                    ).classes("text-red-600")
+                    ui.button(
+                        "Neuer Import",
+                        on_click=lambda: (
+                            import_job.clear_result(),
+                            import_area.refresh(),
+                        ),
+                    ).props("flat")
+                    return
+
                 # Zuletzt beendeter Lauf: Ergebnis zeigen, bis "Neuer Import".
                 if state["result"] is not None:
                     render_result(state["result"])
@@ -154,11 +170,20 @@ def import_page():
                     # io_bound: OCR + LLM blockieren sonst die Event-Loop.
                     # Läuft in NiceGUIs app-globalem Hintergrund-Task, also
                     # unabhängig vom Client, der ihn gestartet hat.
-                    succeeded, duplicates, failed = await run.io_bound(
-                        import_inbox_documents, on_progress
-                    )
+                    # Ohne except bliebe bei einer Exception running=True
+                    # stehen und würde jeden weiteren Import blockieren.
+                    try:
+                        succeeded, duplicates, failed = await run.io_bound(
+                            import_inbox_documents, on_progress
+                        )
 
-                    import_job.finish(succeeded, duplicates, failed)
+                    except Exception as error:
+                        logger.exception("Stapel-Import fehlgeschlagen")
+                        import_job.abort(error)
+
+                    else:
+                        import_job.finish(succeeded, duplicates, failed)
+
                     import_area.refresh()
 
                 ui.button(
@@ -179,8 +204,10 @@ def import_page():
             ).classes("muted")
 
             async def handle_upload(event):
-                inbox = Path("inbox")
-                inbox.mkdir(exist_ok=True)
+                # Derselbe Inbox-Pfad wie beim Stapel-Import (aus der Config) —
+                # sonst landen Uploads bei geändertem Pfad im falschen Ordner.
+                inbox = Path(load_config()["paths"]["inbox"])
+                inbox.mkdir(parents=True, exist_ok=True)
 
                 # Nur den Dateinamen verwenden (keine Pfadanteile aus dem Client).
                 name = Path(event.file.name).name

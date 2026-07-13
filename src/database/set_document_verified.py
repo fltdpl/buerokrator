@@ -1,23 +1,22 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def set_document_verified(document_id, verified):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        UPDATE documents
-        SET verified = ?
-        WHERE id = ?
-        """,
-        (
-            verified,
-            document_id,
-        ),
-    )
+    with open_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE documents
+            SET verified = ?
+            WHERE id = ?
+            """,
+            (
+                verified,
+                document_id,
+            ),
+        )
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
 
 def mark_document_verified(document_id):

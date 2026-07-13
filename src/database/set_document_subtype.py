@@ -1,6 +1,6 @@
 import json
 
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def set_document_subtype(document_id, subtype):
@@ -13,39 +13,37 @@ def set_document_subtype(document_id, subtype):
 
     Gibt True zurück, wenn ein Dokument geändert wurde.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    row = cursor.execute(
-        "SELECT extracted_data FROM documents WHERE id = ?",
-        (document_id,),
-    ).fetchone()
+        row = cursor.execute(
+            "SELECT extracted_data FROM documents WHERE id = ?",
+            (document_id,),
+        ).fetchone()
 
-    if row is None:
-        conn.close()
-        return False
+        if row is None:
+            return False
 
-    try:
-        data = json.loads(row["extracted_data"] or "{}")
+        try:
+            data = json.loads(row["extracted_data"] or "{}")
 
-    except Exception:
-        data = {}
+        except Exception:
+            data = {}
 
-    if not isinstance(data, dict):
-        data = {}
+        if not isinstance(data, dict):
+            data = {}
 
-    data["document_subtype"] = subtype
+        data["document_subtype"] = subtype
 
-    cursor.execute(
-        """
-        UPDATE documents
-        SET extracted_data = ?, verified = 0
-        WHERE id = ?
-        """,
-        (json.dumps(data, ensure_ascii=False), document_id),
-    )
+        cursor.execute(
+            """
+            UPDATE documents
+            SET extracted_data = ?, verified = 0
+            WHERE id = ?
+            """,
+            (json.dumps(data, ensure_ascii=False), document_id),
+        )
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
     return True

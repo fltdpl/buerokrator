@@ -11,7 +11,7 @@ from src.core.document_types import (
     PENSION,
     TAX,
 )
-from src.organizer.category_mapper import get_archive_category
+from src.organizer.category_mapper import get_archive_category, get_archive_root
 from src.core.logger import logger
 from src.organizer.date_utils import extract_year, normalize_date, normalize_month
 from src.organizer.issuer_normalizer import normalize_issuer
@@ -71,7 +71,7 @@ def rename_document(
     # sodass umklassifizierte Dokumente im falschen Jahr-Ordner landeten.
     year = extract_year(extracted_data)
 
-    target_folder = Path("archive") / year / category
+    target_folder = get_archive_root() / year / category
 
     target_folder.mkdir(
         parents=True,
