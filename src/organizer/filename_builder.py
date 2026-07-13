@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.core.amount_utils import normalize_amount
 from src.core.document_types import (
     BANK,
     EMPLOYMENT,
@@ -103,28 +104,49 @@ def rename_document(
     return target
 
 
+def _text_value(value, default):
+    """LLM-Werte defensiv zu Text machen.
+
+    Modelle liefern gelegentlich Zahlen oder null, wo ein String erwartet
+    wird — ohne Coercion crasht der Dateinamen-Bau an `.replace()`.
+    """
+    if value is None:
+        return default
+
+    text = str(value).strip()
+
+    return text or default
+
+
+def _clean_name(value, default):
+    # str-Coercion + "/"-Ersatz: kein unbereinigter Modellwert darf als
+    # Pfadseparator wirken.
+    return _text_value(value, default).replace(" ", "_").replace("/", "_")
+
+
+def _issuer_name(value, default):
+    """Aussteller normalisieren und pfadsicher machen (str-Coercion zuerst)."""
+    return _clean_name(normalize_issuer(_text_value(value, default)), default)
+
+
 def build_invoice_filename(extracted_data, suffix):
 
-    document_date = extracted_data.get("document_date", "unknown_date")
-    document_date = normalize_date(document_date)
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
+    )
 
-    issuer = extracted_data.get("issuer", "unknown_issuer")
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_").replace("/", "_")
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
 
-    invoice_number = extracted_data.get("invoice_number", "unknown_invoice")
-    invoice_number = invoice_number.replace("/", "-")
+    invoice_number = _text_value(
+        extracted_data.get("invoice_number"), "unknown_invoice"
+    ).replace("/", "-")
 
-    amount = extracted_data.get("amount")
+    amount = normalize_amount(extracted_data.get("amount"))
 
     if amount is not None:
         return f"{document_date}_{issuer}_{invoice_number}_{amount:.0f}EUR{suffix}"
 
     return f"{document_date}_{issuer}{suffix}"
-
-
-def _clean_name(value, default):
-    return (value or default).replace(" ", "_").replace("/", "_")
 
 
 def build_tax_filename(extracted_data, suffix):
@@ -191,24 +213,19 @@ def build_employment_filename(extracted_data, suffix):
 
     if subtype == "sv_meldung":
         # SV-Meldung (§ 25 DEÜV): Meldezeitraum + Arbeitgeber + Betreff.
-        issuer = _clean_name(
-            normalize_issuer(extracted_data.get("issuer") or "unknown_issuer"),
-            "unknown_issuer",
-        )
+        issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
         subject = _clean_name(extracted_data.get("subject"), "SV-Meldung")
         prefix = period_prefix or normalize_date(
-            extracted_data.get("document_date", "unknown_date")
+            _text_value(extracted_data.get("document_date"), "unknown_date")
         )
         return f"{prefix}_{issuer}_{subject}{suffix}"
 
     # Arbeitsvertrag / Kündigung / Zeugnis / Sonstiges: Datum + Aussteller +
     # Betreff (Freitext).
     document_date = normalize_date(
-        extracted_data.get("document_date", "unknown_date")
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
-    issuer = extracted_data.get("issuer") or "unknown_issuer"
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_").replace("/", "_")
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
     subject = _clean_name(extracted_data.get("subject"), subtype or "Arbeit")
 
     return f"{document_date}_{issuer}_{subject}{suffix}"
@@ -216,20 +233,23 @@ def build_employment_filename(extracted_data, suffix):
 
 def build_insurance_filename(extracted_data, suffix):
 
-    document_date = extracted_data.get("document_date", "unknown_date")
-    document_date = normalize_date(document_date)
-    issuer = (
-        extracted_data.get("issuer")
-        or extracted_data.get("insurer")
-        or "unknown_issuer"
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_").replace("/", "_")
+    issuer = _issuer_name(
+        extracted_data.get("issuer") or extracted_data.get("insurer"),
+        "unknown_issuer",
+    )
 
-    insurance_type = extracted_data.get("insurance_type", "unknown_insurance")
-    insurance_type = insurance_type.replace(" ", "_").replace("/", "_")
-    policy_number = extracted_data.get("policy_number", "unknown_policy")
-    policy_number = policy_number.replace(" ", "-").replace("/", "-").replace(".", "-")
+    insurance_type = _clean_name(
+        extracted_data.get("insurance_type"), "unknown_insurance"
+    )
+    policy_number = (
+        _text_value(extracted_data.get("policy_number"), "unknown_policy")
+        .replace(" ", "-")
+        .replace("/", "-")
+        .replace(".", "-")
+    )
 
     return f"{document_date}_{issuer}_{insurance_type}_{policy_number}{suffix}"
 
@@ -239,27 +259,22 @@ def build_pension_filename(
     suffix,
 ):
 
-    document_date = extracted_data.get(
-        "document_date",
-        "unknown_date",
-    )
-    document_date = normalize_date(document_date)
-
-    issuer = extracted_data.get("issuer") or "unknown_issuer"
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_").replace("/", "_")
-
-    document_subtype = extracted_data.get(
-        "document_subtype",
-        "unknown",
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
 
-    policy_number = extracted_data.get(
-        "policy_number",
-        "unknown_policy",
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
+
+    document_subtype = _clean_name(
+        extracted_data.get("document_subtype"), "unknown"
     )
 
-    policy_number = policy_number.replace(" ", "-").replace("/", "-").replace(".", "-")
+    policy_number = (
+        _text_value(extracted_data.get("policy_number"), "unknown_policy")
+        .replace(" ", "-")
+        .replace("/", "-")
+        .replace(".", "-")
+    )
 
     return f"{document_date}_{issuer}_{document_subtype}_{policy_number}{suffix}"
 
@@ -270,22 +285,16 @@ def build_bank_filename(
 ):
 
     document_date = normalize_date(
-        extracted_data.get(
-            "document_date",
-            "unknown_date",
-        )
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
 
-    issuer = (
-        extracted_data.get("issuer") or extracted_data.get("bank") or "unknown_bank"
+    issuer = _issuer_name(
+        extracted_data.get("issuer") or extracted_data.get("bank"),
+        "unknown_bank",
     )
 
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_")
-
-    document_subtype = extracted_data.get(
-        "document_subtype",
-        "Kontoauszug",
+    document_subtype = _clean_name(
+        extracted_data.get("document_subtype"), "Kontoauszug"
     )
 
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
@@ -297,24 +306,16 @@ def build_housing_filename(
 ):
 
     document_date = normalize_date(
-        extracted_data.get(
-            "document_date",
-            "unknown_date",
-        )
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
 
-    issuer = (
-        extracted_data.get("issuer")
-        or extracted_data.get("landlord")
-        or "unknown_housing"
+    issuer = _issuer_name(
+        extracted_data.get("issuer") or extracted_data.get("landlord"),
+        "unknown_housing",
     )
 
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_")
-
-    document_subtype = extracted_data.get(
-        "document_subtype",
-        "Wohnen",
+    document_subtype = _clean_name(
+        extracted_data.get("document_subtype"), "Wohnen"
     )
 
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
@@ -326,15 +327,10 @@ def build_legal_filename(
 ):
 
     document_date = normalize_date(
-        extracted_data.get(
-            "document_date",
-            "unknown_date",
-        )
+        _text_value(extracted_data.get("document_date"), "unknown_date")
     )
 
-    issuer = extracted_data.get("issuer") or "unknown_issuer"
-    issuer = normalize_issuer(issuer)
-    issuer = issuer.replace(" ", "_").replace("/", "_")
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
 
     subject = _clean_name(extracted_data.get("subject"), "Recht")
 
