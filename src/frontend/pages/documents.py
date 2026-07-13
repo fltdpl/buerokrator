@@ -6,6 +6,7 @@ from src.database.list_documents import list_documents
 from src.database.search import search_documents
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, format_euro, page_layout
+from src.frontend.listing_order import set_listing_order
 from src.services.document_service import (
     available_years,
     build_table_rows,
@@ -14,7 +15,7 @@ from src.services.document_service import (
     reclassify_documents,
     set_documents_subtype,
 )
-from src.services.form_schema import all_subtype_labels
+from src.services.form_schema import subtype_config
 
 COLUMNS = [
     {"name": "id", "label": "ID", "field": "id", "sortable": True, "align": "left"},
@@ -45,6 +46,9 @@ def _table_rows(documents):
         rows.append(
             {
                 "id": row["id"],
+                # In der Zeile mitgeführt (keine eigene Spalte): die
+                # Bulk-Aktion „Unterart setzen" braucht den Typ der Auswahl.
+                "document_type": row["document_type"],
                 "status": "🟢" if row["verified"] else "🟡",
                 "year": str(row["year"]) if row["year"] else "-",
                 "art_label": _truncate(row["art_label"], 45),
@@ -120,6 +124,9 @@ def documents_page():
         documents = filtered_documents()
         rows = _table_rows(documents)
 
+        # Reihenfolge für die Pfeiltasten-Navigation in der Detailansicht.
+        set_listing_order([row["id"] for row in rows])
+
         with ui.row().classes("items-center gap-4 w-full"):
             ui.label(f"{len(rows)} Dokumente gefunden").classes("muted")
 
@@ -164,6 +171,10 @@ def documents_page():
             results.refresh()
 
         def reclassify_selected(document_type):
+            if not document_type:
+                ui.notify("Bitte eine Kategorie wählen.")
+                return
+
             changed = reclassify_documents(selected_ids(), document_type)
             ui.notify(
                 f"{changed} Dokument(e) auf "
@@ -172,13 +183,19 @@ def documents_page():
             )
             results.refresh()
 
-        subtype_labels = all_subtype_labels()
+        def selected_types():
+            types = {row.get("document_type") for row in table.selected}
+            types.discard(None)
+            return types
 
-        def set_subtype_selected(subtype):
-            label = subtype_labels.get(subtype, subtype)
+        def apply_subtype(subtype):
+            if not subtype:
+                ui.notify("Bitte eine Unterart wählen.")
+                return
+
             changed = set_documents_subtype(selected_ids(), subtype)
             ui.notify(
-                f"{changed} Dokument(e) auf Unterart '{label}' gesetzt "
+                f"{changed} Dokument(e) auf Unterart gesetzt "
                 "und zum erneuten Prüfen markiert."
             )
             results.refresh()
@@ -198,6 +215,42 @@ def documents_page():
             )
             delete_dialog.open()
 
+        # Reklassifizieren: Kategorie wählen + Anwenden.
+        reclassify_choice = {"value": None}
+
+        # Unterart setzen: die Optionen richten sich nach der Kategorie der
+        # Auswahl (nur sinnvoll bei einheitlichem Typ). Refresh via table.on
+        # ("selection") unten.
+        @ui.refreshable
+        def subtype_bulk():
+            types = selected_types()
+
+            if len(types) != 1:
+                ui.label(
+                    "Unterart: erst eine einheitliche Kategorie auswählen."
+                ).classes("text-xs muted")
+                return
+
+            config = subtype_config(next(iter(types)))
+            if not config:
+                ui.label("Unterart: diese Kategorie hat keine Unterarten.").classes(
+                    "text-xs muted"
+                )
+                return
+
+            options = {
+                value: config["labels"].get(value, value)
+                for value in config["options"]
+            }
+            choice = {"value": None}
+            select = ui.select(
+                options, label="Unterart setzen", with_input=True
+            ).props("dense").classes("w-56")
+            select.bind_value(choice, "value")
+            ui.button(
+                "Anwenden", on_click=lambda: apply_subtype(choice["value"])
+            ).props("dense unelevated")
+
         with ui.row().classes("items-center gap-3").bind_visibility_from(
             table, "selected", backward=bool
         ):
@@ -205,22 +258,25 @@ def documents_page():
                 table, "selected", lambda rows: f"{len(rows)} ausgewählt"
             ).classes("muted")
 
-            ui.select(
+            reclass_select = ui.select(
                 {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
                 label="Umklassifizieren nach",
-                on_change=lambda event: reclassify_selected(event.value),
             ).props("dense").classes("w-56")
+            reclass_select.bind_value(reclassify_choice, "value")
+            ui.button(
+                "Anwenden",
+                on_click=lambda: reclassify_selected(reclassify_choice["value"]),
+            ).props("dense unelevated")
 
-            ui.select(
-                subtype_labels,
-                label="Unterart setzen",
-                with_input=True,
-                on_change=lambda event: set_subtype_selected(event.value),
-            ).props("dense").classes("w-56")
+            subtype_bulk()
 
             ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(
                 "flat dense color=negative"
             )
+
+        # Optionen der Unterart-Auswahl an die aktuelle Selektion anpassen
+        # (feuert, nachdem table.selected aktualisiert wurde).
+        table.on_select(lambda event: subtype_bulk.refresh())
 
     def set_filter(key, value):
         filters[key] = value

@@ -231,25 +231,6 @@ def is_known_subtype(document_type, subtype):
     return bool(config) and subtype in config["options"]
 
 
-def all_subtype_labels():
-    """Alle bekannten Subtypen über alle Typen als {wert: label}.
-
-    Für die Bulk-Aktion „Unterart setzen". Gleichnamige Subtypen (z. B.
-    „sonstiges") teilen sich ein Label — das ist gewollt.
-    """
-    merged = {}
-    for labels in (
-        TAX_SUBTYPE_LABELS,
-        PENSION_SUBTYPE_LABELS,
-        HOUSING_SUBTYPE_LABELS,
-        BANK_SUBTYPE_LABELS,
-        EMPLOYMENT_SUBTYPE_LABELS,
-    ):
-        merged.update(labels)
-
-    return merged
-
-
 def form_fields(document_type, subtype=None):
     """Bearbeitbare Felder für Typ (+ Subtyp), in Anzeige-Reihenfolge.
 
