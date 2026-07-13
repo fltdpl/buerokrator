@@ -3,7 +3,7 @@ from pathlib import Path
 
 from src.core.config import load_config
 from src.core.logger import logger
-from src.database.database import get_connection
+from src.database.database import open_connection
 from src.database.init_database import init_database
 
 
@@ -33,13 +33,12 @@ def clear_archive():
 
 def reset_documents_table():
     """Verwirft die documents-Tabelle und legt das Schema neu an."""
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor.execute("DROP TABLE IF EXISTS documents")
+        cursor.execute("DROP TABLE IF EXISTS documents")
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
     init_database()
 

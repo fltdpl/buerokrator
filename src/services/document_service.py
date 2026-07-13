@@ -53,6 +53,12 @@ def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
     Bewusst KEIN endgültiges Löschen: ein Fehlklick darf kein
     Original-Dokument vernichten. Gibt den Papierkorb-Pfad zurück
     (None, wenn die Archivdatei fehlte).
+
+    Reihenfolge bewusst Datei-zuerst (nicht atomar): bricht es zwischen den
+    Schritten ab, zeigt die DB ein Dokument mit fehlender Archivdatei — das
+    fällt in der App sofort auf und die Datei liegt auffindbar im Papierkorb.
+    Umgekehrt (DB zuerst) entstünde eine unsichtbare Waisen-Datei im Archiv.
+    Sichtbarer Defekt schlägt unsichtbaren.
     """
     row = get_document(document_id)
 

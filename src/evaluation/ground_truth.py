@@ -1,7 +1,7 @@
 import json
 
 from src.core.document_fields import whitelist_fields
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 def load_ground_truth(document_type=None, limit=None):
@@ -12,9 +12,6 @@ def load_ground_truth(document_type=None, limit=None):
     Sollwerte, der gespeicherte OCR-Text als Eingabe. Gemessen wird damit
     Klassifikation + Extraktion — nicht die OCR-Qualität selbst.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
-
     query = """
         SELECT id, filename, document_type, extracted_data, document_text
         FROM documents
@@ -31,8 +28,8 @@ def load_ground_truth(document_type=None, limit=None):
         query += " LIMIT ?"
         params.append(limit)
 
-    rows = cursor.execute(query, params).fetchall()
-    conn.close()
+    with open_connection() as conn:
+        rows = conn.cursor().execute(query, params).fetchall()
 
     cases = []
     for doc_id, filename, doc_type, extracted_data, document_text in rows:

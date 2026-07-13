@@ -1,4 +1,4 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 
 DOCUMENT_COLUMNS = {
@@ -79,25 +79,24 @@ def create_indexes(cursor):
 
 
 def init_database():
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor.execute(
-        f"""
-        CREATE TABLE IF NOT EXISTS documents (
-            {", ".join(
-                f"{name} {definition}"
-                for name, definition in DOCUMENT_COLUMNS.items()
-            )}
+        cursor.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS documents (
+                {", ".join(
+                    f"{name} {definition}"
+                    for name, definition in DOCUMENT_COLUMNS.items()
+                )}
+            )
+            """,
         )
-        """,
-    )
 
-    migrate_documents_table(cursor)
-    create_indexes(cursor)
+        migrate_documents_table(cursor)
+        create_indexes(cursor)
 
-    conn.commit()
-    conn.close()
+        conn.commit()
 
 
 if __name__ == "__main__":

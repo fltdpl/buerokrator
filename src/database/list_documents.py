@@ -1,4 +1,4 @@
-from src.database.database import get_connection
+from src.database.database import open_connection
 
 # Spalten, die die Dokument-Konsumenten (Services, Frontend, Export) erwarten.
 # Zugriff erfolgt per Name (dict), die Reihenfolge hier ist nur kosmetisch.
@@ -17,30 +17,28 @@ _DOCUMENT_FIELDS = """
 
 
 def list_documents(document_type=None):
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    if document_type:
-        rows = cursor.execute(
-            f"""
-            SELECT {_DOCUMENT_FIELDS}
-            FROM documents
-            WHERE document_type = ?
-            ORDER BY id DESC
-            """,
-            (document_type,),
-        ).fetchall()
+        if document_type:
+            rows = cursor.execute(
+                f"""
+                SELECT {_DOCUMENT_FIELDS}
+                FROM documents
+                WHERE document_type = ?
+                ORDER BY id DESC
+                """,
+                (document_type,),
+            ).fetchall()
 
-    else:
-        rows = cursor.execute(
-            f"""
-            SELECT {_DOCUMENT_FIELDS}
-            FROM documents
-            ORDER BY id DESC
-            """
-        ).fetchall()
-
-    conn.close()
+        else:
+            rows = cursor.execute(
+                f"""
+                SELECT {_DOCUMENT_FIELDS}
+                FROM documents
+                ORDER BY id DESC
+                """
+            ).fetchall()
 
     return [dict(row) for row in rows]
 
@@ -49,19 +47,17 @@ def get_document(document_id):
     if document_id is None:
         return None
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    row = cursor.execute(
-        f"""
-        SELECT {_DOCUMENT_FIELDS}
-        FROM documents
-        WHERE id = ?
-        """,
-        (document_id,),
-    ).fetchone()
-
-    conn.close()
+        row = cursor.execute(
+            f"""
+            SELECT {_DOCUMENT_FIELDS}
+            FROM documents
+            WHERE id = ?
+            """,
+            (document_id,),
+        ).fetchone()
 
     return dict(row) if row is not None else None
 
@@ -72,20 +68,18 @@ def get_next_unverified_id(exclude_id=None):
     Aufsteigend nach ID, damit der Prüf-Workflow eine stabile Reihenfolge
     hat; exclude_id blendet das gerade bearbeitete Dokument aus.
     """
-    conn = get_connection()
-    cursor = conn.cursor()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    row = cursor.execute(
-        """
-        SELECT id
-        FROM documents
-        WHERE verified = 0 AND id != ?
-        ORDER BY id ASC
-        LIMIT 1
-        """,
-        (exclude_id if exclude_id is not None else -1,),
-    ).fetchone()
-
-    conn.close()
+        row = cursor.execute(
+            """
+            SELECT id
+            FROM documents
+            WHERE verified = 0 AND id != ?
+            ORDER BY id ASC
+            LIMIT 1
+            """,
+            (exclude_id if exclude_id is not None else -1,),
+        ).fetchone()
 
     return row["id"] if row else None

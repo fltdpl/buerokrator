@@ -3,7 +3,7 @@ from datetime import datetime
 
 from src.core.amount_utils import enforce_amount_signs
 from src.core.document_fields import whitelist_fields
-from src.database.database import get_connection
+from src.database.database import open_connection
 from src.database.update_document import update_document
 from src.organizer.date_utils import extract_year
 from src.organizer.filename_builder import rename_document
@@ -19,52 +19,50 @@ def insert_document(
     content_hash=None,
 ):
 
-    conn = get_connection()
-    cursor = conn.cursor()
-
     verified = 0
 
-    cursor.execute(
-        """
-        INSERT INTO documents (
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-            filename,
-            archive_path,
-            document_type,
-            extracted_data,
-            document_text,
-            created_at,
-            verified,
-            tax_year,
-            content_hash,
-            tax_relevant
+        cursor.execute(
+            """
+            INSERT INTO documents (
 
+                filename,
+                archive_path,
+                document_type,
+                extracted_data,
+                document_text,
+                created_at,
+                verified,
+                tax_year,
+                content_hash,
+                tax_relevant
+
+            )
+
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                filename,
+                archive_path,
+                document_type,
+                json.dumps(
+                    extracted_data,
+                    ensure_ascii=False,
+                ),
+                document_text,
+                datetime.now().isoformat(),
+                verified,
+                extract_year(extracted_data),
+                content_hash,
+                int(default_tax_relevance(document_type, extracted_data)),
+            ),
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            filename,
-            archive_path,
-            document_type,
-            json.dumps(
-                extracted_data,
-                ensure_ascii=False,
-            ),
-            document_text,
-            datetime.now().isoformat(),
-            verified,
-            extract_year(extracted_data),
-            content_hash,
-            int(default_tax_relevance(document_type, extracted_data)),
-        ),
-    )
+        document_id = cursor.lastrowid
 
-    document_id = cursor.lastrowid
-
-    conn.commit()
-
-    conn.close()
+        conn.commit()
 
     return document_id
 
@@ -109,21 +107,19 @@ def update_notes(
     notes,
 ):
 
-    conn = get_connection()
+    with open_connection() as conn:
+        cursor = conn.cursor()
 
-    cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE documents
+            SET notes = ?
+            WHERE id = ?
+            """,
+            (
+                notes,
+                document_id,
+            ),
+        )
 
-    cursor.execute(
-        """
-        UPDATE documents
-        SET notes = ?
-        WHERE id = ?
-        """,
-        (
-            notes,
-            document_id,
-        ),
-    )
-
-    conn.commit()
-    conn.close()
+        conn.commit()

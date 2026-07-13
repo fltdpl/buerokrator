@@ -22,7 +22,7 @@ from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
 )
-from src.tax.tax_relevance import resolve_tax_relevance
+from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
     empty_fields,
     form_fields,
@@ -59,6 +59,13 @@ def document_detail_page(document_id: int):
         "subtype": data.get("document_subtype", ""),
     }
     inputs = {}
+    # Ausgangswerte für den Dirty-Check: Formularfelder beim Aufbau (siehe
+    # form_area) plus Typ/Subtyp beim Seitenaufruf.
+    initial_values = {}
+    original_meta = {
+        "document_type": state["document_type"],
+        "subtype": state["subtype"] or "",
+    }
 
     # Effektive Steuerrelevanz: gespeicherter Wert, sonst der aus Typ/Subtyp
     # abgeleitete Default. Die Checkbox unten überstimmt ihn beim Speichern.
@@ -130,38 +137,89 @@ def document_detail_page(document_id: int):
             ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
             ui.button("Ja, löschen", on_click=delete).props("color=negative")
 
+    # ------------------------------------------------------------------
+    # Dirty-Check: Navigation verwirft Änderungen nicht mehr kommentarlos.
+    # ------------------------------------------------------------------
+
+    def is_dirty():
+        if state["document_type"] != original_meta["document_type"]:
+            return True
+
+        if (state["subtype"] or "") != original_meta["subtype"]:
+            return True
+
+        if notes_area.value != (document["notes"] or ""):
+            return True
+
+        if bool(tax_relevant_checkbox.value) != initial_tax_relevant:
+            return True
+
+        return any(
+            element.value != initial_values.get(key)
+            for key, element in inputs.items()
+        )
+
+    pending_leave = {"action": None}
+
+    def discard_and_leave():
+        leave_dialog.close()
+
+        if pending_leave["action"]:
+            pending_leave["action"]()
+
+    with ui.dialog() as leave_dialog, ui.card():
+        ui.label("Ungespeicherte Änderungen gehen verloren — fortfahren?")
+
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=leave_dialog.close).props("flat")
+            ui.button("Verwerfen & weiter", on_click=discard_and_leave).props(
+                "color=negative"
+            )
+
+    def guarded(action):
+        """Führt eine Navigation aus; bei ungespeicherten Änderungen erst
+        nach Rückfrage."""
+        if not is_dirty():
+            action()
+            return
+
+        pending_leave["action"] = action
+        leave_dialog.open()
+
     def handle_key(event):
         if not event.action.keydown or event.action.repeat:
             return
 
-        if event.key.escape:
-            ui.navigate.to("/dokumente")
-
-        elif event.key.enter and event.modifiers.ctrl:
+        if event.key.enter and event.modifiers.ctrl:
             save(verify=True)
 
-    # ignore=[]: die Shortcuts sollen auch beim Tippen in Feldern greifen
-    # (Strg+Enter und Escape kollidieren nicht mit Texteingabe).
+    # ignore=[]: Strg+Enter soll auch beim Tippen in Feldern greifen
+    # (kollidiert nicht mit Texteingabe).
     ui.keyboard(on_key=handle_key, ignore=[])
 
-    def handle_arrows(event):
+    def handle_navigation_keys(event):
         if not event.action.keydown or event.action.repeat:
             return
 
-        if event.key.arrow_right:
-            navigate_adjacent(1)
+        if event.key.escape:
+            guarded(lambda: ui.navigate.to("/dokumente"))
+
+        elif event.key.arrow_right:
+            guarded(lambda: navigate_adjacent(1))
 
         elif event.key.arrow_left:
-            navigate_adjacent(-1)
+            guarded(lambda: navigate_adjacent(-1))
 
-    # Eigene Tastatur mit Standard-ignore (input/textarea/…): die Pfeiltasten
-    # blättern nur, wenn der Fokus NICHT in einem Eingabefeld ist — sonst
-    # bewegen sie dort weiter den Cursor.
-    ui.keyboard(on_key=handle_arrows)
+    # Eigene Tastatur mit Standard-ignore (input/textarea/…): Escape und
+    # Pfeiltasten navigieren nur, wenn der Fokus NICHT in einem Eingabefeld
+    # ist — mitten im Tippen wäre das Datenverlust (Review P3). Zusätzlich
+    # fragt guarded() bei ungespeicherten Änderungen nach.
+    ui.keyboard(on_key=handle_navigation_keys)
 
     @ui.refreshable
     def form_area():
         inputs.clear()
+        initial_values.clear()
 
         ui.select(
             {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
@@ -227,6 +285,16 @@ def document_detail_page(document_id: int):
                 element.props('hint="nicht erkannt"')
 
             inputs[key] = element
+            initial_values[key] = default
+
+    def refresh_tax_relevance_default():
+        # Nach Typ-/Subtypwechsel gilt ein anderer Steuerrelevanz-Default
+        # (Review P3) — die Checkbox folgt ihm; der Nutzer kann weiterhin
+        # umschalten, bevor er speichert.
+        tax_relevant_checkbox.value = default_tax_relevance(
+            state["document_type"],
+            {**data, "document_subtype": state["subtype"] or None},
+        )
 
     def change_type(document_type):
         state["document_type"] = document_type
@@ -240,10 +308,12 @@ def document_detail_page(document_id: int):
         if sub_config and not current:
             state["subtype"] = sub_config["options"][0]
 
+        refresh_tax_relevance_default()
         form_area.refresh()
 
     def change_subtype(subtype):
         state["subtype"] = subtype
+        refresh_tax_relevance_default()
         form_area.refresh()
 
     # ------------------------------------------------------------------
@@ -266,12 +336,12 @@ def document_detail_page(document_id: int):
                 )
 
             with ui.row().classes("gap-2"):
-                ui.button("←", on_click=lambda: navigate_adjacent(-1)).props(
-                    "flat dense"
-                ).tooltip("Vorheriges Dokument (Pfeil links)")
-                ui.button("→", on_click=lambda: navigate_adjacent(1)).props(
-                    "flat dense"
-                ).tooltip("Nächstes Dokument (Pfeil rechts)")
+                ui.button(
+                    "←", on_click=lambda: guarded(lambda: navigate_adjacent(-1))
+                ).props("flat dense").tooltip("Vorheriges Dokument (Pfeil links)")
+                ui.button(
+                    "→", on_click=lambda: guarded(lambda: navigate_adjacent(1))
+                ).props("flat dense").tooltip("Nächstes Dokument (Pfeil rechts)")
                 if Path(document["archive_path"]).exists():
                     ui.button(
                         "📥 Download",

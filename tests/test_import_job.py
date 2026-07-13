@@ -64,6 +64,30 @@ def test_clear_result():
     assert import_job.get_state()["result"] is None
 
 
+def test_abort_frees_job_and_stores_error():
+    import_job.start()
+    import_job.abort(RuntimeError("OCR kaputt"))
+
+    state = import_job.get_state()
+    # Kern des Fixes: running wird freigegeben, sonst blockiert jeder
+    # weitere Import bis zum App-Neustart.
+    assert state["running"] is False
+    assert state["result"] is None
+    assert "OCR kaputt" in state["error"]
+
+    # Neuer Lauf ist sofort wieder möglich und löscht den Fehler.
+    import_job.start()
+    assert import_job.get_state()["error"] is None
+
+
+def test_clear_result_also_clears_error():
+    import_job.start()
+    import_job.abort("Fehler")
+    import_job.clear_result()
+
+    assert import_job.get_state()["error"] is None
+
+
 def test_get_state_returns_a_copy():
     state = import_job.get_state()
     state["running"] = True

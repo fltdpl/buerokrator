@@ -15,6 +15,10 @@ _STATE = {
     "total": 0,
     "current_filename": "",
     "result": None,
+    # Klartext-Fehlermeldung des letzten Laufs (None = kein Fehler). Ohne
+    # sauberes Zurücksetzen im Fehlerfall bliebe running=True stehen und
+    # würde jeden weiteren Import blockieren.
+    "error": None,
 }
 
 
@@ -32,6 +36,7 @@ def start():
     _STATE["total"] = 0
     _STATE["current_filename"] = ""
     _STATE["result"] = None
+    _STATE["error"] = None
 
 
 def update_progress(index, total, filename):
@@ -42,6 +47,7 @@ def update_progress(index, total, filename):
 
 def finish(succeeded, duplicates, failed):
     _STATE["running"] = False
+    _STATE["error"] = None
     _STATE["result"] = {
         "succeeded": succeeded,
         "duplicates": duplicates,
@@ -49,8 +55,16 @@ def finish(succeeded, duplicates, failed):
     }
 
 
+def abort(message):
+    """Beendet den Lauf nach einem Fehler: Job freigeben, Fehler merken."""
+    _STATE["running"] = False
+    _STATE["result"] = None
+    _STATE["error"] = str(message)
+
+
 def clear_result():
     _STATE["result"] = None
+    _STATE["error"] = None
 
 
 def get_state():
@@ -64,3 +78,4 @@ def _reset_for_tests():
     _STATE["total"] = 0
     _STATE["current_filename"] = ""
     _STATE["result"] = None
+    _STATE["error"] = None
