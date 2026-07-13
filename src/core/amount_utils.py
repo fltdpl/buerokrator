@@ -1,3 +1,6 @@
+import re
+
+
 def normalize_amount(value):
     """Wandelt einen Betrag (LLM-Ausgabe oder Benutzereingabe) in einen float um.
 
@@ -22,6 +25,14 @@ def normalize_amount(value):
 
     elif "," in text:
         text = text.replace(",", ".")
+
+    elif re.fullmatch(r"-?\d{1,3}(\.\d{3})+", text):
+        # Deutsche Tausenderpunkte OHNE Dezimalkomma: "1.234" ist in
+        # deutschen Dokumenten 1234, nicht 1,234 — float() würde sonst
+        # still einen Faktor-1000-Fehler erzeugen. Greift nur beim
+        # eindeutigen Muster (Dreiergruppen); "1.23" und "1234.56"
+        # bleiben englische Dezimalzahlen.
+        text = text.replace(".", "")
 
     try:
         return float(text)
