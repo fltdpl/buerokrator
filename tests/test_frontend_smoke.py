@@ -93,6 +93,8 @@ async def test_document_detail_renders(user: User):
     await user.open(f"/dokumente/{document_id}")
     await user.should_see("Speichern & Freigeben")
     await user.should_see("Aussteller")
+    # Dokument-ID im Kopf sichtbar.
+    await user.should_see(f"ID {document_id}")
 
 
 @pytest.mark.asyncio

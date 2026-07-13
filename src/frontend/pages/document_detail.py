@@ -9,7 +9,12 @@ from src.core.document_types import (
     normalize_document_type,
 )
 from src.database.document_repository import save_document
-from src.database.list_documents import get_document, get_next_unverified_id
+from src.database.list_documents import (
+    get_document,
+    get_next_unverified_id,
+    list_documents,
+)
+from src.frontend.listing_order import adjacent_id, get_listing_order
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, page_layout
@@ -101,6 +106,19 @@ def document_detail_page(document_id: int):
         set_document_verified(document_id, 0)
         ui.navigate.to(f"/dokumente/{document_id}")
 
+    def navigate_adjacent(step):
+        """Blättert in der Listenreihenfolge (Fallback: Standardreihenfolge)."""
+        order = get_listing_order()
+        if document_id not in order:
+            order = [row["id"] for row in list_documents()]
+
+        target = adjacent_id(order, document_id, step)
+        if target is not None:
+            ui.navigate.to(f"/dokumente/{target}")
+
+        else:
+            ui.notify("Kein weiteres Dokument in dieser Richtung.")
+
     def delete():
         move_document_to_trash(document_id)
         ui.navigate.to("/dokumente")
@@ -125,6 +143,21 @@ def document_detail_page(document_id: int):
     # ignore=[]: die Shortcuts sollen auch beim Tippen in Feldern greifen
     # (Strg+Enter und Escape kollidieren nicht mit Texteingabe).
     ui.keyboard(on_key=handle_key, ignore=[])
+
+    def handle_arrows(event):
+        if not event.action.keydown or event.action.repeat:
+            return
+
+        if event.key.arrow_right:
+            navigate_adjacent(1)
+
+        elif event.key.arrow_left:
+            navigate_adjacent(-1)
+
+    # Eigene Tastatur mit Standard-ignore (input/textarea/…): die Pfeiltasten
+    # blättern nur, wenn der Fokus NICHT in einem Eingabefeld ist — sonst
+    # bewegen sie dort weiter den Cursor.
+    ui.keyboard(on_key=handle_arrows)
 
     @ui.refreshable
     def form_area():
@@ -228,9 +261,17 @@ def document_detail_page(document_id: int):
         with ui.row().classes("items-center justify-between w-full"):
             with ui.column().classes("gap-0"):
                 ui.label(display_name).classes("text-3xl page-title")
-                ui.label(f"{type_label} · {status_text}").classes("muted")
+                ui.label(f"ID {document_id} · {type_label} · {status_text}").classes(
+                    "muted"
+                )
 
             with ui.row().classes("gap-2"):
+                ui.button("←", on_click=lambda: navigate_adjacent(-1)).props(
+                    "flat dense"
+                ).tooltip("Vorheriges Dokument (Pfeil links)")
+                ui.button("→", on_click=lambda: navigate_adjacent(1)).props(
+                    "flat dense"
+                ).tooltip("Nächstes Dokument (Pfeil rechts)")
                 if Path(document["archive_path"]).exists():
                     ui.button(
                         "📥 Download",
@@ -273,7 +314,7 @@ def document_detail_page(document_id: int):
                 )
                 ui.label(
                     f"{progress_hint} · Strg+Enter = Speichern & Freigeben · "
-                    "Esc = zurück zur Liste"
+                    "Esc = zurück zur Liste · ←/→ = vorheriges/nächstes Dokument"
                 ).classes("text-xs muted")
 
                 notes_area = ui.textarea(
