@@ -5,6 +5,7 @@ reine `create_backup` ist ohne App-Kontext testbar; `run_backup` verdrahtet
 ihn mit der Konfiguration.
 """
 
+import os
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -41,6 +42,14 @@ def create_backup(db_path, archive_dir, target_dir, backup_name):
                 if file.is_file():
                     arcname = Path("archive") / file.relative_to(archive_dir)
                     archive.write(file, arcname=str(arcname))
+
+    # Backup enthält DB (Volltexte) + alle Dokumente im Klartext — nur für
+    # den Besitzer lesbar.
+    try:
+        os.chmod(zip_path, 0o600)
+
+    except OSError:
+        pass
 
     return zip_path
 

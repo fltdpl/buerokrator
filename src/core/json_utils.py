@@ -2,7 +2,7 @@ import json
 import re
 
 
-def parse_llm_json(content):
+def parse_llm_json(content: str) -> dict | list:
     """Parst die JSON-Antwort eines LLM (robust gegen typische Verpackungen).
 
     Entfernt Markdown-Codezäune; scheitert das direkte Parsen, wird der

@@ -34,6 +34,11 @@ def serve_pdf(document_id: int):
 
     Bewusst über die Dokument-ID statt über Pfade (kein Zugriff auf
     beliebige Dateien) und nur an localhost gebunden.
+
+    Bewusste Abwägung (Review P4): kein Auth — jeder lokale Prozess kann
+    bei laufender App PDFs über fortlaufende IDs abrufen. Für den
+    Ein-Nutzer-Betrieb auf 127.0.0.1 akzeptiert; SOBALD Mehrbenutzer/
+    Accounts kommen, braucht diese Route eine Zugriffsprüfung.
     """
     row = get_document(document_id)
 
