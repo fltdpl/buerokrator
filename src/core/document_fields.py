@@ -242,7 +242,7 @@ SUBTYPE_ALIASES = {
 }
 
 
-def normalize_subtype(document_type, value):
+def normalize_subtype(document_type: str, value: object) -> object:
     """Normalisiert einen Subtyp auf das kanonische Vokabular.
 
     Kleinschreibung + Alias-Mapping; LLM-Tippfehler (z. B.
@@ -265,7 +265,7 @@ def normalize_subtype(document_type, value):
     return aliased
 
 
-def whitelist_fields(document_type, data):
+def whitelist_fields(document_type: str, data: dict | None) -> dict:
     """Reduziert ein Datendict auf die für den Dokumenttyp erlaubten Felder.
 
     Für Steuerdokumente wird zusätzlich nach document_subtype gefiltert, sodass

@@ -24,10 +24,6 @@ def get_file_type(file_path):
     return Path(file_path).suffix.lower()
 
 
-def validate_document(file_path):
-    logger.info(f"Validierung gestartet: {file_path}")
-
-
 def wait_for_file(file_path):
     """Wartet, bis die Datei lesbar ist und ihre Größe stabil bleibt.
 
@@ -114,11 +110,8 @@ def archive_document(file_path, classification, extracted_data):
 
 
 def analyze_document(file_path):
-    if not wait_for_file(file_path):
-        raise Exception(f"Datei konnte nicht geöffnet werden: {file_path}")
-
-    validate_document(file_path)
-
+    # Kein eigenes wait_for_file mehr: der einzige Aufrufer (process) wartet
+    # bereits — der doppelte Aufruf kostete pro Datei eine zweite Warteschleife.
     document_text = extract_text(file_path)
     logger.info(f"Textlänge: {len(document_text)}")
 

@@ -1,7 +1,7 @@
 import re
 
 
-def normalize_amount(value):
+def normalize_amount(value: object) -> float | None:
     """Wandelt einen Betrag (LLM-Ausgabe oder Benutzereingabe) in einen float um.
 
     Behandelt Währungszeichen sowie deutsche (1.234,56) und englische
@@ -61,7 +61,7 @@ AMOUNT_FIELD_NAMES = {
 SIGNED_AMOUNT_FIELDS = {"settlement_amount"}
 
 
-def enforce_amount_signs(data):
+def enforce_amount_signs(data: dict | None) -> dict | None:
     """Speichert Geldbeträge als Beträge (Magnitude).
 
     Steuern/Abzüge werden dadurch unabhängig davon, ob sie versehentlich mit

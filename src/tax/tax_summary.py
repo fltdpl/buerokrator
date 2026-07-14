@@ -94,7 +94,7 @@ NON_DEDUCTIBLE_INSURANCE_KEYWORDS = (
 )
 
 
-def document_deductibility(document_type, data):
+def document_deductibility(document_type: str, data: dict) -> str:
     """Absetzbarkeit eines einzelnen Dokuments (deductible/not/unclear)."""
     if document_type != INSURANCE:
         category = tax_category_for_type(document_type)
@@ -125,7 +125,7 @@ TAX_AMOUNT_FIELDS = {
 }
 
 
-def resolve_document_amount(document_type, data):
+def resolve_document_amount(document_type: str, data: dict) -> float | None:
     """Betrag eines Dokuments für die Übersicht (generisch oder benannt)."""
     amount = normalize_amount(data.get("amount"))
 
@@ -144,7 +144,7 @@ def resolve_document_amount(document_type, data):
     return None
 
 
-def tax_category_for_type(document_type):
+def tax_category_for_type(document_type: str) -> str:
     return TAX_CATEGORY_BY_TYPE.get(document_type, "sonstiges")
 
 
@@ -161,7 +161,7 @@ def _parse_data(raw):
     return data if isinstance(data, dict) else {}
 
 
-def available_tax_years(documents=None):
+def available_tax_years(documents: list[dict] | None = None) -> list[int]:
     if documents is None:
         documents = list_documents()
 
@@ -183,7 +183,7 @@ def _new_category_entry(category):
     }
 
 
-def build_tax_summary(year, documents=None):
+def build_tax_summary(year: int, documents: list[dict] | None = None) -> dict:
     """Aggregiert alle Dokumente eines Archivjahres zu einer Steuerübersicht.
 
     Gruppiert nach Steuerkategorie, summiert Beträge und trennt geprüfte von
@@ -313,7 +313,7 @@ def build_tax_summary(year, documents=None):
     }
 
 
-def export_tax_summary_csv(summary):
+def export_tax_summary_csv(summary: dict) -> str:
     """Jahres-CSV je Dokument gemäß docs/05_Steuerlogik.md.
 
     Spalten: Datum, Kategorie, Betrag, Absetzbar, Geprueft, Dokumentreferenz.

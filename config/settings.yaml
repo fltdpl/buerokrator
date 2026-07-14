@@ -15,7 +15,6 @@ ocr:
     windows: C:/Program Files/poppler/poppler-26.02.0/Library/bin
     linux: ""
 classifier:
-  mode: llm
   model: gemma3:4b
   max_input_chars: 3000
   temperature: 0.0

@@ -1,4 +1,6 @@
+import os
 import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -7,7 +9,7 @@ from src.core.config import load_config
 _schema_ready = False
 
 
-def _ensure_schema():
+def _ensure_schema() -> None:
     """Führt die Schema-Migration einmal pro Prozess aus.
 
     So läuft die Migration automatisch beim ersten Datenbankzugriff (App-Start),
@@ -25,8 +27,19 @@ def _ensure_schema():
 
     init_database()
 
+    # Die DB enthält OCR-Volltexte aller Dokumente — nur für den Besitzer
+    # lesbar. Einmal pro Prozess; die WAL-/SHM-Dateien erben die Rechte
+    # der Hauptdatei.
+    db_path = load_config()["database"]["path"]
 
-def get_connection():
+    try:
+        os.chmod(db_path, 0o600)
+
+    except OSError:
+        pass
+
+
+def get_connection() -> sqlite3.Connection:
     config = load_config()
 
     db_path = config["database"]["path"]
@@ -53,7 +66,7 @@ def get_connection():
 
 
 @contextmanager
-def open_connection():
+def open_connection() -> "Iterator[sqlite3.Connection]":
     """get_connection mit garantiertem close — auch im Fehlerfall.
 
     Für alle DB-Zugriffe der Persistenzschicht: `with open_connection() as

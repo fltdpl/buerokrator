@@ -51,7 +51,10 @@ def run_extractor(prompt_file, text, max_input_chars=None):
         },
     )
 
-    logger.debug(f"Extraktor-Antwort: {response.message.content}")
+    # Gekürzt: die volle Antwort enthält sämtliche extrahierten Werte
+    # (Beträge, Nummern) — fürs Debugging reicht der Anfang, das Log soll
+    # keine Komplettkopie der Dokumentdaten werden.
+    logger.debug(f"Extraktor-Antwort: {response.message.content[:300]}")
 
     return parse_llm_json(response.message.content)
 

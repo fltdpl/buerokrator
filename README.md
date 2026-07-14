@@ -71,8 +71,9 @@ python evaluate.py --limit 40    # Qualitätsmessung gegen geprüfte Dokumente
 Pipeline: `inbox` → OCR (`src/ocr`) → Klassifikation (`src/classifier`) →
 Extraktion → Organizer (`src/organizer`) → Datenbank (`src/database`);
 Steuer-Auswertung in `src/tax`. Die Oberfläche (`src/frontend`, NiceGUI)
-enthält nur Darstellung und Event-Verdrahtung; die Anwendungslogik liegt
-framework-frei und getestet in `src/services`.
+enthält Darstellung und Event-Verdrahtung; die Fachlogik liegt
+framework-frei und getestet in `src/services`, einfache Lesezugriffe gehen
+direkt an `src/database`.
 
 Weiterführende Dokumentation liegt im Ordner `docs/`.
 

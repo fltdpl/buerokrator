@@ -15,7 +15,7 @@ kann.
 from src.core.document_types import EMPLOYMENT, INSURANCE, PENSION, TAX
 
 
-def default_tax_relevance(document_type, data):
+def default_tax_relevance(document_type: str, data: dict | None) -> bool:
     """Abgeleiteter Default für die Steuerrelevanz (bool).
 
     Bewusst grob; der Nutzer korrigiert Einzelfälle im Prüf-Formular.
@@ -53,7 +53,9 @@ def default_tax_relevance(document_type, data):
     return False
 
 
-def resolve_tax_relevance(document_type, data, stored):
+def resolve_tax_relevance(
+    document_type: str, data: dict | None, stored: int | None
+) -> bool:
     """Effektive Steuerrelevanz: gespeicherter Wert, sonst der Default.
 
     stored ist der DB-Spaltenwert (0/1/None); None = nie gesetzt (Altbestand
