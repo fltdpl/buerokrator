@@ -17,7 +17,7 @@ from src.database.list_documents import get_document
 from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
 from src.organizer.date_utils import year_from_archive_path
-from src.organizer.trash import TRASH_DIR, move_to_trash
+from src.organizer.trash import move_to_trash
 
 
 def parse_document_row(row):
@@ -47,7 +47,7 @@ def parse_document_row(row):
     }
 
 
-def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
+def move_document_to_trash(document_id, trash_dir=None):
     """Löscht ein Dokument aus der DB und verschiebt das PDF in den Papierkorb.
 
     Bewusst KEIN endgültiges Löschen: ein Fehlklick darf kein
@@ -72,7 +72,7 @@ def move_document_to_trash(document_id, trash_dir=TRASH_DIR):
     return trashed_path
 
 
-def move_documents_to_trash(document_ids, trash_dir=TRASH_DIR):
+def move_documents_to_trash(document_ids, trash_dir=None):
     """Mehrere Dokumente in den Papierkorb; liefert die Anzahl gelöschter Einträge.
 
     Gezählt wird der gelöschte DB-Eintrag, nicht die verschobene Datei: fehlt

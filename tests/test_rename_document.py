@@ -47,7 +47,8 @@ def test_rename_moves_to_year_from_data_on_reclassification(tmp_path, monkeypatc
     )
 
     # Zielordner nach Dokumentjahr (2009), nicht nach altem Pfad (1985).
-    assert new_path == Path("archive") / "2009" / "Arbeit" / (
+    # App-Home-verankert (absolut) statt cwd-relativ.
+    assert new_path == tmp_path / "archive" / "2009" / "Arbeit" / (
         "2009-11_ACME_Gehaltsabrechnung.pdf"
     )
     assert (tmp_path / new_path).exists()
@@ -76,5 +77,5 @@ def test_rename_keeps_year_from_document_date(tmp_path, monkeypatch):
         extracted,
     )
 
-    assert new_path.parts[:2] == ("archive", "1985")
+    assert new_path.parent == tmp_path / "archive" / "1985" / "Versicherungen"
     assert (tmp_path / new_path).exists()

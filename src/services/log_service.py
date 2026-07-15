@@ -2,7 +2,8 @@
 
 from pathlib import Path
 
-LOG_FILE = Path("logs") / "buerokrator.log"
+# Dieselbe Datei, in die src/core/logger.py schreibt (App-Home-basiert).
+from src.core.logger import LOG_FILE
 
 LOG_LEVELS = ["ALLE", "INFO", "WARNING", "ERROR"]
 

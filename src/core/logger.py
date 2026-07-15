@@ -1,9 +1,12 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
-LOG_DIR = Path("logs")
+from src.core.app_home import get_app_home
+
+# Einmal beim Prozessstart aufgelöst (der Handler hält die Datei offen);
+# im Entwickler-Modus ist das wie bisher <repo>/logs.
+LOG_DIR = get_app_home() / "logs"
 LOG_FILE = LOG_DIR / "buerokrator.log"
 
 
