@@ -18,20 +18,20 @@ classifier:
 logging:
   level: INFO
 supported_file_types:
-  - .pdf
-  - .png
-  - .jpg
-  - .jpeg
+- .pdf
+- .png
+- .jpg
+- .jpeg
 supported_document_types:
-  - invoice
-  - tax
-  - insurance
-  - pension
-  - bank
-  - housing
-  - employment
-  - legal
-  - unknown
+- invoice
+- tax
+- insurance
+- pension
+- bank
+- housing
+- employment
+- legal
+- unknown
 archive:
   category_mapping:
     invoice: Rechnungen

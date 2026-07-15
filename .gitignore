@@ -52,3 +52,6 @@ trash/
 # Backups (ZIPs mit Datenbank + komplettem Archiv)
 backups/
 *.zip
+
+# First-Run-Marker (lokaler Zustand, nie committen)
+.setup_done
