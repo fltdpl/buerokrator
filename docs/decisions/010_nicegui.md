@@ -4,8 +4,8 @@
 
 NiceGUI statt Streamlit als Oberfläche
 
-Ersetzt [[003_streamlit]]. Migration dokumentiert in
-[[10_NiceGUI_Migration]] (Phasen 0–4, abgeschlossen).
+Ersetzt [[003_streamlit]]. Die Migration (Phasen 0–4) ist abgeschlossen;
+der Migrationsplan (ehemals docs/10_NiceGUI_Migration.md) wurde entfernt.
 
 ## Begründung
 

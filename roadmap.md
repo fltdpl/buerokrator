@@ -74,11 +74,11 @@
     
 - [x] Archivpfade speichern
     
-- [ ] Rentenversicherung erfassen
+- [x] Rentenversicherung erfassen (pension-Subtypen contract/pension_information/annual_statement) ✅ 2026-07-15
     
 - [ ] Chancenorientierte Rentenversicherung erfassen
     
-- [ ] Bausparvertrag erfassen
+- [x] Bausparvertrag erfassen (pension-Subtyp bauspar_jahresauszug) ✅ 2026-07-15
     
 - [x] Jahresübersicht erzeugen ✅ 2026-07-01
     
@@ -98,7 +98,7 @@
     
 - [ ] Suchergebnisse nach Relevanz sortieren
     
-- [ ] OCR-Text dauerhaft für alle Importwege speichern
+- [x] OCR-Text dauerhaft für alle Importwege speichern (`document_text` bei jedem Insert) ✅ 2026-07-15
     
 - [ ] OCR-Qualität bei Scans verbessern
     
@@ -124,7 +124,7 @@
 
 - [ ] Fehlende Felder erkennen und markieren
     
-- [x] Extraktionsqualität messen (`evaluate.py`, Felder aktuell 82 %) ✅ 2026-07-08
+- [x] Extraktionsqualität messen (`evaluate.py`; Baseline 15.07.2026: Klassifikation 98 %, Felder 85 % bei 40 Dokumenten) ✅ 2026-07-08
     
 - [ ] Validierung von Datumsangaben
     
@@ -166,6 +166,8 @@
     
 - [x] Notizen unabhängig von Freigaben speichern
     
+- [x] Dokument erneut analysieren („Erneut prüfen": Klassifikation/Extraktion auf gespeichertem Text wiederholen, Freigabe-Widerruf) ✅ 2026-07-15
+    
 - [ ] Änderungsdatum (`updated_at`) speichern
     
 - [ ] Dokument löschen vollständig testen
@@ -175,7 +177,7 @@
 
 - [x] Papierkorb statt endgültigem Löschen
     
-- [ ] Dokument wiederherstellen
+- [x] Dokument wiederherstellen (Papierkorb → Inbox) ✅ 2026-07-15
     
 - [ ] Dokumente zusammenführen
     
@@ -205,6 +207,8 @@
     
 - [x] Suche nach Vertragsnummern (über Volltext in `extracted_data`) ✅ 2026-07-08
     
+- [ ] SQLite FTS5 statt `LIKE` für die Volltextsuche
+    
 - [ ] Suche nach Beträgen
     
 - [ ] Suche nach Datumsbereichen
@@ -216,7 +220,7 @@
     
 - [ ] Dokumentzusammenfassungen
     
-- [ ] Dublettenerkennung
+- [x] Dublettenerkennung (Inhalts-Hash vor OCR/LLM, Dublette → Papierkorb) ✅ 2026-07-15
     
 - [ ] Ähnliche Dokumente finden
     
@@ -256,11 +260,13 @@
 
 ### Später
 
+- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen/Zeilen zuordnen (Alleinstellungsmerkmal ggü. Paperless)
+    
 - [ ] ELSTER-Export vorbereiten
     
 - [ ] Steuerbericht erzeugen
     
-- [ ] Steuercheckliste pro Jahr
+- [ ] Steuercheckliste pro Jahr / Jahres-Abschluss-Checkliste („für 2025 fehlt: …" aus Vorjahresbestand)
     
 
 ---
@@ -269,13 +275,17 @@
 
 ### Hoch
 
-- [ ] Automatische Tests erweitern
+- [x] Automatische Tests erweitern (241 Tests inkl. Fehlerpfade, Whitelists, Frontend-Smoke) ✅ 2026-07-15
     
 - [ ] Regressionstests für Dokumenttypen
+    
+- [ ] **Zweiter Testdatensatz mit fremden Anbietern** — Voraussetzung für weitere Extraktions-Optimierung (evaluate.py misst nur den eigenen Bestand, siehe HANDOVER)
     
 - [ ] Testdokumente sammeln
     
 - [ ] Fehlerhafte Dokumente kennzeichnen
+    
+- [ ] Konfidenz-gesteuertes Prüfen: sichere Dokumente (rule + vollständige Pflichtfelder) automatisch freigeben, nur unsichere vorlegen
     
 
 ### Mittel
@@ -297,16 +307,18 @@
     
 - [ ] Doppelte Funktionen entfernen
     
-- [ ] Datenbankzugriffe vereinheitlichen
+- [x] Datenbankzugriffe vereinheitlichen (`open_connection()`-Context-Manager, WAL, timeout) ✅ 2026-07-15
     
 
 ### Mittel
 
 - [ ] Änderungsverlauf für Dokumente
     
-- [ ] Hintergrundjobs für Analyse
+- [x] Hintergrundjobs für Analyse (Stapel-Import läuft im Hintergrund weiter, `import_job`) ✅ 2026-07-15
     
 - [ ] Konfigurierbare Kategorien
+    
+- [ ] Fristen/Erinnerungen (Kündigungsfristen, Zahlungsziele) aufs Dashboard
     
 
 ### Niedrig
@@ -314,3 +326,26 @@
 - [ ] Plugin-System für neue Dokumenttypen
     
 - [ ] API für externe Anwendungen
+
+---
+
+## Installierbarkeit / Packaging (Plan & Details: todo.md)
+
+Entschieden (15.07.2026): Desktop-Einzelplatz, **Linux zuerst**, Windows
+später; kein Server, 0.1.0 bleibt Single-User. Multinutzer = geteilter
+Laptop (getrennte Linux-Konten trennen die Daten bereits; später ggf.
+Profil-Umschalter).
+
+- [x] cwd-Entkopplung: App-Home-Konzept (`BUEROKRATOR_HOME` / Dev-Modus / Benutzer-Datenverzeichnis) ✅ 2026-07-15
+    
+- [x] pypdfium2 statt pdf2image/Poppler (eine native Abhängigkeit weniger) ✅ 2026-07-15
+    
+- [x] First-Run-Assistent `/einrichtung` (Systemcheck + Install-Hinweise, Speicherorte, Erwartungs-Hinweise) ✅ 2026-07-15
+    
+- [ ] Bundling + Installer (Linux zuerst; Details todo.md Schritt 4)
+    
+- [ ] Ollama-Entscheidung: geführte Installation vs. eingebettetes llama.cpp
+    
+- [ ] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration, Update-Weg, Code-Signing, Hardware-Erwartung (CPU-Dauer) dokumentieren
+    
+- [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen
