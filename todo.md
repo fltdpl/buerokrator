@@ -2,10 +2,12 @@
 
 ## Installierbarkeit / Packaging (aus der Machbarkeits-Bewertung, Juli 2026)
 
-**Vorfrage zuerst klären: Für wen?** Desktop-Einzelplatz-Installer und
-Mehrbenutzer-Server (Perspektive laut HANDOVER: Accounts) sind verschiedene
-Produkte. Für Desktop: der Plan unten. Für Server: Docker statt Installer.
-Erst nach dieser Entscheidung in Schritt 3+ investieren.
+**Vorfrage entschieden (15.07.2026): Desktop-Einzelplatz, Linux zuerst,
+Windows später.** Kein Server, keine Accounts. 0.1.0 bleibt Single-User.
+Multinutzer-Szenario = Haushalt teilt sich einen Laptop: bei getrennten
+Linux-Konten trennt das App-Home die Daten bereits; bei geteiltem Konto
+später ein kleiner Profil-Umschalter (mehrere App-Homes, Auswahl beim
+Start) — nichts für 0.1.0.
 
 - [x] **Schritt 1 — cwd-Entkopplung (15.07.2026)**: `src/core/app_home.py`
       mit `get_app_home()` (Auflösung: `BUEROKRATOR_HOME`-Env → cwd mit
@@ -21,9 +23,14 @@ Erst nach dieser Entscheidung in Schritt 3+ investieren.
       Systemstatus prüft jetzt pypdfium2 statt pdftoppm, README/Hilfe
       angepasst, OCR-Renderpfad erstmals mit Tests (`tests/test_ocr_service.py`).
       Danach bleibt nur Tesseract (portable Binaries beilegen) + Ollama.
-- [ ] **Schritt 3 — First-Run-Assistent** auf Basis `dependency_service`:
-      Ollama da? Modell da (`ollama pull`-Anleitung mit Ein-Klick-Link)?
-      Wo sollen Archiv/Inbox liegen? Statt Fehlermeldungen beim Import.
+- [x] **Schritt 3 — First-Run-Assistent (15.07.2026)**: `/einrichtung`
+      (NiceGUI-Stepper): Systemcheck (dependency_service + Linux-Install-
+      Hinweise, `setup_service`) → Speicherorte (Inbox/Archiv, save_config)
+      → Hinweise (Dauer/Offline/Prüf-Workflow). Erscheint automatisch nur
+      bei frischer Instanz (kein `.setup_done`-Marker im App-Home UND keine
+      DB — Bestandsinstallationen bleiben ungestört); jederzeit manuell
+      über Einstellungen → Systemstatus erreichbar. Windows-Hinweise folgen
+      mit dem Windows-Paket.
 - [ ] **Schritt 4 — Bundling**: NiceGUI Native-Mode (`native=True`,
       pywebview) → PyInstaller (NiceGUI-offiziell dokumentiert; Tesseract
       als Daten beilegen, `config/settings.yaml`-Vorlage einpacken —

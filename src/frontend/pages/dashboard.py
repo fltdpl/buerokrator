@@ -9,6 +9,7 @@ from src.core.document_types import (
 )
 from src.frontend.layout import card, page_layout
 from src.frontend.theme import ACCENTS, INK_MUTED
+from src.services.setup_service import needs_setup
 from src.services.stats_service import get_dashboard_data
 
 
@@ -25,6 +26,12 @@ def _metric(label, value, icon, accent="primary"):
 
 @ui.page("/")
 def dashboard_page():
+    # Frische Instanz → Einrichtungsassistent. Prüfung VOR dem ersten
+    # DB-Zugriff: der würde die (leere) DB anlegen und den Check kippen.
+    if needs_setup():
+        ui.navigate.to("/einrichtung")
+        return
+
     stats = get_dashboard_data()
     counts = stats["counts_by_type"]
 
