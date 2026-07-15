@@ -126,8 +126,10 @@ def test_process_archives_invoice_and_stores_document_metadata(
 
     row = documents[0]
     assert row["filename"] == "2026-03-11_Amazon_RE-123_42EUR.pdf"
+    # Archivpfad ist jetzt App-Home-verankert (absolut), nicht cwd-relativ.
     assert row["archive_path"] == str(
-        Path("archive")
+        tmp_path
+        / "archive"
         / "2026"
         / "Rechnungen"
         / "2026-03-11_Amazon_RE-123_42EUR.pdf"
@@ -137,7 +139,7 @@ def test_process_archives_invoice_and_stores_document_metadata(
     assert row["verified"] == 0
     assert row["document_text"] == document_text
 
-    archived_file = tmp_path / row["archive_path"]
+    archived_file = Path(row["archive_path"])
     assert archived_file.exists()
     assert archived_file.read_bytes() == original_pdf_bytes
 
