@@ -160,6 +160,22 @@ async def test_trash_page_lists_deleted_files(user: User, tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_setup_page_renders(user: User):
+    await user.open("/einrichtung")
+    await user.should_see("Einrichtung")
+    await user.should_see("Erneut prüfen")
+
+
+@pytest.mark.asyncio
+async def test_dashboard_redirects_fresh_instance_to_setup(user: User, tmp_path):
+    # Frische Instanz nachstellen: DB weg, kein Abschluss-Marker.
+    (tmp_path / "database" / "buerokrator.db").unlink()
+
+    await user.open("/")
+    await user.should_see("einsatzbereit")
+
+
+@pytest.mark.asyncio
 async def test_detail_marks_empty_required_field(user: User):
     from src.database.document_repository import insert_document
 

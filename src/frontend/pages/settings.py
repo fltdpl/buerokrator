@@ -64,9 +64,15 @@ def _render_dependency_status(config):
     with card("w-full gap-2"):
         with ui.row().classes("items-center justify-between w-full"):
             ui.label("Systemstatus").classes("text-xl page-title")
-            ui.button(icon="refresh", on_click=lambda: status_list.refresh()).props(
-                "flat dense round"
-            )
+
+            with ui.row().classes("gap-1 items-center"):
+                ui.button(
+                    "Einrichtungsassistent",
+                    on_click=lambda: ui.navigate.to("/einrichtung"),
+                ).props("flat dense no-caps")
+                ui.button(
+                    icon="refresh", on_click=lambda: status_list.refresh()
+                ).props("flat dense round")
 
         status_list()
 

@@ -20,6 +20,7 @@ import src.frontend.pages.documents  # noqa: F401
 import src.frontend.pages.help_page  # noqa: F401
 import src.frontend.pages.import_page  # noqa: F401
 import src.frontend.pages.settings  # noqa: F401
+import src.frontend.pages.setup_page  # noqa: F401
 import src.frontend.pages.tax  # noqa: F401
 import src.frontend.pages.trash  # noqa: F401
 from src.database.list_documents import get_document
