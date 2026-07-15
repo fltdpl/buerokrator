@@ -4,7 +4,6 @@ BASE_CONFIG = {
     "classifier": {"model": "gemma3:4b"},
     "ocr": {
         "tesseract": {"linux": "", "windows": ""},
-        "poppler": {"linux": "", "windows": ""},
     },
 }
 
@@ -44,6 +43,13 @@ def test_check_model_missing_suggests_pull(monkeypatch):
 
     assert status["ok"] is False
     assert "ollama pull gemma3:4b" in status["detail"]
+
+
+def test_check_pdf_renderer_ok():
+    status = dep.check_pdf_renderer()
+
+    assert status["ok"] is True
+    assert "PDFium" in status["detail"]
 
 
 def test_collect_returns_all_four(monkeypatch):

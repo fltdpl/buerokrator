@@ -48,7 +48,8 @@ Buerokrator nutzt lokale Werkzeuge. Ob sie verfügbar sind, zeigt
 
 - **Ollama** mit dem konfigurierten Sprachmodell (Klassifikation & Extraktion)
 - **Tesseract OCR** inkl. der Sprachpakete `deu` und `eng`
-- **Poppler** (wandelt gescannte PDF-Seiten in Bilder für die OCR)
+- **PDF-Renderer pypdfium2** (wandelt gescannte PDF-Seiten in Bilder für die
+  OCR; wird als Python-Paket mitinstalliert)
 """
 
 

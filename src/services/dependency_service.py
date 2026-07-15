@@ -1,13 +1,10 @@
-"""Prüft, ob die externen Abhängigkeiten (Ollama, Modell, Tesseract, Poppler)
-verfügbar sind — für die Statusanzeige in den Einstellungen.
+"""Prüft, ob die externen Abhängigkeiten (Ollama, Modell, Tesseract,
+PDF-Renderer) verfügbar sind — für die Statusanzeige in den Einstellungen.
 
 Framework-neutral: jede Prüfung liefert ein dict {name, ok, detail}. Fehler
 werden abgefangen und als `ok=False` mit Klartext-Detail gemeldet, statt die
 Seite abstürzen zu lassen.
 """
-
-import shutil
-from pathlib import Path
 
 from src.core.config import get_platform, load_config
 
@@ -97,27 +94,22 @@ def check_tesseract(config):
     return _status("Tesseract OCR", True, f"v{version}, Sprachen deu+eng vorhanden")
 
 
-def check_poppler(config):
-    poppler_path = config["ocr"]["poppler"].get(get_platform())
+def check_pdf_renderer():
+    """pypdfium2 kommt als Wheel mit eigener nativer Bibliothek — die Prüfung
+    fängt trotzdem defekte Installationen ab (z. B. fehlendes Binary)."""
+    try:
+        import pypdfium2 as pdfium
 
-    if poppler_path:
-        found = (Path(poppler_path) / "pdftoppm").exists() or (
-            Path(poppler_path) / "pdftoppm.exe"
-        ).exists()
-        detail_path = poppler_path
+        version = pdfium.PDFIUM_INFO.build
 
-    else:
-        found = shutil.which("pdftoppm") is not None
-        detail_path = "PATH"
+    except Exception as error:
+        return _status(
+            "PDF-Renderer (pypdfium2)",
+            False,
+            f"nicht verfügbar ({error}) — für OCR gescannter PDFs nötig",
+        )
 
-    if found:
-        return _status("Poppler", True, f"pdftoppm gefunden ({detail_path})")
-
-    return _status(
-        "Poppler",
-        False,
-        "pdftoppm nicht gefunden — für OCR gescannter PDFs nötig",
-    )
+    return _status("PDF-Renderer (pypdfium2)", True, f"PDFium-Build {version}")
 
 
 def collect_dependency_status(config=None):
@@ -128,5 +120,5 @@ def collect_dependency_status(config=None):
         check_ollama(),
         check_model(config),
         check_tesseract(config),
-        check_poppler(config),
+        check_pdf_renderer(),
     ]

@@ -33,9 +33,11 @@ beliebiger Anbieter und (später) mehrerer Nutzer verarbeiten.
 
 GUI klar getrennt: NiceGUI-Frontend (`src/frontend`, nur Darstellung/Events) über framework-freie Services (`src/services`: Formular-Schemata, Listen-Filter, Papierkorb, Kennzahlen, Log, Ollama-Modelle, Backup, Systemstatus). Löschen verschiebt Originale nach `trash/` (nie `unlink` auf Archivdateien). Farben und Layout zentral in `src/frontend/theme.py` und `layout.py`; keine Web-Fonts.
 
-DB-Zeilen sind dicts mit Zugriff per Spaltenname (`get_connection` setzt `sqlite3.Row`; Queries liefern `dict(row)`) — nie per Position indexieren.
+DB-Zugriff über `with open_connection() as conn:` (`src/database/database.py`; WAL, timeout, garantiertes close). DB-Zeilen sind dicts mit Zugriff per Spaltenname (`sqlite3.Row`; Queries liefern `dict(row)`) — nie per Position indexieren.
 
-Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, unknown`. Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz).
+Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, employment, legal, unknown` — **Typ = Lebensbereich** (Gehaltsabrechnung → employment, nicht tax). Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz). Pro Dokument gibt es ein Steuerrelevanz-Flag (`tax_relevant`, Default aus Typ/Subtyp in `src/tax/tax_relevance.py`); `/steuer` zählt Einkommensdokumente nur, wenn steuerrelevant.
+
+Alle Pfade hängen am App-Home (`src/core/app_home.get_app_home()`: Env `BUEROKRATOR_HOME` → cwd-Devmodus mit vorhandener Config → Benutzer-Datenverzeichnis). Neue Pfade nie relativ zur cwd anlegen; Config-Pfade sind nach `load_config()` bereits absolut.
 
 ## Dateinamenskonvention
 
@@ -43,8 +45,10 @@ Datum am Anfang, möglichst vollständig; Aufbau ist **typabhängig** (`src/orga
 
 Beispiele:
 - Rechnung: `2026-03-11_Amazon_RE-123_42EUR.pdf`
-- Lohnsteuerbescheinigung: `2024-12_Arbeitgeber_Lohnsteuerbescheinigung.pdf`
-- Gehaltsabrechnung: `2024-03_Arbeitgeber_Gehaltsabrechnung.pdf`
+- Lohnsteuerbescheinigung: `2021-01-01_bis_2021-06-30_Arbeitgeber_Lohnsteuerbescheinigung.pdf` (mit Bescheinigungszeitraum; ohne: `2024-12_…`)
+- Gehaltsabrechnung: `2021-01-01_bis_2021-01-31_Arbeitgeber_Gehaltsabrechnung.pdf` (Abrechnungszeitraum; Altbestand: `2024-03_…`)
+
+Alle LLM-Werte laufen vor dem Dateinamen-Bau durch str-Coercion und `/`-Ersatz (`filename_builder._clean_name` u. a.).
 
 Archivstruktur: `archive/<Jahr>/<Kategorie>/<Dateiname>`.
 

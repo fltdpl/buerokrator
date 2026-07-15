@@ -11,9 +11,6 @@ ocr:
   tesseract:
     windows: C:/Program Files/Tesseract-OCR/tesseract.exe
     linux: /usr/bin/tesseract
-  poppler:
-    windows: C:/Program Files/poppler/poppler-26.02.0/Library/bin
-    linux: ""
 classifier:
   model: gemma3:4b
   max_input_chars: 3000
