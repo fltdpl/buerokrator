@@ -32,10 +32,10 @@ Alle Werkzeuge laufen lokal:
   (Standard `gemma3:4b`): `ollama pull gemma3:4b`
 - **Tesseract OCR** mit den Sprachpaketen `deu` und `eng`
   (Ubuntu/Debian: `sudo apt install tesseract-ocr tesseract-ocr-deu`)
-- **Poppler** für die Umwandlung gescannter PDF-Seiten in Bilder
-  (Ubuntu/Debian: `sudo apt install poppler-utils`)
+- **pypdfium2** für die Umwandlung gescannter PDF-Seiten in Bilder
+  (wird als Python-Paket über `requirements.txt` mitinstalliert)
 
-Plattformabhängige Pfade zu Tesseract und Poppler stehen in
+Der plattformabhängige Pfad zu Tesseract steht in
 `config/settings.yaml`. Ob alles verfügbar ist, zeigt in der App
 *Einstellungen → Konfiguration → Systemstatus*.
 

@@ -1,8 +1,13 @@
+import pypdfium2 as pdfium
 import pytesseract
-from pdf2image import convert_from_path
 
 from src.core.config import get_platform, load_config
 from src.core.logger import logger
+
+# Render-Auflösung für PDF→Bild vor der OCR. 200 dpi entspricht dem
+# bisherigen pdf2image-Default; PDF-Koordinaten sind 72 dpi → Skalierung.
+_RENDER_DPI = 200
+_RENDER_SCALE = _RENDER_DPI / 72
 
 
 def _configure_ocr():
@@ -20,28 +25,25 @@ def _configure_ocr():
     if tesseract_path:
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
-    language = config["ocr"].get("language") or "deu+eng"
-    poppler_path = config["ocr"]["poppler"][platform_name]
-
-    return language, poppler_path
+    return config["ocr"].get("language") or "deu+eng"
 
 
 def extract_text_from_image_pdf(pdf_path):
     logger.info(f"OCR gestartet: {pdf_path}")
 
-    language, poppler_path = _configure_ocr()
+    language = _configure_ocr()
 
-    if poppler_path:
-        images = convert_from_path(pdf_path, poppler_path=poppler_path)
-
-    else:
-        images = convert_from_path(pdf_path)
-
+    pdf = pdfium.PdfDocument(pdf_path)
     text = ""
 
-    for image in images:
-        page_text = pytesseract.image_to_string(image, lang=language)
-        text += page_text + "\n"
+    try:
+        for page in pdf:
+            image = page.render(scale=_RENDER_SCALE).to_pil()
+            page_text = pytesseract.image_to_string(image, lang=language)
+            text += page_text + "\n"
+
+    finally:
+        pdf.close()
 
     logger.info(f"OCR abgeschlossen: {pdf_path}")
 
@@ -49,7 +51,7 @@ def extract_text_from_image_pdf(pdf_path):
 
 
 def extract_text_from_image(image_path):
-    language, _ = _configure_ocr()
+    language = _configure_ocr()
 
     text = pytesseract.image_to_string(image_path, lang=language)
 

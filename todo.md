@@ -15,10 +15,12 @@ Erst nach dieser Entscheidung in Schritt 3+ investieren.
       kopiert die mitgelieferte settings.yaml als Vorlage; Logs/Trash
       App-Home-basiert. Bewusst ohne platformdirs (nur Linux/Windows
       unterstützt). Testsuite läuft unverändert über den cwd-Modus.
-- [ ] **Schritt 2 — Poppler loswerden statt bundlen**: `pdf2image`+Poppler
-      durch `pypdfium2` ersetzen (BSD/Apache, native Bibliothek als Wheel).
-      Eine native Abhängigkeit weniger, GPL-Beilage-Frage entfällt. Danach
-      bleibt nur Tesseract (portable Binaries beilegen) + Ollama.
+- [x] **Schritt 2 — Poppler loswerden statt bundlen (15.07.2026)**:
+      `pdf2image`+Poppler durch `pypdfium2` ersetzt (Rendern mit 200 dpi wie
+      der alte pdf2image-Default). Config-Key `ocr.poppler` entfernt,
+      Systemstatus prüft jetzt pypdfium2 statt pdftoppm, README/Hilfe
+      angepasst, OCR-Renderpfad erstmals mit Tests (`tests/test_ocr_service.py`).
+      Danach bleibt nur Tesseract (portable Binaries beilegen) + Ollama.
 - [ ] **Schritt 3 — First-Run-Assistent** auf Basis `dependency_service`:
       Ollama da? Modell da (`ollama pull`-Anleitung mit Ein-Klick-Link)?
       Wo sollen Archiv/Inbox liegen? Statt Fehlermeldungen beim Import.
