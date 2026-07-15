@@ -8,12 +8,15 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from src.classifier.document_classifier import classify
+from src.classifier.document_extractor import extract_document
 from src.core.document_display import (
     get_document_art_label,
     get_document_display_name,
 )
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
+from src.database.replace_document_analysis import replace_document_analysis
 from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
 from src.organizer.date_utils import year_from_archive_path
@@ -123,6 +126,45 @@ def set_documents_subtype(document_ids, subtype):
             changed += 1
 
     return changed
+
+
+def reanalyze_document(document_id):
+    """Wiederholt Klassifikation + Extraktion auf dem gespeicherten OCR-Text.
+
+    Für „Erneut prüfen" in der Detailansicht: überschreibt Typ und
+    extracted_data komplett, widerruft die Freigabe und setzt den
+    tax_relevant-Override zurück. Bewusst KEIN neues OCR (der gespeicherte
+    Text ist auch die Eingabe der Qualitätsmessung) und KEIN Umbenennen der
+    Archivdatei — der Button darf nichts im Dateisystem riskieren.
+
+    Liefert Plain Data: {"ok": bool, "error": str|None, "document_type": …}.
+    Fehler (z. B. Ollama nicht erreichbar) lassen das Dokument unverändert.
+    """
+    row = get_document(document_id)
+
+    if row is None:
+        return {"ok": False, "error": "Dokument nicht gefunden.", "document_type": None}
+
+    document_text = row["document_text"] or ""
+
+    if not document_text.strip():
+        return {
+            "ok": False,
+            "error": "Kein gespeicherter Dokumenttext — erneute Analyse nicht möglich.",
+            "document_type": None,
+        }
+
+    try:
+        classification = classify(document_text)
+        document_type = classification["document_type"]
+        extracted_data = extract_document(document_type, document_text) or {}
+
+    except Exception as error:
+        return {"ok": False, "error": str(error), "document_type": None}
+
+    replace_document_analysis(document_id, document_type, extracted_data)
+
+    return {"ok": True, "error": None, "document_type": document_type}
 
 
 def document_year(row):

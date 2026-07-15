@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from nicegui import ui
+from nicegui import run, ui
 
 from src.core.document_display import get_document_display_name
 from src.core.document_types import (
@@ -21,6 +21,7 @@ from src.frontend.layout import card, page_layout
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
+    reanalyze_document,
 )
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
@@ -129,6 +130,34 @@ def document_detail_page(document_id: int):
     def delete():
         move_document_to_trash(document_id)
         ui.navigate.to("/dokumente")
+
+    async def reanalyze():
+        # LLM-Lauf dauert — io_bound hält die Event-Loop (und damit alle
+        # anderen Seiten) am Leben.
+        reanalyze_dialog.close()
+        ui.notify("Erneute Analyse läuft — das kann einen Moment dauern …")
+        result = await run.io_bound(reanalyze_document, document_id)
+
+        if result["ok"]:
+            ui.navigate.to(f"/dokumente/{document_id}")
+
+        else:
+            ui.notify(
+                f"Analyse fehlgeschlagen: {result['error']}", color="negative"
+            )
+
+    with ui.dialog() as reanalyze_dialog, ui.card():
+        ui.label(
+            "Achtung: Alle korrigierten Werte werden durch eine neue"
+            " automatische Analyse überschrieben und die Freigabe wird"
+            " widerrufen. Fortfahren?"
+        )
+
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=reanalyze_dialog.close).props("flat")
+            ui.button("Ja, erneut prüfen", on_click=reanalyze).props(
+                "color=negative"
+            )
 
     with ui.dialog() as delete_dialog, ui.card():
         ui.label("Dokument wirklich in den Papierkorb verschieben?")
@@ -327,33 +356,54 @@ def document_detail_page(document_id: int):
     )
     unverified_count = get_verification_statistics()[0]
 
-    with page_layout(display_name):
-        with ui.row().classes("items-center justify-between w-full"):
-            with ui.column().classes("gap-0"):
-                ui.label(display_name).classes("text-3xl page-title")
-                ui.label(f"ID {document_id} · {type_label} · {status_text}").classes(
-                    "muted"
-                )
+    def _meta_button(label, on_click, color=None):
+        """Kleiner, flacher Button in der Optik der Meta-Zeile."""
+        button = ui.button(label, on_click=on_click).props(
+            "flat dense no-caps" + (f" color={color}" if color else "")
+        )
+        # Quasar-Buttons bringen eine eigene Schriftgröße mit — die Zeile
+        # soll aber durchgehend wie die Meta-Beschriftung aussehen.
+        button.style("font-size: inherit;")
 
-            with ui.row().classes("gap-2"):
-                ui.button(
-                    "←", on_click=lambda: guarded(lambda: navigate_adjacent(-1))
-                ).props("flat dense").tooltip("Vorheriges Dokument (Pfeil links)")
-                ui.button(
-                    "→", on_click=lambda: guarded(lambda: navigate_adjacent(1))
-                ).props("flat dense").tooltip("Nächstes Dokument (Pfeil rechts)")
+        return button
+
+    with page_layout(display_name):
+        # Kopf: Titel, darunter EINE Meta-/Aktionszeile (klein): links
+        # ID · Typ · Status · ←/→, rechts die Aktionen — lange Titel brechen
+        # so nicht mehr um und die Aktionen gehören sichtbar zur ganzen Seite.
+        with ui.column().classes("gap-0 w-full"):
+            ui.label(display_name).classes("text-3xl page-title")
+
+            with ui.row().classes("w-full items-center gap-1 muted"):
+                ui.label(f"ID {document_id} · {type_label} · {status_text} ·")
+
+                _meta_button(
+                    "←", lambda: guarded(lambda: navigate_adjacent(-1))
+                ).tooltip("Vorheriges Dokument (Pfeil links)")
+                _meta_button(
+                    "→", lambda: guarded(lambda: navigate_adjacent(1))
+                ).tooltip("Nächstes Dokument (Pfeil rechts)")
+
+                ui.space()
+
                 if Path(document["archive_path"]).exists():
-                    ui.button(
+                    _meta_button(
                         "📥 Download",
-                        on_click=lambda: ui.download(document["archive_path"]),
-                    ).props("flat")
+                        lambda: ui.download(document["archive_path"]),
+                    )
+                    ui.label("·")
+
+                _meta_button("🔄 Erneut prüfen", reanalyze_dialog.open).tooltip(
+                    "Klassifikation + Extraktion auf dem gespeicherten"
+                    " Text wiederholen — überschreibt korrigierte Werte"
+                )
 
                 if document["verified"]:
-                    ui.button("↩️ Widerrufen", on_click=unverify).props("flat")
+                    ui.label("·")
+                    _meta_button("↩️ Widerrufen", unverify)
 
-                ui.button("🗑 Löschen", on_click=delete_dialog.open).props(
-                    "flat color=negative"
-                )
+                ui.label("·")
+                _meta_button("🗑 Löschen", delete_dialog.open, color="negative")
 
         with ui.row().classes("w-full gap-6 flex-nowrap items-start"):
             # Links: Formular + Aktionen + Notizen
