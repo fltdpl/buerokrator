@@ -55,7 +55,9 @@ exe = EXE(
     a.scripts,
     exclude_binaries=True,
     name="buerokrator",
-    console=True,  # Spike: Konsole für Diagnose; später False + Logdatei
+    # Ohne Konsole (relevant fürs spätere Windows-Paket; unter Linux neutral).
+    # Diagnose läuft über logs/console.log im App-Home (siehe entry.py).
+    console=False,
 )
 
 coll = COLLECT(
