@@ -1,5 +1,7 @@
 # Buerokrator
 
+> In vorbereitung: Version 0.1.0 — erste öffentliche Vorabversion.
+
 Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
 Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
 
@@ -7,8 +9,6 @@ Neue Dokumente landen in einem Eingangsordner, werden per OCR gelesen,
 klassifiziert, automatisch umbenannt und archiviert; die relevanten Felder
 werden in einer lokalen Datenbank gespeichert und in der App geprüft. Keine
 Daten verlassen den Rechner — auch keine Web-Fonts.
-
-> Version 0.1.0 — erste öffentliche Vorabversion.
 
 ## Hauptfunktionen
 
@@ -65,7 +65,7 @@ dem Menüeintrag `~/.local/share/applications/buerokrator.desktop`.
 ## Installation aus dem Quellcode
 
 ```bash
-git clone <repo-url> buerokrator
+git clone https://github.com/fltdpl/buerokrator.git
 cd buerokrator
 
 python -m venv .venv
