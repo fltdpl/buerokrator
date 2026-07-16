@@ -189,3 +189,19 @@ async def test_detail_marks_empty_required_field(user: User):
 
     await user.open(f"/dokumente/{document_id}")
     await user.should_see("Pflichtfeld(er) leer")
+
+
+def test_nicegui_storage_path_points_to_app_home():
+    """NiceGUI-Storage darf nicht cwd-relativ liegen (Packaging).
+
+    Die Env-Variable wird einmalig beim ersten Import von src.frontend.main
+    gesetzt (App-Home zum Importzeitpunkt) — hier nur: gesetzt und absolut.
+    """
+    import os
+    from pathlib import Path
+
+    import src.frontend.main  # noqa: F401 — setzt die Env-Variable beim Import
+
+    storage_path = Path(os.environ["NICEGUI_STORAGE_PATH"])
+    assert storage_path.is_absolute()
+    assert storage_path.name == ".nicegui"
