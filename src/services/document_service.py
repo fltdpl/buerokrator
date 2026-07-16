@@ -10,6 +10,7 @@ from pathlib import Path
 
 from src.classifier.document_classifier import classify
 from src.classifier.document_extractor import extract_document
+from src.classifier.ollama_availability import is_ollama_available
 from src.core.document_display import (
     get_document_art_label,
     get_document_display_name,
@@ -151,6 +152,16 @@ def reanalyze_document(document_id):
         return {
             "ok": False,
             "error": "Kein gespeicherter Dokumenttext — erneute Analyse nicht möglich.",
+            "document_type": None,
+        }
+
+    # Expliziter Check statt stiller Degradierung: classify() fällt ohne
+    # Ollama auf "unknown" zurück — hier würde das geprüfte Werte (Ground
+    # Truth!) mit leeren überschreiben. Lieber gar nicht analysieren.
+    if not is_ollama_available():
+        return {
+            "ok": False,
+            "error": "Ollama nicht erreichbar — erneute Analyse nicht möglich.",
             "document_type": None,
         }
 

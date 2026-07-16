@@ -36,6 +36,21 @@ def import_page():
                     f"✅ {len(result['succeeded'])} Dokument(e) archiviert."
                 ).classes("text-green-700")
 
+                # "none" = Ollama war beim Import nicht erreichbar.
+                limited = [
+                    entry
+                    for entry in result["succeeded"]
+                    if entry.get("classification_source") == "none"
+                ]
+
+                if limited:
+                    ui.label(
+                        f"⚠️ {len(limited)} Dokument(e) ohne automatische"
+                        " Analyse archiviert (Ollama nicht erreichbar) —"
+                        " Typ und Felder bitte im Prüf-Workflow nachtragen"
+                        " oder später „Erneut prüfen“ nutzen."
+                    ).classes("text-orange-700")
+
                 for entry in result["succeeded"]:
                     type_label = DOCUMENT_TYPE_LABELS.get(
                         entry["document_type"], entry["document_type"]

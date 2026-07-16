@@ -26,7 +26,7 @@ if ! command -v tesseract >/dev/null 2>&1; then
     echo "Hinweis: Tesseract OCR fehlt (z. B. 'sudo apt install tesseract-ocr tesseract-ocr-deu')."
 fi
 if ! command -v ollama >/dev/null 2>&1; then
-    echo "Hinweis: Ollama fehlt (https://ollama.com/download) — wird für die Analyse benötigt."
+    echo "Hinweis: Ollama fehlt (https://ollama.com/download) — optional, aber ohne läuft die automatische Analyse nicht."
 fi
 
 echo "Fertig. Start über das Anwendungsmenü oder: ${BIN}/buerokrator"

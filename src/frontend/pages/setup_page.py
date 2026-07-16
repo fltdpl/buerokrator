@@ -21,6 +21,11 @@ def _render_check(check):
         if check["ok"]:
             ui.icon("check_circle").classes("text-green-600")
 
+        elif not check.get("required", True):
+            # Optional (Ollama): Warnung statt Fehler — die App läuft auch
+            # ohne, nur eben ohne automatische Analyse.
+            ui.icon("warning").classes("text-orange-600")
+
         else:
             ui.icon("cancel").classes("text-red-600")
 
@@ -64,9 +69,11 @@ def setup_page():
 
                     if not all_checks_ok(checks):
                         ui.label(
-                            "Fehlendes lässt sich auch später nachholen —"
-                            " ohne Ollama/Modell funktioniert aber kein"
-                            " Import."
+                            "Fehlendes lässt sich auch später nachholen."
+                            " Ollama ist optional: Ohne läuft der Import im"
+                            " eingeschränkten Modus — Dokumente werden"
+                            " archiviert, aber nicht automatisch erkannt"
+                            " und ausgelesen."
                         ).classes("text-sm text-orange-700")
 
                 checks_area()

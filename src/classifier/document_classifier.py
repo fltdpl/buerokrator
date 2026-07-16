@@ -24,11 +24,20 @@ def classify(text):
     prompt = load_prompt("classify.txt")
     prompt = prompt.format(document_text=text[:max_input_chars])
 
-    response = chat(
-        model=model,
-        messages=[{"role": "user", "content": prompt}],
-        options={"temperature": temperature},
-    )
+    # Ollama ist optional: Ist der Dienst nicht erreichbar, wird das Dokument
+    # als "unknown" archiviert (source "none") und im Prüf-Workflow von Hand
+    # nachgepflegt, statt den Import scheitern zu lassen.
+    try:
+        response = chat(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": temperature},
+        )
+
+    except Exception as e:
+        logger.warning(f"Ollama nicht verfügbar — Klassifikation ohne LLM: {e}")
+
+        return {"document_type": UNKNOWN, "source": "none"}
 
     try:
         result = parse_llm_json(response.message.content)
