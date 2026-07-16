@@ -55,3 +55,8 @@ backups/
 
 # First-Run-Marker (lokaler Zustand, nie committen)
 .setup_done
+.nicegui/
+
+# PyInstaller-Build-Artefakte
+build/
+dist/

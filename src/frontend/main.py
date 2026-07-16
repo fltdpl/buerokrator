@@ -7,11 +7,19 @@ Das Frontend enthält nur Darstellung und Event-Verdrahtung; alle Logik
 liegt in src/services.
 """
 
+import os
 from pathlib import Path
 
-from fastapi import HTTPException
-from fastapi.responses import FileResponse
-from nicegui import app, ui
+from src.core.app_home import get_app_home
+
+# NiceGUI legt sein Storage-Verzeichnis standardmäßig relativ zur cwd an.
+# Vor dem ersten nicegui-Import ins App-Home umleiten (Packaging: keine
+# cwd-relativen Pfade). setdefault, damit ein extern gesetzter Pfad gewinnt.
+os.environ.setdefault("NICEGUI_STORAGE_PATH", str(get_app_home() / ".nicegui"))
+
+from fastapi import HTTPException  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
+from nicegui import app, ui  # noqa: E402
 
 # Seiten registrieren (Import genügt, @ui.page dekoriert die Routen).
 import src.frontend.pages.dashboard  # noqa: F401
@@ -54,12 +62,17 @@ def serve_pdf(document_id: int):
     return FileResponse(path, media_type="application/pdf")
 
 
-if __name__ in {"__main__", "__mp_main__"}:
+def run(*, show: bool = False) -> None:
+    """Startet die App (auch Einstiegspunkt für das gepackte Bundle)."""
     ui.run(
         host=HOST,
         port=PORT,
         title="Buerokrator",
         language="de",
         reload=False,
-        show=False,
+        show=show,
     )
+
+
+if __name__ in {"__main__", "__mp_main__"}:
+    run()

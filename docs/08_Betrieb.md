@@ -3,7 +3,7 @@
 ## Voraussetzungen
 
 - Python (venv: `source ~/venvs/buerokrator/bin/activate`)
-- Tesseract (+ Poppler für PDF→Bild)
+- Tesseract (+ pypdfium2 für PDF→Bild, Python-Wheel)
 - Ollama mit dem Modell aus `config/settings.yaml` (aktuell `gemma3:4b`)
 
 ## Start

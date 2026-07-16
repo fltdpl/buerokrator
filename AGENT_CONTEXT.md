@@ -17,7 +17,7 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
 - Python
 - SQLite
 - Ollama (Modell konfigurierbar in `config/settings.yaml`: Qwen oder gemma3:4b oder gemma4)
-- Tesseract OCR (+ Poppler für PDF→Bild)
+- Tesseract OCR (+ pypdfium2 für PDF→Bild, reines Python-Wheel)
 - NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081)
 
 ## Architektur / Pipeline

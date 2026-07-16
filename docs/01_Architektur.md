@@ -8,7 +8,7 @@ laufen lokal, keine externen Dienste.
 
 ### OCR (`src/ocr`)
 
-Extrahiert Text aus PDFs und Bildern (Tesseract, Poppler für PDF→Bild).
+Extrahiert Text aus PDFs und Bildern (Tesseract, pypdfium2 für PDF→Bild).
 
 ### Classifier (`src/classifier`)
 
