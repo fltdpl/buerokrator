@@ -68,6 +68,8 @@ async def test_dashboard_renders(user: User):
     await user.open("/")
     await user.should_see("Dashboard")
     await user.should_see("Dokumente archiviert")
+    # Beenden-Eintrag der Seitenleiste (auf jeder Seite erreichbar)
+    await user.should_see("Beenden")
 
 
 @pytest.mark.asyncio

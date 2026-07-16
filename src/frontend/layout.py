@@ -2,7 +2,7 @@
 
 from contextlib import contextmanager
 
-from nicegui import ui
+from nicegui import app, ui
 
 from src import __version__
 from src.frontend.theme import apply_theme
@@ -28,6 +28,28 @@ def _current_path():
 
     except Exception:
         return ""
+
+
+async def confirm_shutdown():
+    """Beendet den Serverprozess nach Rückfrage (wichtig im Browser-Modus
+    des Desktop-Pakets, wo es sonst kein sauberes Ende gibt)."""
+    with ui.dialog() as dialog, ui.card():
+        ui.label("Buerokrator beenden?").classes("text-lg page-title")
+        ui.label(
+            "Der Hintergrundprozess wird gestoppt; dieser Browser-Tab "
+            "kann danach geschlossen werden."
+        ).classes("muted")
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=lambda: dialog.submit(False)).props(
+                "flat no-caps"
+            )
+            ui.button("Beenden", on_click=lambda: dialog.submit(True)).props(
+                "color=negative unelevated no-caps"
+            )
+
+    if await dialog:
+        ui.notify("Buerokrator wird beendet …")
+        app.shutdown()
 
 
 def _is_active(route, path):
@@ -58,6 +80,10 @@ def page_layout(title):
             with ui.link(target=route).classes(f"nav-item{active}"):
                 ui.icon(icon).classes("text-lg")
                 ui.label(label).classes("text-sm")
+
+        with ui.row().classes("nav-item cursor-pointer").on("click", confirm_shutdown):
+            ui.icon("power_settings_new").classes("text-lg")
+            ui.label("Beenden").classes("text-sm")
 
         ui.label(f"v{__version__}").classes("text-xs muted p-4")
 
