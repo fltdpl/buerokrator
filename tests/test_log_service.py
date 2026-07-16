@@ -41,3 +41,15 @@ def test_read_log_tail_filters_by_level(tmp_path):
 
 def test_read_log_tail_missing_file(tmp_path):
     assert read_log_tail(log_file=tmp_path / "fehlt.log") == []
+
+
+def test_build_logger_creates_missing_parent_dirs(tmp_path, monkeypatch):
+    """Frische Installation: auch das App-Home selbst existiert noch nicht."""
+    import src.core.logger as logger_module
+
+    nested = tmp_path / "app_home" / "logs"
+    monkeypatch.setattr(logger_module, "LOG_DIR", nested)
+
+    logger_module._build_logger()
+
+    assert nested.is_dir()
