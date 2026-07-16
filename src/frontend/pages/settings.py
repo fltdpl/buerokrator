@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import app, ui
 
 from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
@@ -159,6 +159,38 @@ def _render_config(config):
         ui.notify("Einstellungen gespeichert.")
 
     ui.button("💾 Speichern", on_click=save).props("color=primary unelevated")
+
+    _render_shutdown()
+
+
+def _render_shutdown():
+    """Beendet den Serverprozess sauber (wichtig im Browser-Modus des Bundles)."""
+
+    async def confirm_shutdown():
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Buerokrator beenden?").classes("text-lg page-title")
+            ui.label(
+                "Der Hintergrundprozess wird gestoppt; dieser Browser-Tab "
+                "kann danach geschlossen werden."
+            ).classes("muted")
+            with ui.row().classes("justify-end w-full"):
+                ui.button("Abbrechen", on_click=lambda: dialog.submit(False)).props(
+                    "flat no-caps"
+                )
+                ui.button("Beenden", on_click=lambda: dialog.submit(True)).props(
+                    "color=negative unelevated no-caps"
+                )
+
+        if await dialog:
+            ui.notify("Buerokrator wird beendet …")
+            app.shutdown()
+
+    with card("w-full gap-2"):
+        with ui.row().classes("items-center justify-between w-full"):
+            ui.label("Anwendung").classes("text-xl page-title")
+            ui.button("Beenden", icon="power_settings_new", on_click=confirm_shutdown).props(
+                "flat dense no-caps color=negative"
+            )
 
 
 def _render_backup(config):

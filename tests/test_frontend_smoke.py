@@ -140,6 +140,7 @@ async def test_settings_page_renders(user: User):
     await user.open("/einstellungen")
     await user.should_see("Einstellungen")
     await user.should_see("Gefahrenzone")
+    await user.should_see("Beenden")
 
 
 @pytest.mark.asyncio

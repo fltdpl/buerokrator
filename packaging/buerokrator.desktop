@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Buerokrator
+Comment=Lokales Dokumentenarchiv und Steuervorbereitung
+Exec=@EXEC@
+Terminal=false
+Categories=Office;
+Keywords=Dokumente;Steuer;Archiv;OCR;

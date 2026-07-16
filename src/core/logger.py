@@ -27,7 +27,9 @@ def _configured_level():
 
 
 def _build_logger():
-    LOG_DIR.mkdir(exist_ok=True)
+    # parents=True: bei frischer Installation existiert auch das App-Home
+    # (~/.local/share/buerokrator) selbst noch nicht.
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
 
     log = logging.getLogger("buerokrator")
 
