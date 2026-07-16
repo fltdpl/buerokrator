@@ -28,12 +28,17 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
 Alle Werkzeuge laufen lokal:
 
 - **Python 3.12+**
-- **[Ollama](https://ollama.com/)** mit einem Sprachmodell
-  (Standard `gemma3:4b`): `ollama pull gemma3:4b`
 - **Tesseract OCR** mit den Sprachpaketen `deu` und `eng`
   (Ubuntu/Debian: `sudo apt install tesseract-ocr tesseract-ocr-deu`)
 - **pypdfium2** für die Umwandlung gescannter PDF-Seiten in Bilder
   (wird als Python-Paket über `requirements.txt` mitinstalliert)
+- *Optional, empfohlen:* **[Ollama](https://ollama.com/)** mit einem
+  Sprachmodell (Standard `gemma3:4b`): `ollama pull gemma3:4b`.
+  Ohne Ollama läuft der Import im eingeschränkten Modus: Dokumente werden
+  per OCR gelesen und archiviert, eindeutige Typen erkennt der
+  Regel-Klassifikator — aber es werden keine Felder automatisch
+  ausgelesen; Typ und Werte trägt man dann im Prüf-Workflow von Hand nach
+  (oder später per „Erneut prüfen“, sobald Ollama läuft).
 
 Der plattformabhängige Pfad zu Tesseract steht in
 `config/settings.yaml`. Ob alles verfügbar ist, zeigt in der App
@@ -56,8 +61,8 @@ Start über das Anwendungsmenü oder `~/.local/bin/buerokrator` — die App
 durch Systemcheck und Speicherorte. Beenden über
 *Einstellungen → Konfiguration → Anwendung → Beenden*.
 
-Tesseract und Ollama (siehe *Voraussetzungen*) bleiben auch beim Paket
-Systemvoraussetzungen. Alle Nutzerdaten liegen getrennt vom Programm in
+Tesseract (erforderlich) und Ollama (optional, siehe *Voraussetzungen*)
+bleiben auch beim Paket Systemabhängigkeiten. Alle Nutzerdaten liegen getrennt vom Programm in
 `~/.local/share/buerokrator`; zum Entfernen genügt das Löschen von
 `~/.local/opt/buerokrator`, dem Symlink `~/.local/bin/buerokrator` und
 dem Menüeintrag `~/.local/share/applications/buerokrator.desktop`.

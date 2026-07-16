@@ -202,6 +202,9 @@ def process(file_path):
             "source_name": Path(file_path).name,
             "document_id": document_id,
             "document_type": result["classification"]["document_type"],
+            # "none" = Ollama war nicht erreichbar (eingeschränkte Analyse) —
+            # die Import-Seite weist dann darauf hin.
+            "classification_source": result["classification"].get("source"),
             "filename": archive_path.name,
             "archive_path": str(archive_path),
         }

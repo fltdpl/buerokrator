@@ -24,6 +24,16 @@ def evaluate_case(case):
 
 
 def run_evaluation(document_type=None, limit=None):
+    # Ohne Ollama fällt classify() still auf "unknown" zurück — die Messung
+    # würde dann nur den Ausfall messen und die Baseline verfälschen.
+    from src.classifier.ollama_availability import is_ollama_available
+
+    if not is_ollama_available():
+        raise SystemExit(
+            "Ollama nicht erreichbar — Qualitätsmessung abgebrochen "
+            "(sie würde nur Ausfall-Werte liefern)."
+        )
+
     cases = load_ground_truth(document_type=document_type, limit=limit)
 
     if not cases:

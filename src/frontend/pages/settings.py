@@ -55,6 +55,10 @@ def _render_dependency_status(config):
                 if status["ok"]:
                     ui.icon("check_circle").classes("text-green-600")
 
+                elif not status.get("required", True):
+                    # Optional (Ollama): Warnung statt Fehler.
+                    ui.icon("warning").classes("text-orange-600")
+
                 else:
                     ui.icon("cancel").classes("text-red-600")
 

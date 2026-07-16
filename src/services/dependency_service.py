@@ -9,8 +9,10 @@ Seite abstürzen zu lassen.
 from src.core.config import get_platform, load_config
 
 
-def _status(name, ok, detail):
-    return {"name": name, "ok": bool(ok), "detail": detail}
+def _status(name, ok, detail, required=True):
+    """required=False: optionale Abhängigkeit (Ollama) — ohne sie läuft die
+    App im eingeschränkten Modus (keine LLM-Analyse), statt zu scheitern."""
+    return {"name": name, "ok": bool(ok), "detail": detail, "required": required}
 
 
 def _installed_model_names():
@@ -39,10 +41,19 @@ def check_ollama():
 
     except Exception as error:
         return _status(
-            "Ollama", False, f"nicht erreichbar ({error}). Läuft der Dienst?"
+            "Ollama",
+            False,
+            f"nicht erreichbar ({error}) — optional: ohne Ollama werden "
+            "Dokumente archiviert, aber nicht automatisch analysiert",
+            required=False,
         )
 
-    return _status("Ollama", True, f"erreichbar, {len(names)} Modell(e) installiert")
+    return _status(
+        "Ollama",
+        True,
+        f"erreichbar, {len(names)} Modell(e) installiert",
+        required=False,
+    )
 
 
 def check_model(config):
@@ -53,16 +64,20 @@ def check_model(config):
 
     except Exception:
         return _status(
-            f"Modell „{model}“", False, "Ollama nicht erreichbar — Modell unklar"
+            f"Modell „{model}“",
+            False,
+            "Ollama nicht erreichbar — Modell unklar",
+            required=False,
         )
 
     if model in names:
-        return _status(f"Modell „{model}“", True, "installiert")
+        return _status(f"Modell „{model}“", True, "installiert", required=False)
 
     return _status(
         f"Modell „{model}“",
         False,
         f"nicht installiert — mit „ollama pull {model}“ nachladen",
+        required=False,
     )
 
 
