@@ -30,6 +30,11 @@ def tax_page():
 
     with page_layout("Steuer"):
         ui.label("💰 Steuer").classes("text-3xl page-title")
+        ui.label(
+            "🚧 Die Steuer-Funktion ist noch im Aufbau — die Summen und die"
+            " Absetzbarkeits-Einordnung sind eine erste Orientierung, kein"
+            " geprüftes Ergebnis."
+        ).classes("text-sm text-orange-700")
 
         if not years:
             ui.label("Noch keine archivierten Dokumente vorhanden.").classes(
