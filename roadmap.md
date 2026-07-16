@@ -342,10 +342,10 @@ Profil-Umschalter).
     
 - [x] First-Run-Assistent `/einrichtung` (Systemcheck + Install-Hinweise, Speicherorte, Erwartungs-Hinweise) ✅ 2026-07-15
     
-- [ ] Bundling + Installer (Linux zuerst; Details todo.md Schritt 4)
+- [x] Bundling + Installer (PyInstaller-onedir, Browser-Modus + Beenden-Button, Tarball + rootloses install.sh mit .desktop-Eintrag; AppImage/.deb zurückgestellt) ✅ 2026-07-16
     
 - [ ] Ollama-Entscheidung: geführte Installation vs. eingebettetes llama.cpp
     
-- [ ] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration, Update-Weg, Code-Signing, Hardware-Erwartung (CPU-Dauer) dokumentieren
+- [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [[012_kein_update_check]]) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16 — offen nur Code-Signing (erst fürs Windows-Paket)
     
 - [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen

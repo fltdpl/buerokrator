@@ -39,7 +39,30 @@ Der plattformabhängige Pfad zu Tesseract steht in
 `config/settings.yaml`. Ob alles verfügbar ist, zeigt in der App
 *Einstellungen → Konfiguration → Systemstatus*.
 
-## Installation
+## Installation als Desktop-Anwendung (Linux)
+
+Aus dem Release-Tarball (`buerokrator-<version>-linux-<arch>.tar.gz`,
+selbst baubar, siehe *Entwicklung*) — installiert ohne root für den
+aktuellen Benutzer und legt einen Menüeintrag an:
+
+```bash
+tar xzf buerokrator-0.1.0-linux-x86_64.tar.gz
+cd buerokrator-0.1.0-linux-x86_64
+./install.sh
+```
+
+Start über das Anwendungsmenü oder `~/.local/bin/buerokrator` — die App
+öffnet sich im Browser. Beim ersten Start führt ein Einrichtungsassistent
+durch Systemcheck und Speicherorte. Beenden über
+*Einstellungen → Konfiguration → Anwendung → Beenden*.
+
+Tesseract und Ollama (siehe *Voraussetzungen*) bleiben auch beim Paket
+Systemvoraussetzungen. Alle Nutzerdaten liegen getrennt vom Programm in
+`~/.local/share/buerokrator`; zum Entfernen genügt das Löschen von
+`~/.local/opt/buerokrator`, dem Symlink `~/.local/bin/buerokrator` und
+dem Menüeintrag `~/.local/share/applications/buerokrator.desktop`.
+
+## Installation aus dem Quellcode
 
 ```bash
 git clone <repo-url> buerokrator
@@ -50,13 +73,14 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Start
+## Start (Quellcode)
 
 ```bash
 python -m src.frontend.main      # App unter http://localhost:8081
 ```
 
-Die Datenbank und die Datenordner werden beim ersten Lauf automatisch angelegt.
+Datenbank und Datenordner werden automatisch angelegt; bei einer frischen
+Instanz startet der Einrichtungsassistent (`/einrichtung`).
 Eine Kurzanleitung findest du in der App unter *Anleitung*.
 
 ## Entwicklung
@@ -64,6 +88,7 @@ Eine Kurzanleitung findest du in der App unter *Anleitung*.
 ```bash
 python -m pytest -q              # Testsuite
 python evaluate.py --limit 40    # Qualitätsmessung gegen geprüfte Dokumente
+bash packaging/build_linux.sh    # Linux-Release-Tarball bauen (dist/)
 ```
 
 ## Technik
