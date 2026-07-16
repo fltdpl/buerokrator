@@ -1,6 +1,6 @@
 # Buerokrator
 
-> In vorbereitung: Version 0.1.0 — erste öffentliche Vorabversion.
+Version 0.1.0 — erste öffentliche Vorabversion.
 
 Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
 Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
