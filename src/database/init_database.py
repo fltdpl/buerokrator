@@ -1,4 +1,16 @@
+import os
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+
+from src.core.config import load_config
+from src.core.logger import logger
 from src.database.database import open_connection
+
+# Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
+# erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
+# bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
+SCHEMA_VERSION = 1
 
 
 DOCUMENT_COLUMNS = {
@@ -78,9 +90,65 @@ def create_indexes(cursor):
     )
 
 
+def _backup_before_migration(conn, old_version):
+    """Sichert die DB-Datei, bevor eine Migration sie verändert.
+
+    Bewusst neben die DB statt ans konfigurierte Backup-Ziel (das kann ein
+    nicht eingehängtes externes Laufwerk sein). Nutzt die SQLite-Backup-API,
+    damit auch nicht eingespielte WAL-Inhalte mitkommen.
+    """
+    db_path = Path(load_config()["database"]["path"])
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = db_path.with_name(
+        f"pre_migration_v{old_version}_zu_v{SCHEMA_VERSION}_{timestamp}.db"
+    )
+
+    backup_conn = sqlite3.connect(backup_path)
+
+    try:
+        conn.backup(backup_conn)
+
+    finally:
+        backup_conn.close()
+
+    # Wie die Haupt-DB: OCR-Volltexte, nur für den Besitzer lesbar.
+    try:
+        os.chmod(backup_path, 0o600)
+
+    except OSError:
+        pass
+
+    logger.info("Backup vor Schema-Migration angelegt: %s", backup_path)
+
+
 def init_database():
     with open_connection() as conn:
         cursor = conn.cursor()
+
+        version = cursor.execute("PRAGMA user_version").fetchone()["user_version"]
+
+        if version > SCHEMA_VERSION:
+            raise RuntimeError(
+                f"Die Datenbank hat Schemaversion {version}, diese "
+                f"Programmversion kennt nur {SCHEMA_VERSION}. Vermutlich "
+                "wurde die Datenbank mit einer neueren Buerokrator-Version "
+                "benutzt — bitte Programm aktualisieren."
+            )
+
+        documents_exists = (
+            cursor.execute(
+                """
+                SELECT name FROM sqlite_master
+                WHERE type = 'table' AND name = 'documents'
+                """
+            ).fetchone()
+            is not None
+        )
+
+        # Nur echte Bestands-DBs mit älterem Schemastand sichern — eine
+        # frische DB (noch keine Tabelle) hat nichts zu verlieren.
+        if documents_exists and version < SCHEMA_VERSION:
+            _backup_before_migration(conn, version)
 
         cursor.execute(
             f"""
@@ -95,6 +163,8 @@ def init_database():
 
         migrate_documents_table(cursor)
         create_indexes(cursor)
+
+        cursor.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
         conn.commit()
 
