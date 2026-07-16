@@ -1,6 +1,5 @@
 import importlib
 import json
-import shutil
 from pathlib import Path
 
 from src.core.document_types import ARCHIVE_CATEGORY_LABELS
@@ -66,21 +65,18 @@ def test_process_archives_invoice_and_stores_document_metadata(
     tmp_path,
     monkeypatch,
 ):
-    example_pdf = (
-        Path(__file__).resolve().parent.parent
-        / "examples"
-        / "invoice"
-        / "Rechnung_Zahnarzt_OCR.pdf"
-    )
-    original_pdf_bytes = example_pdf.read_bytes()
+    # Dummy-PDF statt echter Beispieldatei: OCR/Klassifikation/Extraktion
+    # sind gemockt, die Datei wird nur gehasht und verschoben. So hängt der
+    # Test nicht an privaten (unversionierten) Dateien in examples/.
+    original_pdf_bytes = b"%PDF-1.4\n% Dummy fuer den Pipeline-Test\n%%EOF\n"
 
     write_test_config(tmp_path)
     monkeypatch.chdir(tmp_path)
 
     inbox = tmp_path / "inbox"
     inbox.mkdir()
-    source_file = inbox / example_pdf.name
-    shutil.copy2(example_pdf, source_file)
+    source_file = inbox / "Rechnung_Zahnarzt_OCR.pdf"
+    source_file.write_bytes(original_pdf_bytes)
 
     init_database, list_documents, search, document_processor = load_pipeline_modules()
     init_database.init_database()
@@ -114,8 +110,6 @@ def test_process_archives_invoice_and_stores_document_metadata(
 
     document_processor.process(str(source_file))
 
-    assert example_pdf.exists()
-    assert example_pdf.read_bytes() == original_pdf_bytes
     assert not source_file.exists()
 
     documents = list_documents.list_documents()
