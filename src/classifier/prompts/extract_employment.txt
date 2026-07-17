@@ -18,7 +18,12 @@ Schema:
   "net_amount": null,
   "income_tax": null,
   "soli": null,
-  "church_tax": null
+  "church_tax": null,
+  "pension_insurance_employer": null,
+  "pension_insurance_employee": null,
+  "health_insurance": null,
+  "care_insurance": null,
+  "unemployment_insurance": null
 }}
 
 Bestimme zuerst document_subtype:
@@ -81,6 +86,19 @@ Extrahiere je nach Subtyp:
 - income_tax = Lohnsteuer
 - soli = Solidaritätszuschlag
 - church_tax = Kirchensteuer
+
+Nur bei lohnsteuerbescheinigung (nummerierte Zeilen der Bescheinigung):
+- pension_insurance_employer = Arbeitgeberanteil zur gesetzlichen
+  Rentenversicherung (Zeile 22)
+- pension_insurance_employee = Arbeitnehmeranteil zur gesetzlichen
+  Rentenversicherung (Zeile 23)
+- health_insurance = Arbeitnehmerbeiträge zur gesetzlichen
+  Krankenversicherung (Zeile 25)
+- care_insurance = Arbeitnehmerbeiträge zur sozialen
+  Pflegeversicherung (Zeile 26)
+- unemployment_insurance = Arbeitnehmerbeiträge zur
+  Arbeitslosenversicherung (Zeile 27)
+Bei gehaltsabrechnung diese fünf Felder NICHT befüllen (null).
 
 Beträge müssen Zahlen sein.
 Keine Währungszeichen.

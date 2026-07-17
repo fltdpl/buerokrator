@@ -55,6 +55,12 @@ AMOUNT_FIELD_NAMES = {
     "net_amount",
     "income_tax",
     "settlement_amount",
+    # Sozialversicherungsbeiträge der Lohnsteuerbescheinigung (Zeilen 22–27).
+    "pension_insurance_employer",
+    "pension_insurance_employee",
+    "health_insurance",
+    "care_insurance",
+    "unemployment_insurance",
 }
 
 # Felder, die ihr Vorzeichen behalten dürfen (negativ = Erstattung).
