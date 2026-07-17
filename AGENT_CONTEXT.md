@@ -16,9 +16,13 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
 
 - Python
 - SQLite
-- Ollama (Modell konfigurierbar in `config/settings.yaml`: Qwen oder gemma3:4b oder gemma4)
+- Ollama (Modell konfigurierbar in `config/settings.yaml`, Standard gemma3:4b) —
+  **optional**: ohne Ollama läuft der Import im eingeschränkten Modus
+  (Regel-Klassifikation, keine Feld-Extraktion); „Erneut prüfen" und
+  `evaluate.py` verweigern dann mit klarer Meldung
 - Tesseract OCR (+ pypdfium2 für PDF→Bild, reines Python-Wheel)
 - NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081)
+- Packaging: PyInstaller-onedir + Linux-Tarball (`bash packaging/build_linux.sh`)
 
 ## Architektur / Pipeline
 

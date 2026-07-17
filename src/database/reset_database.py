@@ -37,6 +37,9 @@ def reset_documents_table():
         cursor = conn.cursor()
 
         cursor.execute("DROP TABLE IF EXISTS documents")
+        # Die Trigger fallen mit der Tabelle; den (external-content)
+        # FTS-Index explizit mit verwerfen, sonst blieben dort alte Einträge.
+        cursor.execute("DROP TABLE IF EXISTS documents_fts")
 
         conn.commit()
 

@@ -10,7 +10,7 @@ from src.database.database import open_connection
 # Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
 # erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
 # bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 DOCUMENT_COLUMNS = {
@@ -90,6 +90,85 @@ def create_indexes(cursor):
     )
 
 
+# Spalten, die die Volltextsuche indexiert (Reihenfolge = FTS-Spaltenindex,
+# relevant für die bm25-Gewichte in search.py).
+FTS_COLUMNS = ["filename", "document_type", "extracted_data", "document_text", "notes"]
+
+
+def create_fts(cursor):
+    """Legt die FTS5-Volltexttabelle samt Sync-Triggern an (Schema v2).
+
+    External-Content-Tabelle über documents: der Index speichert die Texte
+    nicht doppelt; Trigger halten ihn bei INSERT/UPDATE/DELETE aktuell.
+    Trigram-Tokenizer: Substring-Suche wie das frühere LIKE, aber indiziert
+    und mit Relevanz-Ranking (bm25).
+    """
+    fts_exists = (
+        cursor.execute(
+            """
+            SELECT name FROM sqlite_master
+            WHERE type = 'table' AND name = 'documents_fts'
+            """
+        ).fetchone()
+        is not None
+    )
+
+    columns = ", ".join(FTS_COLUMNS)
+
+    cursor.execute(
+        f"""
+        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+            {columns},
+            content='documents',
+            content_rowid='id',
+            tokenize='trigram'
+        )
+        """
+    )
+
+    new_columns = ", ".join(f"new.{name}" for name in FTS_COLUMNS)
+    old_columns = ", ".join(f"old.{name}" for name in FTS_COLUMNS)
+
+    # DROP + CREATE statt IF NOT EXISTS: falls sich die Spaltenliste einmal
+    # ändert, bleiben sonst veraltete Trigger stehen.
+    for name in ("documents_fts_ai", "documents_fts_ad", "documents_fts_au"):
+        cursor.execute(f"DROP TRIGGER IF EXISTS {name}")
+
+    cursor.execute(
+        f"""
+        CREATE TRIGGER documents_fts_ai AFTER INSERT ON documents BEGIN
+            INSERT INTO documents_fts (rowid, {columns})
+            VALUES (new.id, {new_columns});
+        END
+        """
+    )
+    cursor.execute(
+        f"""
+        CREATE TRIGGER documents_fts_ad AFTER DELETE ON documents BEGIN
+            INSERT INTO documents_fts (documents_fts, rowid, {columns})
+            VALUES ('delete', old.id, {old_columns});
+        END
+        """
+    )
+    cursor.execute(
+        f"""
+        CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
+            INSERT INTO documents_fts (documents_fts, rowid, {columns})
+            VALUES ('delete', old.id, {old_columns});
+            INSERT INTO documents_fts (rowid, {columns})
+            VALUES (new.id, {new_columns});
+        END
+        """
+    )
+
+    # Frisch angelegte FTS-Tabelle: Bestand einmalig indexieren (Migration
+    # v1→v2, aber auch nach Backup-Restore einer älteren DB).
+    if not fts_exists:
+        cursor.execute(
+            "INSERT INTO documents_fts (documents_fts) VALUES ('rebuild')"
+        )
+
+
 def _backup_before_migration(conn, old_version):
     """Sichert die DB-Datei, bevor eine Migration sie verändert.
 
@@ -163,6 +242,7 @@ def init_database():
 
         migrate_documents_table(cursor)
         create_indexes(cursor)
+        create_fts(cursor)
 
         cursor.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
