@@ -10,6 +10,16 @@ klassifiziert, automatisch umbenannt und archiviert; die relevanten Felder
 werden in einer lokalen Datenbank gespeichert und in der App geprüft. Keine
 Daten verlassen den Rechner — auch keine Web-Fonts.
 
+## Screenshots
+
+*Dokumentenliste mit Filtern und Bulk-Aktionen:*
+
+![Dokumentenliste](docs/screenshots/dokumente.png)
+
+*Prüf-Workflow: Formular neben der PDF-/OCR-Ansicht (Beispieldokument mit Musterdaten):*
+
+![Detailansicht mit Prüf-Workflow](docs/screenshots/detailansicht.png)
+
 ## Hauptfunktionen
 
 - Stapel-Import aus dem `inbox`-Ordner, inklusive Dubletten-Erkennung
