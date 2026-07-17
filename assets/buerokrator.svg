@@ -1,14 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Buerokrator-Logo: Farben aus src/frontend/theme.py
-       (DARK #1e2229, LIGHT #f7f8f6, DARK_ACTIVE #f18758, INK_MUTED-Ton) -->
   <rect width="512" height="512" rx="100" fill="#1e2229"/>
-  <g transform="rotate(-5 256 250)">
-    <path d="M156 112 h150 l56 56 v220 a18 18 0 0 1 -18 18 H156 a18 18 0 0 1 -18 -18 V130 a18 18 0 0 1 18 -18 z" fill="#f7f8f6"/>
-    <path d="M306 112 l56 56 h-44 a12 12 0 0 1 -12 -12 z" fill="#c9d3d0"/>
-    <rect x="172" y="208" width="172" height="17" rx="8.5" fill="#b9c7cc"/>
-    <rect x="172" y="248" width="140" height="17" rx="8.5" fill="#b9c7cc"/>
-    <rect x="172" y="288" width="156" height="17" rx="8.5" fill="#b9c7cc"/>
+  <!-- Vertrag (wird gefressen) -->
+  <g transform="rotate(-5 256 200)">
+    <rect x="176" y="52" width="160" height="270" rx="12" fill="#f7f8f6"/>
+    <text x="214" y="126" font-family="DejaVu Serif" font-size="64" font-weight="bold" fill="#b9c7cc" text-anchor="middle">§</text>
+    <rect x="196" y="152" width="120" height="14" rx="7" fill="#b9c7cc"/>
+    <rect x="196" y="184" width="96" height="14" rx="7" fill="#b9c7cc"/>
+    <rect x="196" y="216" width="110" height="14" rx="7" fill="#b9c7cc"/>
+    <!-- Unterschrift -->
+    <path d="M198 262 q16 -20 30 0 q10 14 26 -6 q12 -12 26 2" fill="none" stroke="#5f7d88" stroke-width="6" stroke-linecap="round"/>
   </g>
-  <circle cx="352" cy="362" r="88" fill="#f18758" stroke="#1e2229" stroke-width="14"/>
-  <path d="M312 364 l30 30 54 -60" fill="none" stroke="#f7f8f6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Scanner-Monster -->
+  <rect x="76" y="306" width="360" height="136" rx="30" fill="#f18758"/>
+  <!-- Papier läuft ins Maul -->
+  <g transform="rotate(-5 256 200)">
+    <rect x="176" y="270" width="160" height="48" fill="#f7f8f6"/>
+  </g>
+  <!-- Zähne beißen ins Papier -->
+  <path d="M118 306 l23 32 l23 -32 l23 32 l23 -32 l23 32 l23 -32 l23 32 l23 -32 l23 32 l23 -32 l23 32 l23 -32 z" fill="#f7f8f6" stroke="#1e2229" stroke-width="6" stroke-linejoin="round"/>
+  <!-- fiese Augen -->
+  <circle cx="172" cy="396" r="26" fill="#f7f8f6"/>
+  <circle cx="181" cy="393" r="11" fill="#1e2229"/>
+  <circle cx="340" cy="396" r="26" fill="#f7f8f6"/>
+  <circle cx="331" cy="393" r="11" fill="#1e2229"/>
+  <!-- zornige Brauen -->
+  <path d="M136 358 l62 16" stroke="#1e2229" stroke-width="14" stroke-linecap="round"/>
+  <path d="M376 358 l-62 16" stroke="#1e2229" stroke-width="14" stroke-linecap="round"/>
+  <!-- Status-LED -->
+  <circle cx="404" cy="424" r="8" fill="#1e2229"/>
 </svg>
