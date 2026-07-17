@@ -172,6 +172,44 @@ def test_init_database_backs_up_existing_db_before_migration(tmp_path, monkeypat
     assert version == SCHEMA_VERSION
 
 
+def test_init_database_indexes_existing_rows_in_fts(tmp_path, monkeypatch):
+    # Migration einer Bestands-DB (v1, ohne FTS): der Volltextindex wird
+    # angelegt UND mit dem Bestand befüllt (rebuild).
+    db_path = tmp_path / "database" / "buerokrator.db"
+    db_path.parent.mkdir()
+    write_test_config(tmp_path, db_path)
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename TEXT,
+                document_text TEXT
+            )
+            """
+        )
+        conn.execute(
+            "INSERT INTO documents (filename, document_text) VALUES (?, ?)",
+            ("bestand.pdf", "Inhalt aus dem Altbestand"),
+        )
+        conn.execute("PRAGMA user_version = 1")
+
+    monkeypatch.chdir(tmp_path)
+
+    init_database()
+
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            """
+            SELECT rowid FROM documents_fts
+            WHERE documents_fts MATCH '"Altbestand"'
+            """
+        ).fetchall()
+
+    assert rows == [(1,)]
+
+
 def test_init_database_skips_backup_when_version_is_current(tmp_path, monkeypatch):
     db_path = tmp_path / "database" / "buerokrator.db"
     write_test_config(tmp_path, db_path)
