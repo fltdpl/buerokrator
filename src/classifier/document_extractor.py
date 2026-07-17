@@ -88,6 +88,12 @@ AMOUNT_FIELDS = {
         "soli",
         "church_tax",
         "net_amount",
+        # SV-Beiträge der Lohnsteuerbescheinigung (Zeilen 22–27).
+        "pension_insurance_employer",
+        "pension_insurance_employee",
+        "health_insurance",
+        "care_insurance",
+        "unemployment_insurance",
     ),
 }
 

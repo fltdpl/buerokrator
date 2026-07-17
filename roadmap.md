@@ -260,7 +260,7 @@
 
 ### Später
 
-- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen/Zeilen zuordnen (Alleinstellungsmerkmal ggü. Paperless)
+- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen zuordnen (Alleinstellungsmerkmal ggü. Paperless) — **in Arbeit seit 17.07.2026**, Zielbild + Umsetzungsplan in docs/05_Steuerlogik.md (Scope: Anlage N, Vorsorgeaufwand, KAP; Golden-Master-Abgleich gegen abgegebene Taxfix-Erklärung)
     
 - [ ] ELSTER-Export vorbereiten
     
@@ -285,9 +285,6 @@
     
 - [ ] Fehlerhafte Dokumente kennzeichnen
     
-- [ ] Konfidenz-gesteuertes Prüfen: sichere Dokumente (rule + vollständige Pflichtfelder) automatisch freigeben, nur unsichere vorlegen
-    
-
 ### Mittel
 
 - [x] Statistiken zur Erkennungsqualität (Report auf stdout + `exports/evaluation_report.json`) ✅ 2026-07-08
@@ -295,6 +292,11 @@
 - [ ] Dashboard für Erkennungsfehler
     
 - [x] Qualitätskennzahlen pro Dokumenttyp (im Evaluationsreport) ✅ 2026-07-08
+
+
+### Später
+
+- [ ] Konfidenz-gesteuertes Prüfen: sichere Dokumente automatisch freigeben, nur unsichere vorlegen. **Zurückgestellt (17.07.2026): vorerst prüft der Nutzer alles.** Design-Skizze für später: Kriterium = Regel-Klassifikation + vollständige Pflichtfelder + plausibles Datum; neue Spalten `classification_source` und `verified_source` (user/auto) — Auto-Freigaben dürfen NICHT als Ground Truth für evaluate.py zählen; Opt-in-Schalter, Default aus.
     
 
 ---

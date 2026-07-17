@@ -161,6 +161,13 @@ _EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
         _amount("income_tax", "Lohnsteuer"),
         _amount("soli", "Solidaritätszuschlag"),
         _amount("church_tax", "Kirchensteuer"),
+        # Sozialversicherungsbeiträge (LStB Zeilen 22–27) für die
+        # Anlage Vorsorgeaufwand.
+        _amount("pension_insurance_employer", "Rentenversicherung AG-Anteil (Z. 22)"),
+        _amount("pension_insurance_employee", "Rentenversicherung AN-Anteil (Z. 23)"),
+        _amount("health_insurance", "Krankenversicherung (Z. 25)"),
+        _amount("care_insurance", "Pflegeversicherung (Z. 26)"),
+        _amount("unemployment_insurance", "Arbeitslosenversicherung (Z. 27)"),
     ),
     "gehaltsabrechnung": (
         _text("tax_year", "Steuerjahr", required=True),
