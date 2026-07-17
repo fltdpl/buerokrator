@@ -217,3 +217,18 @@ def test_build_table_rows_uses_employer_as_issuer():
     )
 
     assert rows[0]["issuer"] == "ACME AG"
+
+
+def test_filter_documents_by_subtype():
+    docs = [
+        make_row(1, "employment", 2024, {"document_subtype": "lohnsteuerbescheinigung"}),
+        make_row(2, "employment", 2024, {"document_subtype": "gehaltsabrechnung"}),
+        make_row(3, "employment", 2024, {}),
+    ]
+
+    assert [
+        r["id"]
+        for r in filter_documents(docs, subtype="lohnsteuerbescheinigung")
+    ] == [1]
+    # Kein Subtyp-Filter: alles bleibt.
+    assert [r["id"] for r in filter_documents(docs, subtype=None)] == [1, 2, 3]

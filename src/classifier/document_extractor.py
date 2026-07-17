@@ -94,6 +94,7 @@ AMOUNT_FIELDS = {
         "health_insurance",
         "care_insurance",
         "unemployment_insurance",
+        "private_health_insurance",
     ),
 }
 

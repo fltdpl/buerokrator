@@ -61,6 +61,7 @@ AMOUNT_FIELD_NAMES = {
     "health_insurance",
     "care_insurance",
     "unemployment_insurance",
+    "private_health_insurance",
 }
 
 # Felder, die ihr Vorzeichen behalten dürfen (negativ = Erstattung).

@@ -20,6 +20,7 @@ from src.database.list_documents import get_document
 from src.database.replace_document_analysis import replace_document_analysis
 from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
+from src.database.set_document_verified import mark_document_unverified
 from src.organizer.date_utils import year_from_archive_path
 from src.organizer.trash import move_to_trash
 
@@ -129,6 +130,28 @@ def set_documents_subtype(document_ids, subtype):
     return changed
 
 
+def revoke_documents_verification(document_ids):
+    """Widerruft die Freigabe mehrerer Dokumente (verified = 0).
+
+    Für die Bulk-Aktion in der Liste: z. B. nach einer Schema-Erweiterung
+    sollen betroffene Dokumente erneut durch den Prüf-Workflow. Felder und
+    Datei bleiben unangetastet. Gezählt werden nur Dokumente, die vorher
+    freigegeben waren.
+    """
+    changed = 0
+
+    for document_id in document_ids:
+        row = get_document(document_id)
+
+        if row is None or not row["verified"]:
+            continue
+
+        mark_document_unverified(document_id)
+        changed += 1
+
+    return changed
+
+
 def reanalyze_document(document_id):
     """Wiederholt Klassifikation + Extraktion auf dem gespeicherten OCR-Text.
 
@@ -185,6 +208,7 @@ def document_year(row):
 def filter_documents(
     documents,
     document_type=None,
+    subtype=None,
     verified=None,
     from_year=None,
     to_year=None,
@@ -194,6 +218,13 @@ def filter_documents(
     """Wendet die Listen-Filter an (alle optional, None = kein Filter)."""
     if document_type:
         documents = [row for row in documents if row["document_type"] == document_type]
+
+    if subtype:
+        documents = [
+            row
+            for row in documents
+            if parse_document_row(row)["data"].get("document_subtype") == subtype
+        ]
 
     if verified is not None:
         documents = [row for row in documents if bool(row["verified"]) == verified]

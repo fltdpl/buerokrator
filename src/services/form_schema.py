@@ -168,6 +168,7 @@ _EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
         _amount("health_insurance", "Krankenversicherung (Z. 25)"),
         _amount("care_insurance", "Pflegeversicherung (Z. 26)"),
         _amount("unemployment_insurance", "Arbeitslosenversicherung (Z. 27)"),
+        _amount("private_health_insurance", "Private KV/PV (Z. 28)"),
     ),
     "gehaltsabrechnung": (
         _text("tax_year", "Steuerjahr", required=True),

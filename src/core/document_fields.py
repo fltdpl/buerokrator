@@ -82,6 +82,7 @@ EMPLOYMENT_SUBTYPE_FIELDS = {
         "health_insurance",
         "care_insurance",
         "unemployment_insurance",
+        "private_health_insurance",
     },
     # SV-Meldung (§ 25 DEÜV): Meldung zur Sozialversicherung vom Arbeitgeber,
     # inkl. Stornierungen. Nie steuerrelevant.
