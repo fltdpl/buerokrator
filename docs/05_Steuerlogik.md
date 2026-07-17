@@ -110,14 +110,15 @@ lohnt erst, wenn absehbar über dem Pauschbetrag. Später als eigene Phase.
 
 | Position | Quelle | Feld | Status |
 |---|---|---|---|
-| Altersvorsorge: RV-Beitrag Arbeitnehmer | LStB Zeile 23 | `pension_insurance_employee` | ✗ **fehlt** |
-| Altersvorsorge: RV-Beitrag Arbeitgeber | LStB Zeile 22 | `pension_insurance_employer` | ✗ **fehlt** |
-| Basis-Krankenversicherung | LStB Zeile 25 | `health_insurance` | ✗ **fehlt** |
-| Pflegeversicherung | LStB Zeile 26 | `care_insurance` | ✗ **fehlt** |
-| Arbeitslosenversicherung | LStB Zeile 27 | `unemployment_insurance` | ✗ **fehlt** |
+| Altersvorsorge: RV-Beitrag Arbeitnehmer | LStB Zeile 23 | `pension_insurance_employee` | ✓ ergänzt 17.07.2026 |
+| Altersvorsorge: RV-Beitrag Arbeitgeber | LStB Zeile 22 | `pension_insurance_employer` | ✓ ergänzt 17.07.2026 |
+| Basis-Krankenversicherung | LStB Zeile 25 | `health_insurance` | ✓ ergänzt 17.07.2026 |
+| Pflegeversicherung | LStB Zeile 26 | `care_insurance` | ✓ ergänzt 17.07.2026 |
+| Arbeitslosenversicherung | LStB Zeile 27 | `unemployment_insurance` | ✓ ergänzt 17.07.2026 |
+| Private Kranken-/Pflege-Pflichtversicherung | LStB Zeile 28 | `private_health_insurance` | ✓ ergänzt 17.07.2026 |
 | Sonstige Vorsorge (Haftpflicht, Unfall, BU, Risikoleben) | insurance-Dokumente | `amount` + `insurance_type`-Keywords | ✓ vorhanden (Logik: `document_deductibility`) |
 
-→ **Feld-Lücke:** die fünf SV-Felder der Lohnsteuerbescheinigung. Ergänzen in
+→ Feld-Lücke geschlossen (17.07.2026): die sechs SV-Felder (Z. 22–28) der Lohnsteuerbescheinigung. Ergänzen in
 `document_fields.py` (lohnsteuerbescheinigung) + Prompt-Schema + form_schema
 + Kurzlabels (`document_display.py`).
 
@@ -157,7 +158,7 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
 ## Umsetzungsreihenfolge
 
 1. ✅ Dieses Zielbild.
-2. SV-Felder der Lohnsteuerbescheinigung ergänzen (Schema/Prompt/Formular).
+2. ✅ SV-Felder der Lohnsteuerbescheinigung (Z. 22–28) ergänzt (17.07.2026).
 3. Neuer Service `src/tax/elster_mapping.py`: Anlagen-Positionen aus dem
    Bestand berechnen (nur geprüft + steuerrelevant), mit Beleg-Herleitung —
    parallel zur bestehenden Lebensbereichs-Übersicht, mit Tests.

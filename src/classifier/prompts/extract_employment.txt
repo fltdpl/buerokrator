@@ -23,7 +23,8 @@ Schema:
   "pension_insurance_employee": null,
   "health_insurance": null,
   "care_insurance": null,
-  "unemployment_insurance": null
+  "unemployment_insurance": null,
+  "private_health_insurance": null
 }}
 
 Bestimme zuerst document_subtype:
@@ -98,6 +99,8 @@ Nur bei lohnsteuerbescheinigung (nummerierte Zeilen der Bescheinigung):
   Pflegeversicherung (Zeile 26)
 - unemployment_insurance = Arbeitnehmerbeiträge zur
   Arbeitslosenversicherung (Zeile 27)
+- private_health_insurance = Beiträge zur privaten Kranken- und
+  Pflege-Pflichtversicherung (Zeile 28)
 Bei gehaltsabrechnung diese fünf Felder NICHT befüllen (null).
 
 Beträge müssen Zahlen sein.

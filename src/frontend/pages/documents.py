@@ -13,6 +13,7 @@ from src.services.document_service import (
     filter_documents,
     move_documents_to_trash,
     reclassify_documents,
+    revoke_documents_verification,
     set_documents_subtype,
 )
 from src.services.form_schema import subtype_config
@@ -70,6 +71,7 @@ def _default_filters():
     return {
         "search": "",
         "type": "Alle",
+        "subtype": "Alle",
         "status": "Alle",
         "year_range": None,
         "issuer": "",
@@ -111,6 +113,7 @@ def documents_page():
         return filter_documents(
             documents,
             document_type=None if filters["type"] == "Alle" else filters["type"],
+            subtype=None if filters["subtype"] == "Alle" else filters["subtype"],
             verified=None
             if filters["status"] == "Alle"
             else filters["status"] == "Geprüft",
@@ -181,6 +184,14 @@ def documents_page():
                 f"{changed} Dokument(e) auf "
                 f"{DOCUMENT_TYPE_LABELS.get(document_type, document_type)} gesetzt "
                 "und zum erneuten Prüfen markiert."
+            )
+            results.refresh()
+
+        def revoke_selected():
+            changed = revoke_documents_verification(selected_ids())
+            ui.notify(
+                f"Freigabe von {changed} Dokument(en) widerrufen — "
+                "sie stehen wieder zur Prüfung an."
             )
             results.refresh()
 
@@ -271,6 +282,12 @@ def documents_page():
 
             subtype_bulk()
 
+            # Kein Bestätigungsdialog: der Widerruf ist verlustfrei (Felder
+            # bleiben, nur der Prüfstatus fällt) und per Prüfen umkehrbar.
+            ui.button("↩ Freigabe widerrufen", on_click=revoke_selected).props(
+                "flat dense"
+            )
+
             ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(
                 "flat dense color=negative"
             )
@@ -298,12 +315,40 @@ def documents_page():
                 on_change=lambda event: set_filter("search", event.value),
             ).props("dense clearable debounce=400").classes("w-48")
 
+            def set_type_filter(value):
+                # Kategoriewechsel: Unterart-Filter zurücksetzen (die Optionen
+                # gehören zur Kategorie) und die Leiste neu aufbauen.
+                filters["type"] = value
+                filters["subtype"] = "Alle"
+                filter_bar.refresh()
+                results.refresh()
+
             ui.select(
                 ["Alle", *DOCUMENT_TYPES],
                 value=filters["type"],
                 label="Kategorie",
-                on_change=lambda event: set_filter("type", event.value),
+                on_change=lambda event: set_type_filter(event.value),
             ).props("dense").classes("w-36")
+
+            # Unterart-Filter nur, wenn die gewählte Kategorie Unterarten hat.
+            subtype_filter_config = (
+                subtype_config(filters["type"]) if filters["type"] != "Alle" else None
+            )
+
+            if subtype_filter_config:
+                subtype_options = {
+                    "Alle": "Alle",
+                    **{
+                        value: subtype_filter_config["labels"].get(value, value)
+                        for value in subtype_filter_config["options"]
+                    },
+                }
+                ui.select(
+                    subtype_options,
+                    value=filters["subtype"],
+                    label="Unterart",
+                    on_change=lambda event: set_filter("subtype", event.value),
+                ).props("dense").classes("w-44")
 
             ui.select(
                 ["Alle", "Ungeprüft", "Geprüft"],

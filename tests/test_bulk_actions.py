@@ -91,3 +91,32 @@ def test_umklassifizieren_laesst_die_datei_wo_sie_ist(tmp_path, monkeypatch):
     reclassify_documents([document_id], "housing")
 
     assert (tmp_path / "archive" / "a.pdf").exists()
+
+
+def test_freigabe_widerrufen_zaehlt_nur_geprüfte(tmp_path, monkeypatch):
+    from src.services.document_service import revoke_documents_verification
+
+    _setup_project(tmp_path, monkeypatch)
+    verified_doc = _document(tmp_path, "a.pdf")
+    unverified_doc = _document(tmp_path, "b.pdf")
+    set_document_verified(verified_doc, 1)
+
+    changed = revoke_documents_verification([verified_doc, unverified_doc, 999])
+
+    assert changed == 1
+    assert get_document(verified_doc)["verified"] == 0
+    assert get_document(unverified_doc)["verified"] == 0
+
+
+def test_freigabe_widerrufen_laesst_felder_und_datei_unangetastet(tmp_path, monkeypatch):
+    from src.services.document_service import revoke_documents_verification
+
+    _setup_project(tmp_path, monkeypatch)
+    document_id = _document(tmp_path, "a.pdf")
+    set_document_verified(document_id, 1)
+
+    revoke_documents_verification([document_id])
+
+    row = get_document(document_id)
+    assert row["extracted_data"] == "{}"
+    assert (tmp_path / "archive" / "a.pdf").exists()
