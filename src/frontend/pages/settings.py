@@ -1,10 +1,10 @@
-from nicegui import ui
+from nicegui import run, ui
 
 from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
 from src.frontend.layout import card, page_layout
 from src.frontend.pages.trash import render_trash
-from src.services.backup_service import run_backup
+from src.services.backup_service import list_backups, run_backup, run_restore
 from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
 from src.services.model_service import list_installed_models
@@ -191,6 +191,83 @@ def _render_backup(config):
         ui.button("💾 Backup jetzt erstellen", on_click=do_backup).props(
             "color=primary unelevated"
         )
+
+    _render_restore(config)
+
+
+def _render_restore(config):
+    """Backup-ZIP aus dem Zielordner auswählen und wiederherstellen."""
+
+    @ui.refreshable
+    def restore_area():
+        backups = list_backups(_backup_target(config))
+
+        if not backups:
+            ui.label("Keine Backups im Zielordner gefunden.").classes("muted")
+            return
+
+        options = {
+            entry["path"]: f"{entry['name']} ({entry['size_mb']:.1f} MB)"
+            for entry in backups
+        }
+        selected = ui.select(
+            options,
+            value=backups[0]["path"],
+            label="Backup auswählen",
+        ).classes("w-full")
+
+        async def confirm_restore():
+            with ui.dialog() as dialog, ui.card():
+                ui.label("Backup wiederherstellen?").classes("text-lg page-title")
+                ui.label(
+                    "Datenbank und Archiv werden durch den Stand aus der "
+                    "Sicherung ersetzt. Der aktuelle Stand wird nicht "
+                    "gelöscht, sondern daneben abgelegt "
+                    "(pre_restore_… / …_vor_wiederherstellung_…)."
+                ).classes("muted")
+                with ui.row().classes("justify-end w-full"):
+                    ui.button(
+                        "Abbrechen", on_click=lambda: dialog.submit(False)
+                    ).props("flat no-caps")
+                    ui.button(
+                        "Wiederherstellen", on_click=lambda: dialog.submit(True)
+                    ).props("color=negative unelevated no-caps")
+
+            if not await dialog:
+                return
+
+            try:
+                result = await run.io_bound(run_restore, selected.value)
+
+            except Exception as error:
+                ui.notify(
+                    f"Wiederherstellung fehlgeschlagen: {error}", type="negative"
+                )
+                return
+
+            ui.notify(
+                f"Backup wiederhergestellt ({result['archive_files']} "
+                "Archivdateien). Seite neu laden, um den Stand zu sehen.",
+                type="positive",
+            )
+
+        with ui.row().classes("gap-2 items-center"):
+            ui.button("♻️ Wiederherstellen", on_click=confirm_restore).props(
+                "color=negative unelevated no-caps"
+            )
+            ui.button(icon="refresh", on_click=restore_area.refresh).props(
+                "flat dense round"
+            )
+
+    with card("w-full gap-3"):
+        ui.label("Wiederherstellen").classes("text-xl page-title")
+        ui.label(
+            "Stellt Datenbank und Archiv aus einer Backup-ZIP wieder her. "
+            "Der aktuelle Stand wird zuvor beiseitegelegt, nichts wird "
+            "gelöscht."
+        ).classes("text-sm muted")
+
+        restore_area()
 
 
 def _render_database_danger_zone():

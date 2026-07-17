@@ -3,6 +3,7 @@ Type=Application
 Name=Buerokrator
 Comment=Lokales Dokumentenarchiv und Steuervorbereitung
 Exec=@EXEC@
+Icon=buerokrator
 Terminal=false
 Categories=Office;
 Keywords=Dokumente;Steuer;Archiv;OCR;

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Buerokrator-Logo: Farben aus src/frontend/theme.py
+       (DARK #1e2229, LIGHT #f7f8f6, DARK_ACTIVE #f18758, INK_MUTED-Ton) -->
+  <rect width="512" height="512" rx="100" fill="#1e2229"/>
+  <g transform="rotate(-5 256 250)">
+    <path d="M156 112 h150 l56 56 v220 a18 18 0 0 1 -18 18 H156 a18 18 0 0 1 -18 -18 V130 a18 18 0 0 1 18 -18 z" fill="#f7f8f6"/>
+    <path d="M306 112 l56 56 h-44 a12 12 0 0 1 -12 -12 z" fill="#c9d3d0"/>
+    <rect x="172" y="208" width="172" height="17" rx="8.5" fill="#b9c7cc"/>
+    <rect x="172" y="248" width="140" height="17" rx="8.5" fill="#b9c7cc"/>
+    <rect x="172" y="288" width="156" height="17" rx="8.5" fill="#b9c7cc"/>
+  </g>
+  <circle cx="352" cy="362" r="88" fill="#f18758" stroke="#1e2229" stroke-width="14"/>
+  <path d="M312 364 l30 30 54 -60" fill="none" stroke="#f7f8f6" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

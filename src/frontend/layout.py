@@ -1,5 +1,6 @@
 """Gemeinsames Seitenlayout (Seitenleiste + Kopf) für alle NiceGUI-Seiten."""
 
+import asyncio
 from contextlib import contextmanager
 
 from nicegui import app, ui
@@ -49,6 +50,11 @@ async def confirm_shutdown():
 
     if await dialog:
         ui.notify("Buerokrator wird beendet …")
+        # Best effort: Browser dürfen window.close() ablehnen, wenn der Tab
+        # nicht per Skript geöffnet wurde — dann bleibt der Tab einfach offen.
+        # Kurze Wartezeit, damit das JS den Client vor dem Shutdown erreicht.
+        ui.run_javascript("setTimeout(() => window.close(), 100)")
+        await asyncio.sleep(0.5)
         app.shutdown()
 
 

@@ -19,6 +19,8 @@ a = Analysis(
         (str(REPO / "config" / "settings.yaml"), "config"),
         # prompt_loader liest relativ zum Modul: <Bundle>/src/classifier/prompts/
         (str(REPO / "src" / "classifier" / "prompts"), "src/classifier/prompts"),
+        # Logo/Favicon: main.py erwartet <Bundle>/assets/buerokrator.svg
+        (str(REPO / "assets"), "assets"),
     ],
     hiddenimports=[
         # Seiten werden nur per Import-Nebenwirkung registriert — sicherstellen,

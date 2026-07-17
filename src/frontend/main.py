@@ -36,6 +36,10 @@ from src.database.list_documents import get_document
 HOST = "127.0.0.1"
 PORT = 8081
 
+# Logo: im Repo unter assets/, im PyInstaller-Bundle via Spec-datas am
+# selben relativen Ort (parents[2] = Repo-Root bzw. Bundle-Root).
+_FAVICON = Path(__file__).resolve().parents[2] / "assets" / "buerokrator.svg"
+
 
 @app.get("/pdf/{document_id}")
 def serve_pdf(document_id: int):
@@ -69,6 +73,7 @@ def run(*, show: bool = False) -> None:
         port=PORT,
         title="Buerokrator",
         language="de",
+        favicon=str(_FAVICON) if _FAVICON.exists() else None,
         reload=False,
         show=show,
     )
