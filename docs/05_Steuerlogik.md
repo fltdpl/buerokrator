@@ -165,7 +165,9 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
    `tax_expected_<jahr>.yaml` gitignored (echte Steuerdaten). Vorlage:
    `python tax_check.py <jahr> --vorlage` (bewusst OHNE App-Werte
    vorbefüllt — Bestätigungsfehler vermeiden).
-5. Steuer-Seite auf Anlagen-Ansicht umbauen (Ampel + Herleitung).
+5. ✅ Steuer-Seite auf Anlagen-Ansicht umgebaut (18.07.2026): Ampel je
+   Position, aufklappbare Beleg-Herleitung (gezählt/ungeprüft/ohne
+   Wert/unklar), Lebensbereichs-Liste darunter erhalten.
 6. Abgleich echtes Jahr, Differenzen klassifizieren, Abnahme.
 
 ## Ausbauideen (nicht umgesetzt)

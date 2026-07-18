@@ -194,6 +194,37 @@ async def test_detail_marks_empty_required_field(user: User):
     await user.should_see("Pflichtfeld(er) leer")
 
 
+@pytest.mark.asyncio
+async def test_tax_page_renders_anlagen_view(user: User, monkeypatch):
+    # Mit Bestand: die Anlagen-Ansicht baut (Ampel, Positionen). Zahlen erfunden.
+    import src.database.database as database
+    from src.database.document_repository import insert_document
+
+    # Schema-Migration im frischen tmp_path erneut ausführen (das Flag ist
+    # prozess-global und durch vorherige Tests schon gesetzt).
+    monkeypatch.setattr(database, "_schema_ready", False)
+
+    insert_document(
+        filename="lstb.pdf",
+        archive_path="archive/2025/Arbeit/lstb.pdf",
+        document_type="employment",
+        extracted_data={
+            "document_subtype": "lohnsteuerbescheinigung",
+            "employer": "Musterfirma GmbH",
+            "tax_year": "2025",
+            "gross_amount": 38500.0,
+        },
+    )
+
+    await user.open("/steuer")
+    await user.should_see("Anlage N")
+    await user.should_see("Anlage Vorsorgeaufwand")
+    await user.should_see("Anlage KAP")
+    await user.should_see("Bruttoarbeitslohn (LStB Zeile 3)")
+
+
+# Bewusst der LETZTE Test der Datei: der direkte Import von src.frontend.main
+# verstellt die App-Registrierung — User-Fixture-Tests danach laufen ins 404.
 def test_nicegui_storage_path_points_to_app_home():
     """NiceGUI-Storage darf nicht cwd-relativ liegen (Packaging).
 

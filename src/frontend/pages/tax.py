@@ -3,12 +3,26 @@ from nicegui import ui
 from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.database.list_documents import list_documents
 from src.frontend.layout import format_euro, page_layout
+from src.tax.elster_mapping import (
+    EMPTY,
+    INCOMPLETE,
+    READY,
+    build_elster_summary,
+)
+from src.tax.elster_mapping import UNCLEAR as POSITION_UNCLEAR
 from src.tax.tax_summary import (
-    UNCLEAR,
     available_tax_years,
     build_tax_summary,
     export_tax_summary_csv,
 )
+
+# Ampel je Anlagen-Position (siehe docs/05_Steuerlogik.md, Zielbild).
+POSITION_STATUS = {
+    READY: ("🟢", "übernahmefertig"),
+    INCOMPLETE: ("🟡", "unvollständig — ungeprüfte Belege zählen nicht"),
+    POSITION_UNCLEAR: ("❓", "unklar — bitte Belege klären"),
+    EMPTY: ("⚪", "keine Belege"),
+}
 
 DEDUCTIBILITY_HINTS = {
     "deductible": "absetzbar",
@@ -17,10 +31,81 @@ DEDUCTIBILITY_HINTS = {
 }
 
 
-def _metric(label, value):
-    with ui.card().classes("items-center min-w-48"):
-        ui.label(value).classes("text-3xl page-title")
-        ui.label(label).classes("text-sm muted")
+def _reference_list(title, references, note=""):
+    """Beleg-Liste einer Position (Herleitung) mit Links in die Detailansicht."""
+    if not references:
+        return
+
+    suffix = f" · {note}" if note else ""
+    ui.label(f"{title}{suffix}").classes("text-xs muted")
+
+    for ref in references:
+        amount = format_euro(ref["amount"]) if ref["amount"] is not None else "—"
+        ui.link(
+            f"• {ref['issuer'] or ref['filename']} · {amount}",
+            f"/dokumente/{ref['id']}",
+        ).classes("text-sm")
+
+
+def _position_row(position):
+    """Eine Anlagen-Position: Ampel + Betrag, aufklappbare Herleitung."""
+    icon, status_text = POSITION_STATUS[position["status"]]
+
+    if position["status"] == EMPTY:
+        ui.label(f"{icon} {position['label']} — keine Belege").classes(
+            "text-xs muted"
+        )
+        return
+
+    header = f"{icon} {position['label']}  —  {format_euro(position['amount'])}"
+
+    with ui.expansion(header).classes("w-full"):
+        ui.label(status_text).classes("text-xs muted")
+
+        if position["hint"]:
+            ui.label(f"⚠️ {position['hint']}").classes("text-sm text-amber-700")
+
+        _reference_list("Belege (gezählt)", position["documents"])
+        _reference_list(
+            "Ungeprüft",
+            position["pending"],
+            note="zählen NICHT — erst prüfen",
+        )
+        _reference_list(
+            "Geprüft, aber ohne diesen Wert",
+            position["missing_value"],
+            note="Feld nachtragen („Erneut prüfen“ oder von Hand)",
+        )
+        _reference_list(
+            "Unklare Versicherungsart",
+            position["unclear"],
+            note="Art ergänzen, dann zählt der Betrag",
+        )
+
+
+def _anlagen_section(year):
+    """Anlagen-Ansicht: die Werte, die in die Steuererklärung übernommen werden."""
+    summary = build_elster_summary(year)
+
+    for anlage in summary["anlagen"]:
+        positions = anlage["positions"]
+        filled = [p for p in positions if p["status"] != EMPTY]
+        ready = sum(1 for p in filled if p["status"] == READY)
+
+        with ui.card().classes("w-full"):
+            with ui.row().classes("items-baseline gap-3"):
+                ui.label(anlage["label"]).classes("text-xl page-title")
+
+                if filled:
+                    ui.label(
+                        f"{ready} von {len(filled)} Positionen übernahmefertig"
+                    ).classes("text-sm muted")
+
+            if not filled:
+                ui.label("Keine Belege für dieses Jahr.").classes("muted")
+
+            for position in positions:
+                _position_row(position)
 
 
 @ui.page("/steuer")
@@ -53,55 +138,9 @@ def tax_page():
                 "muted"
             )
 
-            ungeprueft = (
-                totals["deductible_amount"] - totals["deductible_verified_amount"]
-            )
-
-            with ui.row().classes("gap-4"):
-                _metric(
-                    "Absetzbar (geprüft)",
-                    format_euro(totals["deductible_verified_amount"]),
-                )
-                _metric("davon ungeprüft", format_euro(ungeprueft))
-                _metric("Erfasste Beträge gesamt", format_euro(totals["amount"]))
-                _metric(
-                    "Steuerrelevante Dokumente",
-                    str(totals["tax_relevant_count"]),
-                )
-
-            if ungeprueft > 0:
-                ui.label(
-                    "⚠️ Es gibt ungeprüfte Beträge. Prüfe die betroffenen "
-                    "Dokumente, bevor du die Summen für die Steuererklärung "
-                    "verwendest."
-                ).classes("text-amber-700")
-
-            # Dokumente mit unklarer Absetzbarkeit direkt verlinken.
-            unclear_documents = [
-                document
-                for category in summary["categories"]
-                for document in category["documents"]
-                if document["deductibility"] == UNCLEAR
-                and document["amount"] is not None
-            ]
-
-            if unclear_documents:
-                unclear_sum = totals["deductible_unclear_amount"]
-
-                with ui.card().classes("w-full bg-blue-50"):
-                    ui.label(
-                        f"{format_euro(unclear_sum)} aus "
-                        f"{len(unclear_documents)} Dokument(en) mit unklarer "
-                        "Versicherungsart sind nicht in „Absetzbar“ enthalten. "
-                        "Versicherungsart ergänzen, dann zählt der Betrag mit:"
-                    )
-
-                    for document in unclear_documents:
-                        ui.link(
-                            f"• {document['issuer'] or document['filename']}"
-                            f" · {format_euro(document['amount'])}",
-                            f"/dokumente/{document['id']}",
-                        )
+            # Anlagen-Ansicht: nur geprüfte + steuerrelevante Belege zählen,
+            # jede Summe ist über die Belegliste herleitbar.
+            _anlagen_section(state["year"])
 
             ui.button(
                 "📥 Jahres-Export (CSV)",
@@ -113,36 +152,10 @@ def tax_page():
                 ),
             ).props("flat")
 
-            capital = summary["capital_income"]
-
-            if totals["income_tax"] or capital["count"]:
-                ui.separator()
-                ui.label("Weitere steuerrelevante Summen").classes(
-                    "text-xl page-title"
-                )
-
-                with ui.row().classes("gap-4"):
-                    _metric(
-                        "Gezahlte Lohn-/Einkommensteuer",
-                        format_euro(totals["income_tax"]),
-                    )
-                    _metric(
-                        "Guthabenszinsen (Anlage KAP)",
-                        format_euro(capital["interest"]),
-                    )
-                    _metric(
-                        "Kapitalertragssteuer",
-                        format_euro(capital["capital_gains_tax"]),
-                    )
-
-                if capital["count"]:
-                    ui.label(
-                        f"Kapitalerträge aus {capital['count']} "
-                        "Steuerbescheinigung(en). Bauspar-Kontoauszüge zählen "
-                        "nicht mit (Steuerbescheinigung ist maßgeblich)."
-                    ).classes("text-xs muted")
-
             ui.separator()
+            ui.label("Alle Dokumente des Jahres (nach Lebensbereich)").classes(
+                "text-xl page-title"
+            )
 
             for category in summary["categories"]:
                 hint = " · absetzbar (je nach Art)" if category["deductible"] else ""
