@@ -159,10 +159,12 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
 
 1. ✅ Dieses Zielbild.
 2. ✅ SV-Felder der Lohnsteuerbescheinigung (Z. 22–28) ergänzt (17.07.2026).
-3. Neuer Service `src/tax/elster_mapping.py`: Anlagen-Positionen aus dem
-   Bestand berechnen (nur geprüft + steuerrelevant), mit Beleg-Herleitung —
-   parallel zur bestehenden Lebensbereichs-Übersicht, mit Tests.
-4. `tax_check.py` (Golden-Master-Abgleich, gitignored Erwartungsdatei).
+3. ✅ Service `src/tax/elster_mapping.py` (17.07.2026): Anlagen-Positionen
+   (nur geprüft + steuerrelevant), Beleg-Herleitung, Ampel.
+4. ✅ `tax_check.py` (18.07.2026): Golden-Master-Abgleich; Erwartungsdatei
+   `tax_expected_<jahr>.yaml` gitignored (echte Steuerdaten). Vorlage:
+   `python tax_check.py <jahr> --vorlage` (bewusst OHNE App-Werte
+   vorbefüllt — Bestätigungsfehler vermeiden).
 5. Steuer-Seite auf Anlagen-Ansicht umbauen (Ampel + Herleitung).
 6. Abgleich echtes Jahr, Differenzen klassifizieren, Abnahme.
 
