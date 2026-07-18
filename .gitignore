@@ -53,6 +53,9 @@ trash/
 backups/
 *.zip
 
+# Golden-Master-Erwartungen (echte Steuerdaten, nur lokal)
+tax_expected_*.yaml
+
 # First-Run-Marker (lokaler Zustand, nie committen)
 .setup_done
 .nicegui/
