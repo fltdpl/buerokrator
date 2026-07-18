@@ -100,3 +100,21 @@ def test_template_is_valid_yaml_without_active_values():
     report = compare_year(2025, parsed, [lstb(1, gross_amount=38500.0)])
     assert report["errors"] == []
     assert report["ok"] is False
+
+
+def test_whole_euro_expectation_tolerates_taxfix_rounding():
+    # Taxfix rundet auf ganze Euro: 38500 gegen App-Wert 38500.47 ist ok.
+    docs = [lstb(1, gross_amount=38500.47)]
+
+    report = compare_year(2025, {"anlage_n": {"gross_amount": 38500}}, docs)
+
+    assert report["ok"] is True
+    assert report["checked"][0]["rounded"] is True
+    assert "±1 €" in format_report(report)
+
+    # Mehr als 1 € Abstand bleibt eine Differenz …
+    assert not compare_year(2025, {"anlage_n": {"gross_amount": 38502}}, docs)["ok"]
+    # … und Cent-Erwartungen bleiben cent-genau.
+    assert not compare_year(
+        2025, {"anlage_n": {"gross_amount": 38500.40}}, docs
+    )["ok"]

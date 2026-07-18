@@ -16,6 +16,10 @@ from src.tax.elster_mapping import build_elster_summary
 # Cent-genau: Rundungsdifferenzen unter einem halben Cent gelten als gleich.
 TOLERANCE = 0.005
 
+# Erwartungswerte ohne Cent-Anteil (z. B. aus Taxfix, das auf ganze Euro
+# rundet) bekommen eine Euro-Toleranz: |App − Erwartung| < 1 €.
+ROUNDED_TOLERANCE = 1.0
+
 
 def compare_year(year: int, expected: dict, documents=None) -> dict:
     """Vergleicht die Anlagen-Positionen eines Jahres mit den Erwartungen.
@@ -76,6 +80,11 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
                 )
                 continue
 
+            # Ganzzahlige Erwartung = gerundete Quelle (Taxfix): ±1 €.
+            rounded_source = float(expected_amount).is_integer()
+            tolerance = ROUNDED_TOLERANCE if rounded_source else TOLERANCE
+            difference = abs(position["amount"] - expected_amount)
+
             checked.append(
                 {
                     "anlage": anlage["label"],
@@ -83,7 +92,9 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
                     "label": position["label"],
                     "expected": expected_amount,
                     "actual": position["amount"],
-                    "ok": abs(position["amount"] - expected_amount) < TOLERANCE,
+                    "ok": difference < tolerance,
+                    # Treffer nur dank Rundungstoleranz — im Report kenntlich.
+                    "rounded": rounded_source and difference >= TOLERANCE,
                     "status": position["status"],
                     "documents": position["documents"],
                     "pending": position["pending"],
@@ -156,10 +167,13 @@ def format_report(report: dict) -> str:
             lines.append(f"{current_anlage}")
 
         marker = "OK  " if entry["ok"] else "DIFF"
+        rounding_note = (
+            " (±1 €, Erwartung gerundet)" if entry["ok"] and entry["rounded"] else ""
+        )
         lines.append(
             f"  {marker}  {entry['label']}: "
             f"erwartet {entry['expected']:.2f} €, "
-            f"App {entry['actual']:.2f} €"
+            f"App {entry['actual']:.2f} €{rounding_note}"
         )
 
         if not entry["ok"] or entry["status"] != "ready":
