@@ -10,7 +10,7 @@ from src.database.database import open_connection
 # Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
 # erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
 # bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 DOCUMENT_COLUMNS = {
@@ -30,6 +30,10 @@ DOCUMENT_COLUMNS = {
     # Steuerrelevanz (0/1). NULL = noch nicht gesetzt: dann gilt der aus
     # Typ/Subtyp abgeleitete Default (siehe src/tax/tax_relevance.py).
     "tax_relevant": "INTEGER",
+    # Steuerlicher Zweck eines Beleg-Dokuments (werbungskosten /
+    # krankheitskosten, NULL = keiner). Vom Nutzer beim Prüfen gesetzt,
+    # nie vom LLM; Grundlage der Belegsummen-Positionen im ELSTER-Mapping.
+    "tax_purpose": "TEXT",
 }
 
 REQUIRED_EXISTING_COLUMNS = {

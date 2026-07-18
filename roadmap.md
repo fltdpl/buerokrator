@@ -260,7 +260,7 @@
 
 ### Später
 
-- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen zuordnen (Alleinstellungsmerkmal ggü. Paperless) — **in Arbeit seit 17.07.2026**, Zielbild + Umsetzungsplan in docs/05_Steuerlogik.md (Scope: Anlage N, Vorsorgeaufwand, KAP; Golden-Master-Abgleich gegen abgegebene Taxfix-Erklärung)
+- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen zuordnen (Alleinstellungsmerkmal ggü. Paperless) — **in Arbeit seit 17.07.2026**, Zielbild + Umsetzungsplan in docs/05_Steuerlogik.md (Scope: Anlage N, Vorsorgeaufwand, KAP; Golden-Master-Abgleich gegen eine abgegebene Erklärung)
     
 - [ ] ELSTER-Export vorbereiten
     

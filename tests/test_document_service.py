@@ -53,6 +53,7 @@ def make_row(
         "document_text": "text",
         "notes": "",
         "tax_relevant": None,
+        "tax_purpose": None,
     }
 
 

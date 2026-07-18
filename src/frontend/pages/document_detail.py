@@ -6,6 +6,7 @@ from src.core.document_display import get_document_display_name
 from src.core.document_types import (
     DOCUMENT_TYPES,
     DOCUMENT_TYPE_LABELS,
+    INVOICE,
     normalize_document_type,
 )
 from src.database.document_repository import save_document
@@ -23,6 +24,7 @@ from src.services.document_service import (
     parse_document_row,
     reanalyze_document,
 )
+from src.tax.tax_purpose import TAX_PURPOSE_LABELS
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
     empty_fields,
@@ -100,6 +102,13 @@ def document_detail_page(document_id: int):
             extracted_data=updated,
             notes=notes_area.value,
             tax_relevant=tax_relevant_checkbox.value,
+            # Zweck nur zusammen mit Steuerrelevanz: ein unsichtbar
+            # gewordener Zweck darf die Anlagen-Summen nicht still befüllen.
+            tax_purpose=(
+                tax_purpose_select.value or None
+                if tax_purpose_select is not None and tax_relevant_checkbox.value
+                else None
+            ),
         )
 
         if verify:
@@ -181,6 +190,11 @@ def document_detail_page(document_id: int):
             return True
 
         if bool(tax_relevant_checkbox.value) != initial_tax_relevant:
+            return True
+
+        if tax_purpose_select is not None and (tax_purpose_select.value or "") != (
+            document["tax_purpose"] or ""
+        ):
             return True
 
         return any(
@@ -418,6 +432,26 @@ def document_detail_page(document_id: int):
                     "Vorbelegt aus Art/Unterart — bei Bedarf ändern "
                     "(z. B. absetzbare Rechnung)."
                 ).classes("text-xs muted")
+
+                # Steuerlicher Zweck: kennzeichnet Rechnungs-Belege für die
+                # Belegsummen-Positionen der Steuer-Seite (Anlage N / agB).
+                # Nur bei Rechnungen (andere Typen haben eigene Steuerwege)
+                # und nur sichtbar, wenn das Dokument steuerrelevant ist.
+                tax_purpose_select = None
+
+                if state["document_type"] == INVOICE:
+                    with ui.column().classes("gap-0").bind_visibility_from(
+                        tax_relevant_checkbox, "value"
+                    ):
+                        tax_purpose_select = ui.select(
+                            {"": "—", **TAX_PURPOSE_LABELS},
+                            label="Steuerlicher Zweck (Beleg)",
+                            value=document["tax_purpose"] or "",
+                        ).props("dense").classes("w-64")
+                        ui.label(
+                            "Der Betrag fließt als Belegsumme in die "
+                            "gewählte Anlage ein."
+                        ).classes("text-xs muted")
 
                 with ui.row().classes("gap-2 w-full"):
                     ui.button("💾 Speichern", on_click=lambda: save(verify=False))

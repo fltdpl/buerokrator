@@ -92,7 +92,7 @@ def test_template_is_valid_yaml_without_active_values():
 
     # Alle Anlagen da, aber keine Werte einkommentiert (kein
     # Bestätigungsfehler durch vorbefüllte App-Werte).
-    assert set(parsed) == {"anlage_n", "vorsorgeaufwand", "kap"}
+    assert set(parsed) == {"anlage_n", "vorsorgeaufwand", "kap", "agb"}
     assert all(value is None for value in parsed.values())
     assert "gross_amount" in template  # als Kommentar-Vorlage enthalten
 
@@ -102,8 +102,8 @@ def test_template_is_valid_yaml_without_active_values():
     assert report["ok"] is False
 
 
-def test_whole_euro_expectation_tolerates_taxfix_rounding():
-    # Taxfix rundet auf ganze Euro: 38500 gegen App-Wert 38500.47 ist ok.
+def test_whole_euro_expectation_tolerates_rounded_source():
+    # Steuerprogramme runden oft auf ganze Euro: 38500 gegen App-Wert 38500.47 ist ok.
     docs = [lstb(1, gross_amount=38500.47)]
 
     report = compare_year(2025, {"anlage_n": {"gross_amount": 38500}}, docs)
@@ -118,3 +118,38 @@ def test_whole_euro_expectation_tolerates_taxfix_rounding():
     assert not compare_year(
         2025, {"anlage_n": {"gross_amount": 38500.40}}, docs
     )["ok"]
+
+
+def test_nicht_abgegeben_documents_finding_instead_of_unchecked():
+    # KAP war nicht Teil der Erklärung, die App hat aber Werte: kein
+    # Abgleichsfehler, sondern ein dokumentierter Befund.
+    import json
+
+    docs = [
+        lstb(1, gross_amount=38500.0),
+        {
+            "id": 2,
+            "filename": "steuerb.pdf",
+            "archive_path": "archive/2025/Vorsorge/steuerb.pdf",
+            "document_type": "pension",
+            "extracted_data": json.dumps(
+                {"document_subtype": "steuerbescheinigung", "interest": 210.4}
+            ),
+            "verified": 1,
+            "tax_relevant": None,
+            "tax_purpose": None,
+        },
+    ]
+    expected = {
+        "anlage_n": {"gross_amount": 38500.0},
+        "kap": "nicht_abgegeben",
+    }
+
+    report = compare_year(2025, expected, docs)
+
+    assert report["ok"] is True
+    assert not any(e["key"].startswith("kap.") for e in report["unchecked"])
+    (entry,) = report["not_submitted"]
+    assert entry["anlage"] == "kap"
+    assert any("Kapitalerträge" in f["label"] for f in entry["findings"])
+    assert "unvollständig" in format_report(report)

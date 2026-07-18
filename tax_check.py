@@ -1,7 +1,8 @@
 """Golden-Master-Abgleich: ELSTER-Zuordnung gegen die abgegebene Erklärung.
 
 Vertrauens-Workflow (docs/05_Steuerlogik.md): die Erwartungswerte stammen
-aus der tatsächlich abgegebenen Steuererklärung (Taxfix-PDF/Bescheid) und
+aus der tatsächlich abgegebenen Steuererklärung (Ausdruck des
+Steuerprogramms oder Bescheid) und
 liegen lokal in tax_expected_<jahr>.yaml (gitignored — echte Steuerdaten).
 
   python tax_check.py 2025             # Abgleich gegen tax_expected_2025.yaml

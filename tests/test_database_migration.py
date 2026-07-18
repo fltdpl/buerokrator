@@ -16,6 +16,7 @@ EXPECTED_DOCUMENT_COLUMNS = {
     "tax_year",
     "content_hash",
     "tax_relevant",
+    "tax_purpose",
 }
 
 

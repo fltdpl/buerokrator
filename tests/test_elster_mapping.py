@@ -21,6 +21,7 @@ def make_row(
     data,
     verified=1,
     tax_relevant=None,
+    tax_purpose=None,
 ):
     return {
         "id": id,
@@ -30,6 +31,7 @@ def make_row(
         "extracted_data": json.dumps(data),
         "verified": verified,
         "tax_relevant": tax_relevant,
+        "tax_purpose": tax_purpose,
     }
 
 
@@ -301,3 +303,70 @@ def test_empty_year_has_empty_positions():
         for position in anlage["positions"]:
             assert position["status"] == EMPTY
             assert position["amount"] == 0.0
+
+
+def test_tax_purpose_builds_werbungskosten_and_krankheitskosten():
+    docs = [
+        # Rechnung wäre per Default nicht steuerrelevant — die Kennzeichnung
+        # durch den Nutzer zählt trotzdem.
+        make_row(
+            1,
+            "invoice",
+            2025,
+            {"issuer": "Steuerberater Muster", "amount": 85.5},
+            tax_purpose="werbungskosten",
+        ),
+        make_row(
+            2,
+            "invoice",
+            2025,
+            {"issuer": "Zahnarztpraxis Muster", "amount": 480.25},
+            tax_purpose="krankheitskosten",
+        ),
+        # Ungeprüft: To-do, zählt nicht.
+        make_row(
+            3,
+            "invoice",
+            2025,
+            {"issuer": "Fachbuchhandlung", "amount": 55.0},
+            verified=0,
+            tax_purpose="werbungskosten",
+        ),
+    ]
+
+    summary = build_elster_summary(2025, docs)
+
+    wk = positions(summary, "anlage_n")["werbungskosten_belege"]
+    assert wk["amount"] == 85.5
+    assert [ref["id"] for ref in wk["pending"]] == [3]
+    assert wk["status"] == INCOMPLETE
+    # Grenze dokumentiert: Pauschalen aus eigenen Angaben sind nicht enthalten.
+    assert "Pauschalen" in wk["hint"]
+
+    kk = positions(summary, "agb")["krankheitskosten_belege"]
+    assert kk["amount"] == 480.25
+    assert kk["status"] == READY
+    assert "Erstattungen" in kk["hint"]
+
+
+def test_zusatz_krankenversicherung_gets_own_position():
+    docs = [
+        make_row(
+            1,
+            "insurance",
+            2025,
+            {"insurance_type": "Krankenzusatzversicherung", "amount": 9.0},
+        ),
+        make_row(
+            2,
+            "insurance",
+            2025,
+            {"insurance_type": "Krankenversicherung", "amount": 1234.5},
+        ),
+    ]
+
+    summary = build_elster_summary(2025, docs)
+    vorsorge = positions(summary, "vorsorgeaufwand")
+
+    assert vorsorge["insurance_health_supplementary"]["amount"] == 9.0
+    assert vorsorge["insurance_health"]["amount"] == 1234.5
