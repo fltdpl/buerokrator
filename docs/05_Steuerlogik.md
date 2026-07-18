@@ -70,8 +70,22 @@ Jährlicher CSV-Export, eine Zeile je Dokument, Trennzeichen `;`:
 
 Die heutige Übersicht aggregiert nach Lebensbereichen — eine Steuererklärung
 braucht aber Zahlen **pro ELSTER-Anlage**. Zielbild: die Steuer-Seite zeigt je
-Anlage die übernahmefertigen Werte mit Beleg-Herleitung. Scope (nach Bedarf
-des Nutzers): **Anlage N, Anlage Vorsorgeaufwand, Anlage KAP** — nicht mehr.
+Anlage die übernahmefertigen Werte mit Beleg-Herleitung. Scope (typischer
+Arbeitnehmer-Fall, erweitert 18.07.2026): **Anlage N (inkl. belegbasierter
+Werbungskosten), Anlage Vorsorgeaufwand, Anlage KAP, Anlage Außergewöhnliche
+Belastungen (Krankheitskosten)** — weitere Anlagen erst, wenn ein realer
+Bestand sie braucht.
+
+**Grenze des Systems (bewusst):** Die Erklärung enthält zwei Klassen von
+Posten. **Belegbasierte** (Rechnungen: Steuerberatung, Arbeitsmittel,
+Arzt-/Behandlungskosten …) kann ein Dokumentenarchiv liefern — dafür gibt es die
+Zweck-Kennzeichnung `tax_purpose` (werbungskosten/krankheitskosten, DB-Spalte,
+vom Nutzer beim Prüfen gesetzt, nie vom LLM; nur bei Rechnungen und nur,
+wenn das Dokument steuerrelevant ist — andere Typen haben eigene
+Steuerwege). **Angabenbasierte** (Entfernungspauschale aus Tagen × km,
+Homeoffice-Tage, anteilige Telefonkosten, Verpflegungspauschalen) entstehen
+aus Nutzerangaben, nicht aus Dokumenten — sie sind KOMPLETT außerhalb des
+Projekt-Scopes (weder App noch Abgleich, Entscheidung 18.07.2026).
 
 ## Grundregeln
 
@@ -102,9 +116,11 @@ Monats-Gehaltsabrechnungen sind redundant und zählen nicht).
 | Solidaritätszuschlag | 5 | `soli` | ✓ vorhanden |
 | Kirchensteuer | 6/7 | `church_tax` | ✓ vorhanden |
 
-Werbungskosten (Arbeitsmittel, Fortbildung, Homeoffice/Entfernungspauschale):
-**bewusst zurückgestellt** — bräuchte eine Kennzeichnung an Rechnungen und
-lohnt erst, wenn absehbar über dem Pauschbetrag. Später als eigene Phase.
+**Werbungskosten aus Belegen** (Position `werbungskosten_belege`,
+18.07.2026): Summe aller Dokumente mit `tax_purpose = werbungskosten`
+(beliebiger Typ, Feld `amount`). Angabenbasierte Werbungskosten
+(Entfernungspauschale, Homeoffice, Telefon-Anteil) bewusst NICHT — siehe
+Grenze oben.
 
 ### Anlage Vorsorgeaufwand
 
@@ -117,6 +133,7 @@ lohnt erst, wenn absehbar über dem Pauschbetrag. Später als eigene Phase.
 | Arbeitslosenversicherung | LStB Zeile 27 | `unemployment_insurance` | ✓ ergänzt 17.07.2026 |
 | Private Kranken-/Pflege-Pflichtversicherung | LStB Zeile 28 | `private_health_insurance` | ✓ ergänzt 17.07.2026 |
 | Sonstige Vorsorge (Haftpflicht, Unfall, BU, Risikoleben) | insurance-Dokumente | `amount` + `insurance_type`-Keywords | ✓ vorhanden (Logik: `document_deductibility`) |
+| Zusatz-Krankenversicherung („über Basisabsicherung hinaus", eigene Anlagen-Zeile) | insurance-Dokumente mit „zusatz" (+ kranken/pflege/zahn) im Typ | eigene Position `insurance_health_supplementary` | ✓ ergänzt 18.07.2026 |
 
 → Feld-Lücke geschlossen (17.07.2026): die sechs SV-Felder (Z. 22–28) der Lohnsteuerbescheinigung. Ergänzen in
 `document_fields.py` (lohnsteuerbescheinigung) + Prompt-Schema + form_schema
@@ -134,6 +151,25 @@ Bauspar-Jahresauszüge zählen nicht — Doppelzählung).
 | Soli auf KESt | `soli` | ✓ vorhanden |
 | Kirchensteuer auf KESt | `church_tax` | ✓ vorhanden |
 
+### Anlage Außergewöhnliche Belastungen (18.07.2026)
+
+Position `krankheitskosten_belege`: Summe aller Dokumente mit
+`tax_purpose = krankheitskosten` (z. B. Arzt- oder Apothekenrechnungen).
+Hinweis in
+der Position: Erstattungen (Versicherung/Beihilfe) gegenrechnen — die
+Erklärung verlangt beide Angaben.
+
+## Erwartungsdatei (`tax_expected_<jahr>.yaml`, gitignored)
+
+- Je Anlage ein Mapping `position: betrag`. Ganzzahlige Beträge gelten als
+  gerundete Quelle (viele Steuerprogramme runden auf ganze Euro) → ±1 € Toleranz; Cent-Beträge cent-genau.
+- `kap: nicht_abgegeben` — Anlage war nicht Teil der Erklärung; App-Werte
+  dazu erscheinen als BEFUND (war die Erklärung unvollständig?), nicht als
+  Abgleichsfehler.
+- Tippfehler in Positions-Schlüsseln sind FEHLER (nie stilles „ok").
+- Angabenbasierte Posten der Erklärung tauchen hier bewusst NICHT auf
+  (out of scope, siehe Grenze oben).
+
 ## Vertrauens-Workflow (Entwicklungsprozess)
 
 Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
@@ -144,14 +180,14 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
    Steuerbescheinigung), ungeprüfte Belege (zählen nicht), zwei
    Teilzeit-LStB desselben Jahres (addieren sich).
 2. **Golden-Master lokal (gitignored, echte Daten):** Nutzer pflegt
-   `tax_expected_<jahr>.yaml` mit den Werten aus der tatsächlich abgegebenen
-   Erklärung (Taxfix-PDF/Bescheid). Skript `tax_check.py <jahr>` vergleicht
-   App-Ergebnis je Position und listet jede Differenz mit Beleg-Herleitung.
+   `tax_expected_<jahr>.yaml` mit den Werten aus einer tatsächlich
+   abgegebenen Erklärung (Ausdruck des Steuerprogramms oder Bescheid).
+   Skript `tax_check.py <jahr>` vergleicht App-Ergebnis je Position und
+   listet jede Differenz mit Beleg-Herleitung.
 3. **Differenzen klassifizieren**, nicht wegoptimieren: (a) App-Fehler →
-   fixen; (b) App fehlt ein Beleg → importieren; (c) **Taxfix-Erklärung war
-   unvollständig** (Vermutung des Nutzers: zu seinem Nachteil) → Befund
-   dokumentieren, App hat recht. Erst wenn jede Differenz erklärt ist, gilt
-   das Jahr als abgenommen.
+   fixen; (b) App fehlt ein Beleg → importieren; (c) **die damalige
+   Erklärung war unvollständig** → Befund dokumentieren, App hat recht.
+   Erst wenn jede Differenz erklärt ist, gilt das Jahr als abgenommen.
 4. Das „im Aufbau"-Banner der Steuer-Seite fällt erst, wenn mindestens ein
    echtes Jahr abgenommen ist.
 

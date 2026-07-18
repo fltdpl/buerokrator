@@ -74,6 +74,7 @@ def save_document(
     extracted_data,
     notes="",
     tax_relevant=None,
+    tax_purpose=None,
 ):
 
     # Auf die für den Dokumenttyp erlaubten Felder begrenzen, damit auch beim
@@ -97,6 +98,7 @@ def save_document(
         extracted_data=extracted_data,
         notes=notes,
         tax_relevant=tax_relevant,
+        tax_purpose=tax_purpose,
     )
 
     return new_path

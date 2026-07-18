@@ -49,6 +49,8 @@ def parse_document_row(row):
         # Rohwert (0/1/None); die effektive Relevanz löst resolve_tax_relevance
         # mit dem Typ/Subtyp-Default auf.
         "tax_relevant": row["tax_relevant"],
+        # Steuerlicher Zweck (werbungskosten/krankheitskosten/None).
+        "tax_purpose": row["tax_purpose"],
     }
 
 

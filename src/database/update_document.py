@@ -12,6 +12,7 @@ def update_document(
     extracted_data,
     notes="",
     tax_relevant=None,
+    tax_purpose=None,
 ):
 
     with open_connection() as conn:
@@ -28,7 +29,8 @@ def update_document(
                 notes = ?,
                 verified = 1,
                 tax_year = ?,
-                tax_relevant = ?
+                tax_relevant = ?,
+                tax_purpose = ?
             WHERE id = ?
             """,
             (
@@ -42,6 +44,7 @@ def update_document(
                 notes,
                 extract_year(extracted_data),
                 None if tax_relevant is None else int(bool(tax_relevant)),
+                tax_purpose or None,
                 document_id,
             ),
         )

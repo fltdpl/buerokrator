@@ -12,7 +12,8 @@ _DOCUMENT_FIELDS = """
     created_at,
     document_text,
     notes,
-    tax_relevant
+    tax_relevant,
+    tax_purpose
 """
 
 

@@ -19,6 +19,7 @@ from src.core.amount_utils import normalize_amount
 from src.core.document_types import EMPLOYMENT, INSURANCE, PENSION
 from src.database.list_documents import list_documents
 from src.organizer.date_utils import year_from_archive_path
+from src.tax.tax_purpose import KRANKHEITSKOSTEN, WERBUNGSKOSTEN
 from src.tax.tax_relevance import resolve_tax_relevance
 from src.tax.tax_summary import (
     DEDUCTIBLE,
@@ -87,6 +88,7 @@ ANLAGE_LABELS = {
     "anlage_n": "Anlage N",
     "vorsorgeaufwand": "Anlage Vorsorgeaufwand",
     "kap": "Anlage KAP",
+    "agb": "Anlage Außergewöhnliche Belastungen",
 }
 
 
@@ -202,11 +204,20 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
     lstb_rows = []
     kap_rows = []
     insurance_rows = []
+    purpose_rows = {WERBUNGSKOSTEN: [], KRANKHEITSKOSTEN: []}
 
     for row in documents:
         data = _parse_data(row["extracted_data"])
 
         if _document_year(row, data) != year:
+            continue
+
+        # Steuerlicher Zweck (vom Nutzer gesetzt) hat Vorrang: die explizite
+        # Kennzeichnung zählt unabhängig vom Relevanz-Default des Typs.
+        if row["tax_purpose"] in purpose_rows:
+            purpose_rows[row["tax_purpose"]].append(
+                (row, data, bool(row["verified"]))
+            )
             continue
 
         subtype = data.get("document_subtype")
@@ -256,7 +267,32 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
 
     vorsorge.extend(_insurance_positions(insurance_rows))
 
+    anlage_n.append(
+        _purpose_position(
+            purpose_rows[WERBUNGSKOSTEN],
+            "werbungskosten_belege",
+            "Werbungskosten aus Belegen",
+            hint=(
+                "Nur belegbasierte Posten (z. B. Arbeitsmittel, "
+                "Steuerberatung). Pauschalen aus eigenen Angaben sind "
+                "nicht Teil der App — direkt in der Erklärung ansetzen."
+            ),
+        )
+    )
+
     kap = _field_positions(kap_rows, _KAP_POSITIONS)
+
+    agb = [
+        _purpose_position(
+            purpose_rows[KRANKHEITSKOSTEN],
+            "krankheitskosten_belege",
+            "Krankheitskosten aus Belegen",
+            hint=(
+                "Erhaltene/erwartete Erstattungen (Versicherung, Beihilfe) "
+                "gegenrechnen — die Erklärung verlangt beide Angaben."
+            ),
+        )
+    ]
 
     return {
         "year": year,
@@ -268,8 +304,29 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
                 "positions": vorsorge,
             },
             {"key": "kap", "label": ANLAGE_LABELS["kap"], "positions": kap},
+            {"key": "agb", "label": ANLAGE_LABELS["agb"], "positions": agb},
         ],
     }
+
+
+def _purpose_position(rows, key, label, hint=None):
+    """Belegsummen-Position aus zweck-gekennzeichneten Dokumenten."""
+    position = _new_position(key, label, hint=hint)
+
+    for row, data, verified in rows:
+        amount = normalize_amount(data.get("amount"))
+
+        if not verified:
+            position["pending"].append(_reference(row, data, amount))
+
+        elif amount is None:
+            position["missing_value"].append(_reference(row, data))
+
+        else:
+            position["amount"] += amount
+            position["documents"].append(_reference(row, data, amount))
+
+    return _finalize_status(position)
 
 
 def _insurance_positions(rows):
@@ -289,6 +346,12 @@ def _insurance_positions(rows):
             "nicht doppelt ansetzen."
         ),
     )
+    # Zusatzversicherungen (Wahlleistungen, Zahnzusatz …) gehören in eine
+    # eigene Anlagen-Zeile („über die Basisabsicherung hinausgehend").
+    supplementary = _new_position(
+        "insurance_health_supplementary",
+        "Zusatz-Krankenversicherung (über Basisabsicherung hinaus)",
+    )
     other = _new_position(
         "insurance_other",
         "Sonstige Vorsorgeaufwendungen (Haftpflicht, Unfall, BU …)",
@@ -303,7 +366,17 @@ def _insurance_positions(rows):
         amount = normalize_amount(data.get("amount"))
         insurance_type = str(data.get("insurance_type") or "").lower()
         is_health = any(keyword in insurance_type for keyword in _HEALTH_KEYWORDS)
-        position = health if is_health else other
+
+        # Zahnzusatz ist eine KV-Zusatzversicherung, trägt aber kein
+        # "kranken" im Namen.
+        if "zusatz" in insurance_type and (is_health or "zahn" in insurance_type):
+            position = supplementary
+
+        elif is_health:
+            position = health
+
+        else:
+            position = other
 
         if deductibility != DEDUCTIBLE:
             # Unklare Art: ausweisen statt still summieren oder verwerfen.
@@ -319,4 +392,8 @@ def _insurance_positions(rows):
             position["amount"] += amount
             position["documents"].append(_reference(row, data, amount))
 
-    return [_finalize_status(health), _finalize_status(other)]
+    return [
+        _finalize_status(health),
+        _finalize_status(supplementary),
+        _finalize_status(other),
+    ]

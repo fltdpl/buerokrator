@@ -16,8 +16,8 @@ from src.tax.elster_mapping import build_elster_summary
 # Cent-genau: Rundungsdifferenzen unter einem halben Cent gelten als gleich.
 TOLERANCE = 0.005
 
-# Erwartungswerte ohne Cent-Anteil (z. B. aus Taxfix, das auf ganze Euro
-# rundet) bekommen eine Euro-Toleranz: |App − Erwartung| < 1 €.
+# Erwartungswerte ohne Cent-Anteil (viele Steuerprogramme runden auf
+# ganze Euro) bekommen eine Euro-Toleranz: |App − Erwartung| < 1 €.
 ROUNDED_TOLERANCE = 1.0
 
 
@@ -42,13 +42,39 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
 
     checked = []
     errors = []
+    not_submitted = []
 
-    expected = expected if isinstance(expected, dict) else {}
+    expected = dict(expected) if isinstance(expected, dict) else {}
 
     for anlage_key, entries in expected.items():
         if entries is None:
             # Anlage ohne (einkommentierte) Positionen — z. B. frische
             # Vorlage: nichts zu prüfen, kein Fehler.
+            continue
+
+        # `nicht_abgegeben` — die Anlage war bewusst nicht Teil der
+        # Erklärung. App-Werte dazu sind ein dokumentierter Befund (evtl.
+        # war die Erklärung unvollständig), aber kein Abgleichsfehler.
+        if entries == "nicht_abgegeben" or (
+            isinstance(entries, dict) and entries.get("nicht_abgegeben")
+        ):
+            if anlage_key not in {a["key"] for a in summary["anlagen"]}:
+                errors.append(
+                    f"Unbekannte Anlage '{anlage_key}' in der Erwartungsdatei."
+                )
+                continue
+
+            findings = [
+                {
+                    "key": f"{a_key}.{p_key}",
+                    "label": position["label"],
+                    "actual": position["amount"],
+                    "status": position["status"],
+                }
+                for (a_key, p_key), (_, position) in positions_by_key.items()
+                if a_key == anlage_key and position["status"] != "empty"
+            ]
+            not_submitted.append({"anlage": anlage_key, "findings": findings})
             continue
 
         if not isinstance(entries, dict):
@@ -80,7 +106,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
                 )
                 continue
 
-            # Ganzzahlige Erwartung = gerundete Quelle (Taxfix): ±1 €.
+            # Ganzzahlige Erwartung = gerundete Quelle (Steuerprogramm): ±1 €.
             rounded_source = float(expected_amount).is_integer()
             tolerance = ROUNDED_TOLERANCE if rounded_source else TOLERANCE
             difference = abs(position["amount"] - expected_amount)
@@ -104,9 +130,10 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
             )
 
     checked_keys = {entry["key"] for entry in checked}
+    not_submitted_anlagen = {entry["anlage"] for entry in not_submitted}
 
     # Positionen mit App-Befund, aber ohne Erwartung: ausweisen, damit die
-    # Abnahme nichts übersieht (z. B. eine Position, die Taxfix nicht kannte).
+    # Abnahme nichts übersieht (z. B. eine Position, die die damalige Erklärung nicht enthielt).
     unchecked = [
         {
             "key": f"{anlage['key']}.{position['key']}",
@@ -116,6 +143,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
         }
         for (anlage_key, position_key), (anlage, position) in positions_by_key.items()
         if f"{anlage_key}.{position_key}" not in checked_keys
+        and anlage_key not in not_submitted_anlagen
         and position["status"] != "empty"
     ]
 
@@ -123,6 +151,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
         "year": year,
         "checked": checked,
         "unchecked": unchecked,
+        "not_submitted": not_submitted,
         "errors": errors,
         "ok": bool(checked)
         and not errors
@@ -196,6 +225,24 @@ def format_report(report: dict) -> str:
                 f"[{entry['status']}]"
             )
 
+    for entry in report["not_submitted"]:
+        lines.append("")
+        lines.append(
+            f"Anlage '{entry['anlage']}' laut Erklärung nicht abgegeben."
+        )
+
+        if entry["findings"]:
+            lines.append(
+                "  BEFUND — die App hat dazu Werte (war die Erklärung "
+                "unvollständig?):"
+            )
+
+            for finding in entry["findings"]:
+                lines.append(
+                    f"    {finding['label']}: {finding['actual']:.2f} € "
+                    f"[{finding['status']}]"
+                )
+
     lines.append("")
     lines.append(
         "ERGEBNIS: ABGENOMMEN — alle geprüften Positionen stimmen."
@@ -218,9 +265,11 @@ def build_template(year: int, documents=None) -> str:
 
     lines = [
         f"# Erwartete ELSTER-Werte für {year} — Quelle: abgegebene",
-        "# Steuererklärung (z. B. Taxfix-PDF/Bescheid), NICHT die App.",
+        "# Steuererklärung (Ausdruck des Steuerprogramms/Bescheid), NICHT die App.",
         "# Zeilen einkommentieren und Betrag eintragen; auskommentierte",
         "# Positionen werden nicht geprüft.",
+        "# War eine Anlage nicht Teil der Erklärung:",
+        "#   kap: nicht_abgegeben",
         "# Diese Datei enthält echte Steuerdaten und bleibt lokal (gitignored).",
     ]
 
