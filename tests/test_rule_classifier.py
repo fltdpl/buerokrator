@@ -83,3 +83,21 @@ def test_lebensversicherung_policy_is_insurance():
         "für Ihre Lebensversicherung Ausfertigungs-Nr. 007"
     )
     assert match_rule(text) == "insurance"
+
+
+def test_akdb_sv_bescheinigung_matches_employment():
+    # AKDB-Ausdruck: Titel "Bescheinigung - Sozialversicherung", "DEÜV" ist
+    # durch das Font-Encoding unleserlich — die Regel muss trotzdem greifen
+    # (auch mit zerrissenen Wörtern, kompaktes Matching).
+    text = "\n".join(
+        [
+            "MUSTER GMBH  Personal nummer  777001",
+            "Besche i n igung  - Soz i al vers i cherung",
+            "nach ü 25 DEèV vom 10 . Febr  .1998",
+            "Art der Mel dung  -  Jahresmel dung",
+        ]
+    )
+
+    from src.classifier.rule_classifier import match_rule
+
+    assert match_rule(text) == "employment"

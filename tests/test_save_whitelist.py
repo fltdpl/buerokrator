@@ -76,3 +76,23 @@ def test_save_document_strips_unknown_fields(tmp_path, monkeypatch):
         "amount",
     }
     assert stored["issuer"] == "Neu"
+
+
+def test_whitelist_strips_string_values():
+    # Ein Leerzeichen am Ende ("31.12.2019 ") machte Datumsfelder
+    # unparsebar — mit kaputten Dateinamen als Folge.
+    from src.core.document_fields import whitelist_fields
+
+    data = whitelist_fields(
+        "employment",
+        {
+            "document_subtype": "sv_meldung",
+            "issuer": "Muster GmbH ",
+            "period_end": "31.12.2023 ",
+            "subject": " Jahresmeldung",
+        },
+    )
+
+    assert data["issuer"] == "Muster GmbH"
+    assert data["period_end"] == "31.12.2023"
+    assert data["subject"] == "Jahresmeldung"
