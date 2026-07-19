@@ -16,6 +16,10 @@ from src.core.document_types import (
 )
 from src.core.json_utils import parse_llm_json
 from src.core.logger import logger
+from src.extraction.lohnsteuerbescheinigung import (
+    is_lohnsteuerbescheinigung,
+    parse_lohnsteuerbescheinigung,
+)
 from src.extraction.pension_refiner import refine_pension_fields
 
 # Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
@@ -177,7 +181,21 @@ def extract_legal(text):
 
 
 def extract_employment(text):
-    return _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
+    data = _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
+
+    # Amtlicher LStB-Ausdruck: der Regelparser liest die nummerierten
+    # Zeilen deterministisch — das LLM scheitert am zweispaltigen Layout.
+    # Parser-Werte überschreiben LLM-Werte; der Arbeitgeber bleibt Sache
+    # des LLM (nichts Identifizierendes aus Regeln).
+    if not is_lohnsteuerbescheinigung(text):
+        return data
+
+    parsed = parse_lohnsteuerbescheinigung(text)
+
+    if not parsed:
+        return data
+
+    return enforce_amount_signs(whitelist_fields(EMPLOYMENT, {**data, **parsed}))
 
 
 def extract_document(
