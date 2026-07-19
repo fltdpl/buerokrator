@@ -24,7 +24,10 @@ Schema:
   "health_insurance": null,
   "care_insurance": null,
   "unemployment_insurance": null,
-  "private_health_insurance": null
+  "private_health_insurance": null,
+  "commuting_allowance_taxfree": null,
+  "commuting_allowance_flat_taxed": null,
+  "meal_allowance_taxfree": null
 }}
 
 Bestimme zuerst document_subtype:
@@ -101,7 +104,13 @@ Nur bei lohnsteuerbescheinigung (nummerierte Zeilen der Bescheinigung):
   Arbeitslosenversicherung (Zeile 27)
 - private_health_insurance = Beiträge zur privaten Kranken- und
   Pflege-Pflichtversicherung (Zeile 28)
-Bei gehaltsabrechnung diese fünf Felder NICHT befüllen (null).
+- commuting_allowance_taxfree = Steuerfreie Arbeitgeberleistungen,
+  die auf die Entfernungspauschale anzurechnen sind (Zeile 17)
+- commuting_allowance_flat_taxed = Pauschal besteuerte
+  Arbeitgeberleistungen für Fahrten Wohnung/Tätigkeitsstätte (Zeile 18)
+- meal_allowance_taxfree = Steuerfreie Verpflegungszuschüsse
+  bei Auswärtstätigkeit (Zeile 20)
+Bei gehaltsabrechnung diese Zeilen-Felder NICHT befüllen (null).
 
 Beträge müssen Zahlen sein.
 Keine Währungszeichen.

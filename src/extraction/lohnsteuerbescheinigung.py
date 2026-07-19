@@ -33,6 +33,9 @@ _LINE_LABELS = (
     ("income_tax", r"(?<!\d)4\.einbehaltenelohnsteuer"),
     ("soli", r"(?<!\d)5\.einbehaltenersol"),
     ("church_tax", r"(?<!\d)6\.einbehaltenekirchensteuer"),
+    ("commuting_allowance_taxfree", r"(?<!\d)17\.steuerfrei\w*arbeitgeberleistungen"),
+    ("commuting_allowance_flat_taxed", r"(?<!\d)18\.pauschal"),
+    ("meal_allowance_taxfree", r"(?<!\d)20\.steuerfrei\w*verpflegung"),
     ("pension_insurance_employer", r"(?<!\d)22\.arbeitgeber"),
     ("pension_insurance_employee", r"(?<!\d)23\.arbeitnehmer"),
     ("health_insurance", r"(?<!\d)25\.arbeitnehmerbeitr"),
@@ -50,6 +53,9 @@ _COMPILED_LABELS = tuple(
 # Für die Steuerzeilen 3–6 gilt das bewusst NICHT (dort wäre eine stille
 # 0 bei einem Parserfehler gefährlicher als ein fehlender Wert).
 _BLANK_IS_ZERO = {
+    "commuting_allowance_taxfree",
+    "commuting_allowance_flat_taxed",
+    "meal_allowance_taxfree",
     "pension_insurance_employer",
     "pension_insurance_employee",
     "health_insurance",

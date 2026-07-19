@@ -20,6 +20,10 @@ from src.extraction.lohnsteuerbescheinigung import (
     is_lohnsteuerbescheinigung,
     parse_lohnsteuerbescheinigung,
 )
+from src.extraction.entgeltnachweis import (
+    is_entgeltnachweis,
+    parse_entgeltnachweis,
+)
 from src.extraction.pension_refiner import refine_pension_fields
 from src.extraction.sv_meldung import is_sv_meldung, parse_sv_meldung
 
@@ -100,6 +104,9 @@ AMOUNT_FIELDS = {
         "care_insurance",
         "unemployment_insurance",
         "private_health_insurance",
+        "commuting_allowance_taxfree",
+        "commuting_allowance_flat_taxed",
+        "meal_allowance_taxfree",
     ),
 }
 
@@ -193,6 +200,9 @@ def extract_employment(text):
 
     elif is_sv_meldung(text):
         parsed = parse_sv_meldung(text)
+
+    elif is_entgeltnachweis(text):
+        parsed = parse_entgeltnachweis(text)
 
     else:
         return data

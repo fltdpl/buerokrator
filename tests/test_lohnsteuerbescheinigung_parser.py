@@ -27,6 +27,12 @@ FIXTURE = "\n".join(
         "von 3  67 8 9",
         "6 . Ei nbehaltene Ki rchensteuer des Arbeitnehmers",
         "von 3  - - - - - -",
+        "17 . Steuerfreie Arbeitgeberleistu ngen , die auf die",
+        "Entfernungspausch ale anzurech nen si nd  0 ,00",
+        "18 . Pausch al mit 15% best . AG - Leistu ngen fÞ r",
+        "Fah rten zw . Woh nung und 1 . Tåti gkeitsståtte  0 ,00",
+        "20 . Steuerfreie VerpflegungszuschÞsse bei",
+        "Auswå rtståti gkeit  19 ,00",
         "1 1 . Ei nbehaltene Lohnsteuer",
         "von 9. und 1 0.",
         "1 2 . Ei nbehaltener Solidaritåtszuschl ag",
@@ -73,6 +79,12 @@ def test_parses_all_labeled_lines():
     assert fields["unemployment_insurance"] == 54.32
     # Leeres SV-Feld = kein Beitrag bescheinigt.
     assert fields["private_health_insurance"] == 0.0
+
+    # Arbeitgeberleistungen (Zeilen 17/18/20): Wert auf der Folgezeile
+    # des zweizeiligen Labels.
+    assert fields["commuting_allowance_taxfree"] == 0.0
+    assert fields["commuting_allowance_flat_taxed"] == 0.0
+    assert fields["meal_allowance_taxfree"] == 19.0
 
 
 def test_line_11_does_not_shadow_line_4():
