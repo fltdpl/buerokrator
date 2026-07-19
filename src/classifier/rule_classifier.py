@@ -1,3 +1,5 @@
+import re
+
 from src.core.document_types import (
     BANK,
     EMPLOYMENT,
@@ -106,7 +108,12 @@ MIN_MARGIN = 2
 
 def _score_details(text):
     lowered = text.lower()
+    # Zusätzlich leerzeichenfrei matchen: die layouttreue PDF-Rekonstruktion
+    # (und OCR bei gesperrter Schrift) kann Wörter zerreißen
+    # („Gehaltsabrech nung") — die Keywords sollen trotzdem treffen.
+    compact = re.sub(r"\s+", "", lowered)
     head = lowered[: max(len(lowered) // 3, 200)]
+    compact_head = compact[: max(len(compact) // 3, 200)]
 
     scores = {}
     max_weights = {}
@@ -114,9 +121,10 @@ def _score_details(text):
         score = 0
         max_weight = 0
         for keyword, weight in keywords:
-            if keyword in head:
+            compact_keyword = keyword.replace(" ", "")
+            if keyword in head or compact_keyword in compact_head:
                 score += weight * 2
-            elif keyword in lowered:
+            elif keyword in lowered or compact_keyword in compact:
                 score += weight
             else:
                 continue

@@ -123,3 +123,28 @@ def test_extract_employment_strips_sv_fields_from_gehaltsabrechnung(monkeypatch)
 
     assert "pension_insurance_employee" not in data
     assert data["net_amount"] == 2050.0
+
+
+def test_extract_employment_lstb_parser_overrides_llm(monkeypatch):
+    # Amtlicher LStB-Ausdruck: der Regelparser überschreibt die (am
+    # Spalten-Layout scheiternden) LLM-Werte. Alle Zahlen erfunden.
+    from tests.test_lohnsteuerbescheinigung_parser import FIXTURE
+
+    def fake_run_extractor(prompt_file, text, max_input_chars=None):
+        return {
+            "document_subtype": "lohnsteuerbescheinigung",
+            "employer": "Muster GmbH",
+            "tax_year": "2024",
+            "gross_amount": 999999.0,  # LLM-Falschwert
+            "income_tax": None,
+        }
+
+    monkeypatch.setattr(de, "run_extractor", fake_run_extractor)
+
+    data = de.extract_employment(FIXTURE)
+
+    assert data["gross_amount"] == 4321.09
+    assert data["income_tax"] == 1023.45
+    assert data["pension_insurance_employee"] == 456.78
+    # Identifizierendes bleibt Sache des LLM.
+    assert data["employer"] == "Muster GmbH"
