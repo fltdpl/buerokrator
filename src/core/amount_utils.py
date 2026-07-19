@@ -62,6 +62,10 @@ AMOUNT_FIELD_NAMES = {
     "care_insurance",
     "unemployment_insurance",
     "private_health_insurance",
+    # Arbeitgeberleistungen der Lohnsteuerbescheinigung (Zeilen 17/18/20).
+    "commuting_allowance_taxfree",
+    "commuting_allowance_flat_taxed",
+    "meal_allowance_taxfree",
 }
 
 # Felder, die ihr Vorzeichen behalten dürfen (negativ = Erstattung).

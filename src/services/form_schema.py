@@ -157,11 +157,15 @@ _EMPLOYMENT_SUBTYPE_FORM_FIELDS = {
         _text("employer", "Arbeitgeber", required=True),
         _text("period_start", "Bescheinigungszeitraum von"),
         _text("period_end", "Bescheinigungszeitraum bis"),
-        _amount("gross_amount", "Bruttolohn", required=True),
-        _amount("income_tax", "Lohnsteuer"),
-        _amount("soli", "Solidaritätszuschlag"),
-        _amount("church_tax", "Kirchensteuer"),
-        # Sozialversicherungsbeiträge (LStB Zeilen 22–27) für die
+        _amount("gross_amount", "Bruttolohn (Z. 3)", required=True),
+        _amount("income_tax", "Lohnsteuer (Z. 4)"),
+        _amount("soli", "Solidaritätszuschlag (Z. 5)"),
+        _amount("church_tax", "Kirchensteuer (Z. 6)"),
+        # Arbeitgeberleistungen (Werbungskosten-Kontext).
+        _amount("commuting_allowance_taxfree", "Steuerfreie AG-Leistungen Entfernungspauschale (Z. 17)"),
+        _amount("commuting_allowance_flat_taxed", "Pauschal best. AG-Leistungen Fahrten (Z. 18)"),
+        _amount("meal_allowance_taxfree", "Steuerfreie Verpflegungszuschüsse (Z. 20)"),
+        # Sozialversicherungsbeiträge (LStB Zeilen 22–28) für die
         # Anlage Vorsorgeaufwand.
         _amount("pension_insurance_employer", "Rentenversicherung AG-Anteil (Z. 22)"),
         _amount("pension_insurance_employee", "Rentenversicherung AN-Anteil (Z. 23)"),

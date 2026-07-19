@@ -32,6 +32,7 @@ KEYWORD_WEIGHTS = {
         ("lohnsteuerbescheinigung", 3),
         ("gehaltsabrechnung", 3),
         ("entgeltabrechnung", 3),
+        ("entgeltnachweis", 3),
         ("lohnabrechnung", 3),
         ("verdienstbescheinigung", 3),
         ("bezügemitteilung", 3),

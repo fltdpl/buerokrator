@@ -83,6 +83,11 @@ EMPLOYMENT_SUBTYPE_FIELDS = {
         "care_insurance",
         "unemployment_insurance",
         "private_health_insurance",
+        # Arbeitgeberleistungen (LStB Zeilen 17/18/20) — mindern bzw.
+        # betreffen Werbungskosten (Entfernungspauschale, Verpflegung).
+        "commuting_allowance_taxfree",
+        "commuting_allowance_flat_taxed",
+        "meal_allowance_taxfree",
     },
     # SV-Meldung (§ 25 DEÜV): Meldung zur Sozialversicherung vom Arbeitgeber,
     # inkl. Stornierungen. Nie steuerrelevant.
@@ -234,6 +239,7 @@ SUBTYPE_ALIASES = {
     },
     EMPLOYMENT: {
         "entgeltabrechnung": "gehaltsabrechnung",
+        "entgeltnachweis": "gehaltsabrechnung",
         "lohnabrechnung": "gehaltsabrechnung",
         "verdienstbescheinigung": "gehaltsabrechnung",
         "bezügemitteilung": "gehaltsabrechnung",

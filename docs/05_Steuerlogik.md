@@ -116,6 +116,13 @@ Monats-Gehaltsabrechnungen sind redundant und zählen nicht).
 | Solidaritätszuschlag | 5 | `soli` | ✓ vorhanden |
 | Kirchensteuer | 6/7 | `church_tax` | ✓ vorhanden |
 
+Zusätzlich erfasst (19.07.2026), aber bewusst OHNE eigene Anlagen-Position
+(Werbungskosten-Kontext, siehe Grenze oben): LStB Zeile 17
+(`commuting_allowance_taxfree`), Zeile 18 (`commuting_allowance_flat_taxed`),
+Zeile 20 (`meal_allowance_taxfree`) — die Werte mindern bzw. betreffen
+Entfernungspauschale und Verpflegungsmehraufwand und stehen für die
+Erklärung am Dokument bereit.
+
 **Werbungskosten aus Belegen** (Position `werbungskosten_belege`,
 18.07.2026): Summe aller Dokumente mit `tax_purpose = werbungskosten`
 (beliebiger Typ, Feld `amount`). Angabenbasierte Werbungskosten
