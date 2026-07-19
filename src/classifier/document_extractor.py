@@ -21,6 +21,7 @@ from src.extraction.lohnsteuerbescheinigung import (
     parse_lohnsteuerbescheinigung,
 )
 from src.extraction.pension_refiner import refine_pension_fields
+from src.extraction.sv_meldung import is_sv_meldung, parse_sv_meldung
 
 # Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
 # die Beträge (Lohnsteuer/Soli bzw. Zinsen/Salden beim Bauspar-Jahresauszug)
@@ -183,14 +184,18 @@ def extract_legal(text):
 def extract_employment(text):
     data = _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
 
-    # Amtlicher LStB-Ausdruck: der Regelparser liest die nummerierten
-    # Zeilen deterministisch — das LLM scheitert am zweispaltigen Layout.
-    # Parser-Werte überschreiben LLM-Werte; der Arbeitgeber bleibt Sache
-    # des LLM (nichts Identifizierendes aus Regeln).
-    if not is_lohnsteuerbescheinigung(text):
-        return data
+    # Amtliche Formular-Ausdrucke: die Regelparser lesen die beschrifteten
+    # Zeilen deterministisch — das LLM scheitert an den Spalten-Layouts.
+    # Parser-Werte überschreiben LLM-Werte; der Arbeitgeber/Aussteller
+    # bleibt Sache des LLM (nichts Identifizierendes aus Regeln).
+    if is_lohnsteuerbescheinigung(text):
+        parsed = parse_lohnsteuerbescheinigung(text)
 
-    parsed = parse_lohnsteuerbescheinigung(text)
+    elif is_sv_meldung(text):
+        parsed = parse_sv_meldung(text)
+
+    else:
+        return data
 
     if not parsed:
         return data

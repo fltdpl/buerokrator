@@ -44,6 +44,10 @@ KEYWORD_WEIGHTS = {
         ("deuev", 3),
         ("meldung zur sozialversicherung", 3),
         ("meldebescheinigung zur sozialversicherung", 3),
+        # AKDB-Ausdruck der SV-Meldung: anderer Titel, und "DEÜV" ist dort
+        # durch das Font-Encoding unleserlich ("DEèV").
+        ("bescheinigung - sozialversicherung", 3),
+        ("art der meldung", 3),
         # bewusst schwach: "Kündigung" kommt auch bei Versicherungen/Verträgen
         # vor; "arbeitgeber" ist nur ein Indiz.
         ("kündigung", 1),

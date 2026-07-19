@@ -284,6 +284,14 @@ def whitelist_fields(document_type: str, data: dict | None) -> dict:
     if not isinstance(data, dict):
         return {}
 
+    # String-Werte trimmen: ein Leerzeichen am Ende (LLM oder Tippfehler im
+    # Formular) hat schon Datumsfelder unparsebar gemacht — mit kaputten
+    # Dateinamen als Folge ("…_bis_31.12.2019 _…").
+    data = {
+        key: value.strip() if isinstance(value, str) else value
+        for key, value in data.items()
+    }
+
     if "document_subtype" in data:
         data = {
             **data,
