@@ -34,6 +34,7 @@ PENSION_SUBTYPE_SHORT_LABELS = {
 
 HOUSING_SUBTYPE_SHORT_LABELS = {
     "nebenkostenabrechnung": "Nebenkostenabrechnung",
+    "heizkostenabrechnung": "Heizkostenabrechnung",
     "mietvertrag": "Mietvertrag",
     "mieterhoehung": "Mieterhöhung",
     "hausgeldabrechnung": "Hausgeldabrechnung",

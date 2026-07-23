@@ -96,3 +96,38 @@ def test_whitelist_strips_string_values():
     assert data["issuer"] == "Muster GmbH"
     assert data["period_end"] == "31.12.2023"
     assert data["subject"] == "Jahresmeldung"
+
+
+def test_housing_abrechnung_keeps_settlement_and_par35a_fields():
+    from src.core.document_fields import whitelist_fields
+
+    data = whitelist_fields(
+        "housing",
+        {
+            "document_subtype": "heizkostenabrechnung",
+            "issuer": "Hausverwaltung Muster",
+            "settlement_amount": -87.3,
+            "household_services_amount": 245.1,
+            "craftsman_services_amount": 61.2,
+            "subject": "Heizkosten 2024",
+            "iban": "DE00...",  # nicht im Schema
+        },
+    )
+
+    assert data["settlement_amount"] == -87.3
+    assert data["household_services_amount"] == 245.1
+    assert data["craftsman_services_amount"] == 61.2
+    assert "iban" not in data
+
+    # Mietvertrag trägt die Abrechnungsfelder NICHT.
+    rent = whitelist_fields(
+        "housing",
+        {
+            "document_subtype": "mietvertrag",
+            "amount": 850.0,
+            "settlement_amount": -87.3,
+        },
+    )
+
+    assert rent["amount"] == 850.0
+    assert "settlement_amount" not in rent

@@ -132,6 +132,11 @@ def resolve_document_amount(document_type: str, data: dict) -> float | None:
     if amount is not None:
         return amount
 
+    # Wohnen-Abrechnungen: vorzeichenbehafteter Abrechnungsbetrag
+    # (Nachzahlung positiv, Guthaben negativ).
+    if document_type == HOUSING:
+        return normalize_amount(data.get("settlement_amount"))
+
     if document_type in (TAX, EMPLOYMENT):
         fields = TAX_AMOUNT_FIELDS.get(data.get("document_subtype"), ())
 

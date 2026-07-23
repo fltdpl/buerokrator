@@ -140,7 +140,17 @@ ALLOWED_FIELDS = {
         "closing_balance",
     },
     BANK: {"issuer", "document_date", "document_subtype", "subject"},
-    HOUSING: {"issuer", "document_date", "document_subtype", "amount", "subject"},
+    HOUSING: {
+        "issuer",
+        "document_date",
+        "document_subtype",
+        "amount",
+        "subject",
+        # Abrechnungs-Subtypen (siehe HOUSING_ABRECHNUNG_FIELDS)
+        "settlement_amount",
+        "household_services_amount",
+        "craftsman_services_amount",
+    },
     EMPLOYMENT: set().union(*EMPLOYMENT_SUBTYPE_FIELDS.values()),
     LEGAL: {"issuer", "document_date", "subject"},
 }
@@ -187,6 +197,32 @@ PENSION_SUBTYPE_FIELDS = {
     "steuerbescheinigung": PENSION_STEUERBESCHEINIGUNG_FIELDS,
 }
 
+# Wohnen: die Abrechnungs-Subtypen tragen einen vorzeichenbehafteten
+# Abrechnungsbetrag (settlement_amount: Nachzahlung positiv, Guthaben
+# negativ — das generische amount ist Magnitude und kann das nicht) sowie
+# die § 35a-Summen (haushaltsnahe Dienstleistungen / Handwerker-Lohnanteil).
+# amount bleibt als Alt-Feld erhalten, damit Bestandsdokumente beim
+# Speichern nichts verlieren.
+HOUSING_ABRECHNUNG_SUBTYPES = {
+    "nebenkostenabrechnung",
+    "heizkostenabrechnung",
+    "hausgeldabrechnung",
+}
+
+HOUSING_BASE_FIELDS = {
+    "issuer",
+    "document_date",
+    "document_subtype",
+    "amount",
+    "subject",
+}
+
+HOUSING_ABRECHNUNG_FIELDS = HOUSING_BASE_FIELDS | {
+    "settlement_amount",
+    "household_services_amount",
+    "craftsman_services_amount",
+}
+
 # Kanonisches Subtyp-Vokabular je Dokumenttyp (muss Prompt + GUI-Labels
 # entsprechen). Alles außerhalb wird beim Normalisieren auf einen Alias
 # gemappt oder unverändert gelassen (kein Datenverlust).
@@ -203,6 +239,7 @@ KNOWN_SUBTYPES = {
     },
     HOUSING: {
         "nebenkostenabrechnung",
+        "heizkostenabrechnung",
         "mietvertrag",
         "mieterhoehung",
         "hausgeldabrechnung",
@@ -232,6 +269,7 @@ SUBTYPE_ALIASES = {
     },
     HOUSING: {
         "betriebskostenabrechnung": "nebenkostenabrechnung",
+        "heizkosten": "heizkostenabrechnung",
         "mieterhöhung": "mieterhoehung",
     },
     BANK: {
@@ -319,6 +357,15 @@ def whitelist_fields(document_type: str, data: dict | None) -> dict:
     if document_type == EMPLOYMENT:
         subtype = data.get("document_subtype")
         allowed = EMPLOYMENT_SUBTYPE_FIELDS.get(subtype, ALLOWED_FIELDS[EMPLOYMENT])
+        return {key: value for key, value in data.items() if key in allowed}
+
+    if document_type == HOUSING:
+        subtype = data.get("document_subtype")
+        allowed = (
+            HOUSING_ABRECHNUNG_FIELDS
+            if subtype in HOUSING_ABRECHNUNG_SUBTYPES
+            else HOUSING_BASE_FIELDS
+        )
         return {key: value for key, value in data.items() if key in allowed}
 
     if document_type not in ALLOWED_FIELDS:

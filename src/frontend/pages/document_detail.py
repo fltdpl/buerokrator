@@ -327,6 +327,17 @@ def document_detail_page(document_id: int):
             elif key in empty:
                 element.props('hint="nicht erkannt"')
 
+            # § 35a-Beträge machen das Dokument steuerrelevant: die Checkbox
+            # wurde beim Seitenaufbau (Felder noch leer) initialisiert und
+            # wird beim Speichern IMMER explizit übernommen — ohne den
+            # Automatismus fiele der Beleg still aus der § 35a-Summe.
+            if key in ("household_services_amount", "craftsman_services_amount"):
+                element.on_value_change(
+                    lambda event: event.value
+                    and event.value.strip()
+                    and tax_relevant_checkbox.set_value(True)
+                )
+
             inputs[key] = element
             initial_values[key] = default
 

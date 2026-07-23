@@ -12,7 +12,7 @@ aus Typ/Subtyp abgeleiteten Default, den der Nutzer beim Prüfen überstimmen
 kann.
 """
 
-from src.core.document_types import EMPLOYMENT, INSURANCE, PENSION, TAX
+from src.core.document_types import EMPLOYMENT, HOUSING, INSURANCE, PENSION, TAX
 
 
 def default_tax_relevance(document_type: str, data: dict | None) -> bool:
@@ -41,6 +41,14 @@ def default_tax_relevance(document_type: str, data: dict | None) -> bool:
         # Nur die Steuerbescheinigung (Kapitalerträge) ist automatisch
         # relevant; Verträge/Standmitteilungen überstimmt der Nutzer bei Bedarf.
         return subtype == "steuerbescheinigung"
+
+    if document_type == HOUSING:
+        # Abrechnungen mit ausgewiesenen § 35a-Summen (haushaltsnahe
+        # Dienstleistungen / Handwerker) gehören in die Erklärung.
+        return (
+            data.get("household_services_amount") is not None
+            or data.get("craftsman_services_amount") is not None
+        )
 
     if document_type == INSURANCE:
         # Absetzbare Vorsorge (Kranken/Pflege/Haftpflicht …) ist relevant,

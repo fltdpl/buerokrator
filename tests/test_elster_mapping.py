@@ -370,3 +370,58 @@ def test_zusatz_krankenversicherung_gets_own_position():
 
     assert vorsorge["insurance_health_supplementary"]["amount"] == 9.0
     assert vorsorge["insurance_health"]["amount"] == 1234.5
+
+
+def test_par35a_positions_from_housing_abrechnungen():
+    docs = [
+        make_row(
+            1,
+            "housing",
+            2025,
+            {
+                "document_subtype": "nebenkostenabrechnung",
+                "issuer": "Hausverwaltung Muster",
+                "settlement_amount": 145.0,
+                "household_services_amount": 245.1,
+                "craftsman_services_amount": 61.2,
+            },
+        ),
+        # Ungeprüft: To-do, zählt nicht.
+        make_row(
+            2,
+            "housing",
+            2025,
+            {
+                "document_subtype": "heizkostenabrechnung",
+                "household_services_amount": 99.9,
+            },
+            verified=0,
+        ),
+        # Ohne § 35a-Angaben: per Default nicht steuerrelevant, taucht
+        # nirgends auf (keine falsche "fehlt"-Meldung).
+        make_row(
+            3,
+            "housing",
+            2025,
+            {"document_subtype": "mietvertrag", "amount": 850.0},
+        ),
+    ]
+
+    summary = build_elster_summary(2025, docs)
+    par35a = positions(summary, "par35a")
+
+    household = par35a["household_services_amount"]
+    assert household["amount"] == 245.1
+    assert [ref["id"] for ref in household["pending"]] == [2]
+    assert household["status"] == INCOMPLETE
+
+    craftsman = par35a["craftsman_services_amount"]
+    assert craftsman["amount"] == 61.2
+    assert "Lohnkosten" in craftsman["hint"]
+
+    all_ids = {
+        ref["id"]
+        for position in par35a.values()
+        for ref in position["documents"] + position["pending"]
+    }
+    assert 3 not in all_ids

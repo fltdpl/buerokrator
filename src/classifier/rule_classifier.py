@@ -101,6 +101,7 @@ KEYWORD_WEIGHTS = {
     HOUSING: (
         ("nebenkostenabrechnung", 3),
         ("betriebskostenabrechnung", 3),
+        ("heizkostenabrechnung", 3),
         ("mietvertrag", 3),
     ),
 }

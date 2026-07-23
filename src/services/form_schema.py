@@ -16,6 +16,7 @@ beim Prüfen nur hervor (`missing_required_fields`), damit sie nicht
 """
 
 from src.core.amount_utils import normalize_amount
+from src.core.document_fields import HOUSING_ABRECHNUNG_SUBTYPES
 from src.core.document_types import (
     BANK,
     EMPLOYMENT,
@@ -59,7 +60,8 @@ PENSION_SUBTYPE_LABELS = {
 # Wohnen und Bank: der Subtyp kategorisiert nur (er ändert die Formularfelder
 # nicht). "sonstiges" ist die Auffangkategorie für alles ohne eigene Art.
 HOUSING_SUBTYPE_LABELS = {
-    "nebenkostenabrechnung": "Nebenkostenabrechnung",
+    "nebenkostenabrechnung": "Nebenkosten-/Betriebskostenabrechnung",
+    "heizkostenabrechnung": "Heizkostenabrechnung",
     "mietvertrag": "Mietvertrag",
     "mieterhoehung": "Mieterhöhung",
     "hausgeldabrechnung": "Hausgeldabrechnung",
@@ -101,8 +103,18 @@ _TYPE_FIELDS = {
         _amount("amount", "Betrag (Jahresbeitrag)"),
     ),
     PENSION: (_text("product_name", "Produkt"),),
-    HOUSING: (_amount("amount", "Betrag (Nachzahlung/Guthaben)"),),
 }
+
+# Wohnen: Abrechnungs-Subtypen tragen den vorzeichenbehafteten
+# Abrechnungsbetrag plus die § 35a-Summen; Mietvertrag/Mieterhöhung die
+# monatliche Miete. Betreff für alle (z. B. "Betriebskosten 2024").
+_HOUSING_ABRECHNUNG_FORM_FIELDS = (
+    _amount("settlement_amount", "Abrechnungsbetrag (Nachzahlung positiv, Guthaben negativ)"),
+    _amount("household_services_amount", "Haushaltsnahe Dienstleistungen (§ 35a)"),
+    _amount("craftsman_services_amount", "Handwerkerleistungen (§ 35a, nur Lohnanteil)"),
+)
+
+_HOUSING_RENT_FIELD = _amount("amount", "Betrag (monatliche Miete)")
 
 # Auffangkategorie "sonstiges" (Wohnen/Bank) bzw. der Dokumenttyp "Sonstiges"
 # (unknown) selbst: ohne eigene Beträge, deshalb braucht es eine
@@ -272,6 +284,21 @@ def form_fields(document_type, subtype=None):
 
         return list(_EMPLOYMENT_TEXT_FIELDS)
 
+    if document_type == HOUSING:
+        fields = list(_COMMON_FIELDS)
+
+        if subtype in HOUSING_ABRECHNUNG_SUBTYPES:
+            fields.extend(_HOUSING_ABRECHNUNG_FORM_FIELDS)
+
+        elif subtype in ("mietvertrag", "mieterhoehung"):
+            fields.append(_HOUSING_RENT_FIELD)
+
+        # Betreff für alle Wohnen-Subtypen: klärt z. B. "Betriebskosten"
+        # vs. "Heizkosten", wenn beide separat abgerechnet werden.
+        fields.append(_SUBJECT_FIELD)
+
+        return fields
+
     fields = list(_COMMON_FIELDS)
     fields.extend(_TYPE_FIELDS.get(document_type, ()))
 
@@ -283,7 +310,7 @@ def form_fields(document_type, subtype=None):
             _PENSION_SUBTYPE_FIELDS.get(subtype, _PENSION_DEFAULT_FIELDS)
         )
 
-    if document_type in (HOUSING, BANK) and subtype == "sonstiges":
+    if document_type == BANK and subtype == "sonstiges":
         fields.append(_SUBJECT_FIELD)
 
     return fields

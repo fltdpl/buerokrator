@@ -326,3 +326,17 @@ def test_capital_income_counts_only_steuerbescheinigung():
     assert summary["capital_income"]["interest"] == 120.0
     assert summary["capital_income"]["capital_gains_tax"] == 30.0
     assert summary["totals"]["income_tax"] == 8000.0
+
+
+def test_housing_settlement_amount_keeps_sign():
+    # Nebenkosten-Guthaben: settlement_amount bleibt negativ (Erstattung),
+    # resolve_document_amount nutzt es als Fallback zum generischen amount.
+    from src.core.amount_utils import enforce_amount_signs
+    from src.tax.tax_summary import resolve_document_amount
+
+    data = enforce_amount_signs(
+        {"document_subtype": "nebenkostenabrechnung", "settlement_amount": -120.5}
+    )
+
+    assert data["settlement_amount"] == -120.5
+    assert resolve_document_amount("housing", data) == -120.5

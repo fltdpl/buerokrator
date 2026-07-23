@@ -43,3 +43,10 @@ def test_whitelist_steuerbescheinigung_drops_policy_number():
 def test_whitelist_housing_keeps_amount():
     data = {"issuer": "Hausverwaltung", "document_subtype": "nebenkostenabrechnung", "amount": 348.0}
     assert whitelist_fields(HOUSING, data)["amount"] == 348.0
+
+
+def test_heizkosten_aliases():
+    from src.core.document_fields import normalize_subtype
+
+    assert normalize_subtype("housing", "Heizkosten") == "heizkostenabrechnung"
+    assert normalize_subtype("housing", "Heizkostenabrechnung") == "heizkostenabrechnung"
