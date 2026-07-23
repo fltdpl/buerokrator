@@ -124,7 +124,10 @@ def test_sonstiges_subtype_offers_subject_field():
 
     assert "subject" in housing_keys
     assert "subject" in bank_keys
-    assert "subject" not in [field["key"] for field in form_fields(HOUSING, "mietvertrag")]
+    # Wohnen: Betreff inzwischen bei ALLEN Subtypen (Klarstellung z. B.
+    # "Betriebskosten" vs. "Heizkosten"); Bank-Kontoauszug bleibt ohne.
+    assert "subject" in [field["key"] for field in form_fields(HOUSING, "mietvertrag")]
+    assert "subject" not in [field["key"] for field in form_fields(BANK, "kontoauszug")]
 
 
 def test_merge_form_values_normalizes_amounts_and_keeps_rest():

@@ -60,7 +60,7 @@ bank:
 - Depotübersichten
 
 housing:
-- Nebenkostenabrechnungen
+- Nebenkosten-/Betriebskosten- und Heizkostenabrechnungen
 - Betriebskostenabrechnungen
 - Mietverträge und Mieterhöhungen
 - Schreiben der Hausverwaltung

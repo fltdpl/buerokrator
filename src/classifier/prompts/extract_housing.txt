@@ -10,6 +10,9 @@ Schema:
   "document_date": "",
   "document_subtype": "",
   "amount": null,
+  "settlement_amount": null,
+  "household_services_amount": null,
+  "craftsman_services_amount": null,
   "subject": ""
 }}
 
@@ -23,22 +26,36 @@ document_subtype:
 Wähle exakt einen dieser Werte:
 
 nebenkostenabrechnung
+  (auch Betriebskostenabrechnung)
+heizkostenabrechnung
 mietvertrag
 mieterhoehung
 hausgeldabrechnung
 
 amount:
-Bei Nebenkosten-/Betriebskosten-/Hausgeldabrechnungen der
-Abrechnungsbetrag (Nachzahlung oder Gesamtbetrag).
-Bei Mietverträgen und Mieterhöhungen die monatliche Miete.
+Nur bei Mietverträgen und Mieterhöhungen: die monatliche Miete.
 
-amount muss eine Zahl sein. Keine Währungszeichen.
-Wenn kein Betrag gefunden wird, verwende null.
+settlement_amount:
+Nur bei nebenkostenabrechnung, heizkostenabrechnung und
+hausgeldabrechnung: der Abrechnungsbetrag.
+Nachzahlung positiv, Guthaben/Gutschrift NEGATIV (mit Minuszeichen).
+
+household_services_amount:
+Nur bei Abrechnungen: ausgewiesene Summe der haushaltsnahen
+Dienstleistungen nach § 35a EStG (z. B. Gartenpflege, Winterdienst,
+Hauswart, Gebäudereinigung). Wenn keine Summe ausgewiesen ist, null.
+
+craftsman_services_amount:
+Nur bei Abrechnungen: ausgewiesene Summe der Handwerkerleistungen
+nach § 35a EStG (nur Arbeits-/Lohnkosten). Wenn nicht ausgewiesen, null.
+
+Beträge müssen Zahlen sein. Keine Währungszeichen.
+Wenn ein Betrag nicht im Dokument steht, verwende null.
 
 subject:
-Nur ausfüllen, wenn keiner der obigen document_subtype-Werte passt:
-kurze Angabe, worum es sich handelt (z. B. "Meldebestätigung").
-Sonst leer lassen.
+Kurze Klarstellung, worum es geht (z. B. "Betriebskosten 2024" oder
+"Heizkosten 2024"); bei unbekannter Dokumentart die Art des Dokuments
+(z. B. "Meldebestätigung"). Sonst leer lassen.
 
 Dokument:
 

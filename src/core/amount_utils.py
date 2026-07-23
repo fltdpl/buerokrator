@@ -66,6 +66,9 @@ AMOUNT_FIELD_NAMES = {
     "commuting_allowance_taxfree",
     "commuting_allowance_flat_taxed",
     "meal_allowance_taxfree",
+    # § 35a-Summen der Wohnen-Abrechnungen.
+    "household_services_amount",
+    "craftsman_services_amount",
 }
 
 # Felder, die ihr Vorzeichen behalten dürfen (negativ = Erstattung).

@@ -16,7 +16,7 @@ Grundregeln:
 import json
 
 from src.core.amount_utils import normalize_amount
-from src.core.document_types import EMPLOYMENT, INSURANCE, PENSION
+from src.core.document_types import EMPLOYMENT, HOUSING, INSURANCE, PENSION
 from src.database.list_documents import list_documents
 from src.organizer.date_utils import year_from_archive_path
 from src.tax.tax_purpose import KRANKHEITSKOSTEN, WERBUNGSKOSTEN
@@ -89,7 +89,24 @@ ANLAGE_LABELS = {
     "vorsorgeaufwand": "Anlage Vorsorgeaufwand",
     "kap": "Anlage KAP",
     "agb": "Anlage Außergewöhnliche Belastungen",
+    "par35a": "Haushaltsnahe Dienstleistungen / Handwerker (§ 35a)",
 }
+
+# § 35a-Positionen aus den Wohnen-Abrechnungen: (Feld, Label, Hinweis).
+_PAR35A_POSITIONS = (
+    (
+        "household_services_amount",
+        "Haushaltsnahe Dienstleistungen (§ 35a Abs. 2)",
+        None,
+    ),
+    (
+        "craftsman_services_amount",
+        "Handwerkerleistungen (§ 35a Abs. 3)",
+        "Nur Arbeits-/Lohnkosten ansetzen (keine Materialkosten). Die "
+        "20-%-Ermäßigung und Höchstbeträge rechnet ELSTER — hier stehen "
+        "die Belegsummen.",
+    ),
+)
 
 
 def _parse_data(raw):
@@ -204,6 +221,7 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
     lstb_rows = []
     kap_rows = []
     insurance_rows = []
+    housing_rows = []
     purpose_rows = {WERBUNGSKOSTEN: [], KRANKHEITSKOSTEN: []}
 
     for row in documents:
@@ -248,6 +266,11 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
 
         elif row["document_type"] == PENSION and subtype == "steuerbescheinigung":
             kap_rows.append(entry)
+
+        elif row["document_type"] == HOUSING:
+            # § 35a: relevant sind Abrechnungen mit ausgewiesenen Summen
+            # (Default) oder explizit markierte.
+            housing_rows.append(entry)
 
     lstb_positions = _field_positions(
         lstb_rows, [(f, l) for f, l, _ in _LSTB_POSITIONS]
@@ -294,6 +317,8 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
         )
     ]
 
+    par35a = _par35a_positions(housing_rows)
+
     return {
         "year": year,
         "anlagen": [
@@ -305,8 +330,40 @@ def build_elster_summary(year: int, documents: list[dict] | None = None) -> dict
             },
             {"key": "kap", "label": ANLAGE_LABELS["kap"], "positions": kap},
             {"key": "agb", "label": ANLAGE_LABELS["agb"], "positions": agb},
+            {"key": "par35a", "label": ANLAGE_LABELS["par35a"], "positions": par35a},
         ],
     }
+
+
+def _par35a_positions(rows):
+    """§ 35a-Belegsummen aus den Wohnen-Abrechnungen.
+
+    Ein Dokument zählt zu einer Position, wenn das jeweilige Feld gefüllt
+    ist (geprüft → Summe, ungeprüft → To-do). Abrechnungen ohne
+    § 35a-Angaben tauchen bewusst nicht als „fehlend" auf — nicht jede
+    Abrechnung weist solche Kosten aus.
+    """
+    positions = []
+
+    for field, label, hint in _PAR35A_POSITIONS:
+        position = _new_position(field, label, hint=hint)
+
+        for row, data, verified in rows:
+            value = normalize_amount(data.get(field))
+
+            if value is None:
+                continue
+
+            if verified:
+                position["amount"] += value
+                position["documents"].append(_reference(row, data, value))
+
+            else:
+                position["pending"].append(_reference(row, data, value))
+
+        positions.append(_finalize_status(position))
+
+    return positions
 
 
 def _purpose_position(rows, key, label, hint=None):

@@ -177,6 +177,34 @@ Erklärung verlangt beide Angaben.
 - Angabenbasierte Posten der Erklärung tauchen hier bewusst NICHT auf
   (out of scope, siehe Grenze oben).
 
+### § 35a Haushaltsnahe Dienstleistungen / Handwerker (19.07.2026)
+
+Quelle: Wohnen-Abrechnungen (Nebenkosten-/Betriebskosten-, Heizkosten-,
+Hausgeldabrechnung). Zwei Summenfelder je Dokument (LLM darf sie versuchen,
+primär trägt sie der Nutzer beim Prüfen aus der § 35a-Bescheinigung nach):
+
+| Position | Feld |
+|---|---|
+| Haushaltsnahe Dienstleistungen (§ 35a Abs. 2) | `household_services_amount` |
+| Handwerkerleistungen (§ 35a Abs. 3, NUR Lohnanteil) | `craftsman_services_amount` |
+
+Steuerrelevanz-Default für Wohnen: relevant, sobald ein § 35a-Feld gefüllt
+ist. Abrechnungen ohne § 35a-Angaben erscheinen bewusst nicht als „fehlend"
+(nicht jede Abrechnung weist solche Kosten aus). Die 20-%-Ermäßigung und
+Höchstbeträge rechnet ELSTER — die App liefert Belegsummen.
+
+**Jahreszuordnung (bewusst, kein tax_year-Feld):** § 35a-Kosten aus einer
+Abrechnung setzt der Mieter im Jahr des ZUGANGS der Abrechnung an
+(BMF-Schreiben zu § 35a) — das Dokumentdatum (Zustellung) ist also das
+richtige Steuerjahr, genau wie die App über das Archivjahr zuordnet. Der
+Abrechnungszeitraum („Betriebskosten 2024") gehört in den Betreff.
+
+Außerdem (19.07.2026): Abrechnungs-Subtypen speichern den Abrechnungsbetrag
+als vorzeichenbehaftetes `settlement_amount` (Nachzahlung positiv, Guthaben
+negativ — das generische `amount` ist Magnitude und konnte das nicht);
+neuer Subtyp `heizkostenabrechnung`; Freitext-Betreff bei allen
+Wohnen-Subtypen.
+
 ## Vertrauens-Workflow (Entwicklungsprozess)
 
 Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
@@ -215,7 +243,7 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
 
 ## Ausbauideen (nicht umgesetzt)
 
-Werbungskosten-Kennzeichnung an Rechnungen (s. o.), Spenden,
-Handwerkerleistungen/§35a (Lohnanteil aus Nebenkostenabrechnungen),
-Gesundheitskosten (dafür fehlen bisher passende Dokumenttypen, siehe
-Ideenspeicher in [[03_Dokumenttypen]]).
+Spenden (fehlt als Dokumenttyp/Subtyp); § 35a aus
+Handwerker-EINZELrechnungen (bisher nur aus Wohnen-Abrechnungen —
+Einzelrechnungen bräuchten einen eigenen tax_purpose-Wert); siehe
+Ideenspeicher in [[03_Dokumenttypen]].

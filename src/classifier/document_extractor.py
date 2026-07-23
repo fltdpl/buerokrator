@@ -72,7 +72,12 @@ def run_extractor(prompt_file, text, max_input_chars=None):
 AMOUNT_FIELDS = {
     INVOICE: ("amount",),
     INSURANCE: ("amount",),
-    HOUSING: ("amount",),
+    HOUSING: (
+        "amount",
+        "settlement_amount",
+        "household_services_amount",
+        "craftsman_services_amount",
+    ),
     PENSION: (
         "amount",
         "interest",

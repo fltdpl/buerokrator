@@ -92,7 +92,7 @@ def test_template_is_valid_yaml_without_active_values():
 
     # Alle Anlagen da, aber keine Werte einkommentiert (kein
     # Bestätigungsfehler durch vorbefüllte App-Werte).
-    assert set(parsed) == {"anlage_n", "vorsorgeaufwand", "kap", "agb"}
+    assert set(parsed) == {"anlage_n", "vorsorgeaufwand", "kap", "agb", "par35a"}
     assert all(value is None for value in parsed.values())
     assert "gross_amount" in template  # als Kommentar-Vorlage enthalten
 
