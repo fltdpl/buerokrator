@@ -250,7 +250,14 @@ def filter_documents(
 
         for row in documents:
             data = parse_document_row(row)["data"]
-            value = data.get("issuer") or data.get("insurer") or ""
+            # Gleiche Auflösung wie die Aussteller-Spalte der Liste:
+            # employment-Dokumente tragen den Arbeitgeber in "employer".
+            value = (
+                data.get("issuer")
+                or data.get("insurer")
+                or data.get("employer")
+                or ""
+            )
 
             if needle in value.lower():
                 filtered.append(row)

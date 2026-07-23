@@ -324,7 +324,13 @@ def documents_page():
                 results.refresh()
 
             ui.select(
-                ["Alle", *DOCUMENT_TYPES],
+                {
+                    "Alle": "Alle",
+                    **{
+                        dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype)
+                        for dtype in DOCUMENT_TYPES
+                    },
+                },
                 value=filters["type"],
                 label="Kategorie",
                 on_change=lambda event: set_type_filter(event.value),

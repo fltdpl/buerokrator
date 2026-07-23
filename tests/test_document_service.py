@@ -233,3 +233,14 @@ def test_filter_documents_by_subtype():
     ] == [1]
     # Kein Subtyp-Filter: alles bleibt.
     assert [r["id"] for r in filter_documents(docs, subtype=None)] == [1, 2, 3]
+
+
+def test_filter_issuer_matches_employer_field():
+    # employment-Dokumente tragen den Arbeitgeber in "employer" — der
+    # Aussteller-Filter muss ihn genauso finden wie issuer/insurer.
+    docs = [
+        make_row(1, "employment", 2024, {"employer": "Musterfirma GmbH"}),
+        make_row(2, "invoice", 2024, {"issuer": "Musterladen"}),
+    ]
+
+    assert [r["id"] for r in filter_documents(docs, issuer="musterfirma")] == [1]
