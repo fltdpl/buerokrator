@@ -18,9 +18,12 @@ from src.core.document_display import (
 from src.database.delete_document import delete_document
 from src.database.list_documents import get_document
 from src.database.replace_document_analysis import replace_document_analysis
+from src.core.document_fields import whitelist_fields
+from src.core.document_types import EMPLOYMENT
 from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
 from src.database.set_document_verified import mark_document_unverified
+from src.database.update_document import update_document_data
 from src.organizer.date_utils import year_from_archive_path
 from src.organizer.trash import move_to_trash
 
@@ -128,6 +131,58 @@ def set_documents_subtype(document_ids, subtype):
     for document_id in document_ids:
         if set_document_subtype(document_id, subtype):
             changed += 1
+
+    return changed
+
+
+def set_documents_issuer(document_ids, name):
+    """Vereinheitlicht Aussteller/Arbeitgeber der Auswahl (z. B.
+    „TU Berlin" vs. „Technische Universität Berlin").
+
+    Schreibt je Dokument das Feld, das den Namen trägt (employer bei den
+    Lohn-Subtypen, sonst issuer; ein Alt-Feld insurer wird dabei durch die
+    Whitelist abgelöst). Bewusst KEIN Freigabe-Widerruf und KEIN Umbenennen
+    der Datei: reine Namenskorrektur, keine inhaltliche Neubewertung — der
+    Dateiname zieht beim nächsten regulären Speichern nach.
+
+    Achtung Ground Truth: der kanonische Name sollte der Schreibweise der
+    meisten Dokumente entsprechen, sonst misst evaluate.py korrekte
+    LLM-Extraktionen als Fehler (siehe HANDOVER-Vermerk).
+    """
+    name = (name or "").strip()
+
+    if not name:
+        return 0
+
+    changed = 0
+
+    for document_id in document_ids:
+        row = get_document(document_id)
+
+        if row is None:
+            continue
+
+        data = dict(parse_document_row(row)["data"])
+
+        field = "issuer"
+        if row["document_type"] == EMPLOYMENT and data.get("document_subtype") in (
+            "lohnsteuerbescheinigung",
+            "gehaltsabrechnung",
+        ):
+            field = "employer"
+
+        if data.get(field) == name:
+            continue
+
+        data[field] = name
+        # insurer u. Ä. Alt-Felder verschwinden hiermit zugunsten des
+        # kanonischen Feldes.
+        data.pop("insurer", None)
+
+        update_document_data(
+            document_id, whitelist_fields(row["document_type"], data)
+        )
+        changed += 1
 
     return changed
 

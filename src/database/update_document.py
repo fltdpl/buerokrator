@@ -50,3 +50,30 @@ def update_document(
         )
 
         conn.commit()
+
+
+def update_document_data(document_id, extracted_data):
+    """Ersetzt NUR extracted_data (z. B. Aussteller-Vereinheitlichung).
+
+    Lässt im Gegensatz zu update_document (setzt verified = 1, benennt um)
+    und replace_document_analysis (widerruft die Freigabe) den Prüfstatus,
+    die Datei und die Notizen unangetastet — für reine Metadaten-Korrekturen
+    ohne inhaltliche Neubewertung.
+    """
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE documents
+            SET extracted_data = ?, tax_year = ?
+            WHERE id = ?
+            """,
+            (
+                json.dumps(extracted_data, ensure_ascii=False),
+                extract_year(extracted_data),
+                document_id,
+            ),
+        )
+
+        conn.commit()

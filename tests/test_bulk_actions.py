@@ -120,3 +120,54 @@ def test_freigabe_widerrufen_laesst_felder_und_datei_unangetastet(tmp_path, monk
     row = get_document(document_id)
     assert row["extracted_data"] == "{}"
     assert (tmp_path / "archive" / "a.pdf").exists()
+
+
+def test_aussteller_vereinheitlichen_schreibt_das_passende_feld(tmp_path, monkeypatch):
+    import json
+
+    from src.services.document_service import set_documents_issuer
+
+    _setup_project(tmp_path, monkeypatch)
+    invoice = _document(tmp_path, "rechnung.pdf", document_type="invoice")
+    lohn = insert_document(
+        filename="lohn.pdf",
+        archive_path=str(tmp_path / "archive" / "lohn.pdf"),
+        document_type="employment",
+        extracted_data={
+            "document_subtype": "gehaltsabrechnung",
+            "employer": "TU Berlin",
+            "gross_amount": 3100.0,
+        },
+    )
+    set_document_verified(lohn, 1)
+
+    changed = set_documents_issuer(
+        [invoice, lohn, 999], "Technische Universität Berlin"
+    )
+
+    assert changed == 2
+
+    invoice_data = json.loads(get_document(invoice)["extracted_data"])
+    assert invoice_data["issuer"] == "Technische Universität Berlin"
+
+    lohn_row = get_document(lohn)
+    lohn_data = json.loads(lohn_row["extracted_data"])
+    # Lohn-Subtypen tragen den Namen in employer, nicht issuer.
+    assert lohn_data["employer"] == "Technische Universität Berlin"
+    assert "issuer" not in lohn_data
+    # Reine Namenskorrektur: Freigabe und Felder bleiben.
+    assert lohn_row["verified"] == 1
+    assert lohn_data["gross_amount"] == 3100.0
+    assert lohn_row["filename"] == "lohn.pdf"
+
+
+def test_aussteller_vereinheitlichen_ohne_namen_aendert_nichts(tmp_path, monkeypatch):
+    import json
+
+    from src.services.document_service import set_documents_issuer
+
+    _setup_project(tmp_path, monkeypatch)
+    document_id = _document(tmp_path, "a.pdf")
+
+    assert set_documents_issuer([document_id], "   ") == 0
+    assert json.loads(get_document(document_id)["extracted_data"]) == {}

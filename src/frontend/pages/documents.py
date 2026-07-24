@@ -14,6 +14,7 @@ from src.services.document_service import (
     move_documents_to_trash,
     reclassify_documents,
     revoke_documents_verification,
+    set_documents_issuer,
     set_documents_subtype,
 )
 from src.services.form_schema import subtype_config
@@ -187,6 +188,18 @@ def documents_page():
             )
             results.refresh()
 
+        def unify_issuer(name):
+            if not (name or "").strip():
+                ui.notify("Bitte einen Aussteller-Namen eingeben.")
+                return
+
+            changed = set_documents_issuer(selected_ids(), name)
+            ui.notify(
+                f"Aussteller von {changed} Dokument(en) auf "
+                f"„{name.strip()}“ vereinheitlicht."
+            )
+            results.refresh()
+
         def revoke_selected():
             changed = revoke_documents_verification(selected_ids())
             ui.notify(
@@ -281,6 +294,16 @@ def documents_page():
             ).props("dense unelevated")
 
             subtype_bulk()
+
+            # Aussteller/Arbeitgeber vereinheitlichen ("TU Berlin" vs.
+            # "Technische Universität Berlin"): Prüfstatus und Datei bleiben.
+            issuer_input = ui.input("Aussteller vereinheitlichen").props(
+                "dense"
+            ).classes("w-56")
+            ui.button(
+                "Anwenden",
+                on_click=lambda: unify_issuer(issuer_input.value),
+            ).props("dense unelevated")
 
             # Kein Bestätigungsdialog: der Widerruf ist verlustfrei (Felder
             # bleiben, nur der Prüfstatus fällt) und per Prüfen umkehrbar.
