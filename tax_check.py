@@ -8,7 +8,10 @@ liegen lokal in tax_expected_<jahr>.yaml (gitignored — echte Steuerdaten).
   python tax_check.py 2025             # Abgleich gegen tax_expected_2025.yaml
   python tax_check.py 2025 --vorlage   # leere Erwartungs-Vorlage anlegen
 
-Exit-Code 0 = alle geprüften Positionen stimmen (Jahr abgenommen), sonst 1.
+Der Abgleich ist ein Hilfsmittel, um kritische Stellen zu finden — kein
+hartes Abnahme-Kriterium; erklärte Differenzen lassen sich in der
+Erwartungsdatei mit `position: ignoriert` ausklammern.
+Exit-Code 0 = alle geprüften Positionen stimmen, sonst 1.
 Wie evaluate.py bewusst cwd-relativ (CLI-Werkzeug im Entwickler-Modus).
 """
 

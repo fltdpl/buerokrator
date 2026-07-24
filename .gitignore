@@ -63,3 +63,6 @@ tax_expected_*.yaml
 # PyInstaller-Build-Artefakte
 build/
 dist/
+
+# Claude-Code-Arbeitsverzeichnis (lokale Skills/Einstellungen)
+.claude/

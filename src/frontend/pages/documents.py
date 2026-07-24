@@ -295,8 +295,8 @@ def documents_page():
 
             subtype_bulk()
 
-            # Aussteller/Arbeitgeber vereinheitlichen ("HTW Muster" vs.
-            # "Hochschule für Technik Musterstadt"): Prüfstatus und Datei bleiben.
+            # Aussteller/Arbeitgeber vereinheitlichen (Kurz- vs. Langname
+            # desselben Ausstellers): Prüfstatus und Datei bleiben.
             issuer_input = ui.input("Aussteller vereinheitlichen").props(
                 "dense"
             ).classes("w-56")

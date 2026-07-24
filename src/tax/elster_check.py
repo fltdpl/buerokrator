@@ -2,10 +2,13 @@
 
 Vergleicht das Ergebnis von build_elster_summary mit einer lokalen
 Erwartungsdatei (Werte aus der tatsächlich abgegebenen Steuererklärung).
-Siehe Vertrauens-Workflow in docs/05_Steuerlogik.md: jede Differenz wird
-mit Beleg-Herleitung gelistet und muss erklärt werden (App-Fehler,
-fehlender Beleg oder Lücke in der damaligen Erklärung) — erst dann gilt
-das Jahr als abgenommen.
+Der Abgleich ist ein Hilfsmittel, um kritische Stellen zu finden — kein
+hartes Abnahme-Kriterium (Vertrauens-Workflow in docs/05_Steuerlogik.md):
+jede Differenz wird mit Beleg-Herleitung gelistet und will erklärt sein
+(App-Fehler, fehlender Beleg oder Lücke in der damaligen Erklärung).
+Erklärte Positionen lassen sich mit `position: ignoriert` in der
+Erwartungsdatei bewusst ausklammern — sie bleiben im Report sichtbar,
+zählen aber nicht als Differenz.
 
 Die Erwartungsdatei enthält echte Steuerdaten und ist gitignored
 (tax_expected_*.yaml).
@@ -43,6 +46,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
     checked = []
     errors = []
     not_submitted = []
+    ignored = []
 
     expected = dict(expected) if isinstance(expected, dict) else {}
 
@@ -96,6 +100,20 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
 
             anlage, position = anlage_position
 
+            # `ignoriert` — Differenz ist erklärt und bewusst ausgeklammert
+            # (z. B. App genauer als die damalige Erklärung, Bagatelle).
+            # Bleibt im Report sichtbar, zählt aber nicht als Differenz.
+            if expected_value == "ignoriert":
+                ignored.append(
+                    {
+                        "key": f"{anlage_key}.{position_key}",
+                        "label": position["label"],
+                        "actual": position["amount"],
+                        "status": position["status"],
+                    }
+                )
+                continue
+
             try:
                 expected_amount = float(expected_value)
 
@@ -130,6 +148,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
             )
 
     checked_keys = {entry["key"] for entry in checked}
+    checked_keys.update(entry["key"] for entry in ignored)
     not_submitted_anlagen = {entry["anlage"] for entry in not_submitted}
 
     # Positionen mit App-Befund, aber ohne Erwartung: ausweisen, damit die
@@ -152,6 +171,7 @@ def compare_year(year: int, expected: dict, documents=None) -> dict:
         "checked": checked,
         "unchecked": unchecked,
         "not_submitted": not_submitted,
+        "ignored": ignored,
         "errors": errors,
         "ok": bool(checked)
         and not errors
@@ -177,7 +197,13 @@ def _format_references(title, references):
 
 def format_report(report: dict) -> str:
     """Textreport: OK/DIFF je Position, Herleitung bei jeder Differenz."""
-    lines = [f"ELSTER-Abgleich Steuerjahr {report['year']}", ""]
+    lines = [
+        f"ELSTER-Abgleich Steuerjahr {report['year']}",
+        "Hinweis: Der Abgleich hilft, kritische Stellen zu finden — er ist",
+        "kein hartes Kriterium. Erklärte Differenzen lassen sich in der",
+        "Erwartungsdatei mit `position: ignoriert` ausklammern.",
+        "",
+    ]
 
     for error in report["errors"]:
         lines.append(f"FEHLER: {error}")
@@ -215,6 +241,15 @@ def format_report(report: dict) -> str:
             )
             lines.extend(_format_references("Unklare Art", entry["unclear"]))
 
+    if report["ignored"]:
+        lines.append("")
+        lines.append("Bewusst ignoriert (Vermerk in der Erwartungsdatei):")
+
+        for entry in report["ignored"]:
+            lines.append(
+                f"  IGN   {entry['label']}: App {entry['actual']:.2f} €"
+            )
+
     if report["unchecked"]:
         lines.append("")
         lines.append("Ohne Erwartungswert (bitte ergänzen oder bewusst auslassen):")
@@ -244,12 +279,19 @@ def format_report(report: dict) -> str:
                 )
 
     lines.append("")
-    lines.append(
-        "ERGEBNIS: ABGENOMMEN — alle geprüften Positionen stimmen."
-        if report["ok"]
-        else "ERGEBNIS: NICHT abgenommen — Differenzen/Fehler erklären "
-        "(App-Fehler? Beleg fehlt? Damalige Erklärung unvollständig?)."
-    )
+
+    if report["ok"]:
+        lines.append("ERGEBNIS: alle geprüften Positionen stimmen.")
+
+    else:
+        open_count = len(report["errors"]) + sum(
+            1 for entry in report["checked"] if not entry["ok"]
+        )
+        lines.append(
+            f"ERGEBNIS: {open_count} kritische Stelle(n) — Differenzen "
+            "erklären (App-Fehler? Beleg fehlt? Damalige Erklärung "
+            "unvollständig?) oder bewusst ignorieren."
+        )
 
     return "\n".join(lines)
 
@@ -270,6 +312,8 @@ def build_template(year: int, documents=None) -> str:
         "# Positionen werden nicht geprüft.",
         "# War eine Anlage nicht Teil der Erklärung:",
         "#   kap: nicht_abgegeben",
+        "# Erklärte Differenz bewusst ausklammern (bleibt im Report sichtbar):",
+        "#   position: ignoriert",
         "# Diese Datei enthält echte Steuerdaten und bleibt lokal (gitignored).",
     ]
 

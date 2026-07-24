@@ -16,7 +16,7 @@ def test_matching_expectation_is_accepted():
 
     assert report["ok"] is True
     assert all(entry["ok"] for entry in report["checked"])
-    assert "ABGENOMMEN" in format_report(report)
+    assert "alle geprüften Positionen stimmen" in format_report(report)
 
 
 def test_difference_fails_and_shows_derivation():
@@ -30,7 +30,7 @@ def test_difference_fails_and_shows_derivation():
     assert "DIFF" in text
     # Herleitung: der Beleg steht im Report.
     assert "dok_1.pdf" in text
-    assert "NICHT abgenommen" in text
+    assert "1 kritische Stelle(n)" in text
 
 
 def test_typo_in_expectation_is_an_error_not_a_pass():
@@ -83,6 +83,45 @@ def test_unclear_insurance_appears_in_diff_report():
     # Unklare Art zählt nicht in die Summe → Differenz, Beleg gelistet.
     assert report["ok"] is False
     assert "Unklare Art" in format_report(report)
+
+
+def test_ignoriert_position_counts_not_as_difference():
+    # Erklärte Differenz: bewusst ausgeklammert, aber im Report sichtbar
+    # und nicht nochmal unter „ohne Erwartungswert" gelistet.
+    docs = [lstb(1, gross_amount=38500.0, income_tax=5120.0)]
+    expected = {
+        "anlage_n": {"gross_amount": 38500.0, "income_tax": "ignoriert"},
+    }
+
+    report = compare_year(2025, expected, docs)
+
+    assert report["ok"] is True
+    assert report["errors"] == []
+    (entry,) = report["ignored"]
+    assert entry["key"] == "anlage_n.income_tax"
+    assert not any(
+        e["key"] == "anlage_n.income_tax" for e in report["unchecked"]
+    )
+    text = format_report(report)
+    assert "Bewusst ignoriert" in text
+    assert "IGN" in text
+
+
+def test_ignoriert_on_unknown_position_stays_an_error():
+    docs = [lstb(1, gross_amount=38500.0)]
+    expected = {"anlage_n": {"gross_amout": "ignoriert"}}  # Tippfehler
+
+    report = compare_year(2025, expected, docs)
+
+    assert report["ok"] is False
+    assert any("gross_amout" in error for error in report["errors"])
+
+
+def test_report_states_hint_character():
+    docs = [lstb(1, gross_amount=38500.0)]
+    report = compare_year(2025, {"anlage_n": {"gross_amount": 38500.0}}, docs)
+
+    assert "kein hartes Kriterium" in format_report(report)
 
 
 def test_template_is_valid_yaml_without_active_values():

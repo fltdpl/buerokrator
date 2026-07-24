@@ -174,6 +174,10 @@ Erklärung verlangt beide Angaben.
   dazu erscheinen als BEFUND (war die Erklärung unvollständig?), nicht als
   Abgleichsfehler.
 - Tippfehler in Positions-Schlüsseln sind FEHLER (nie stilles „ok").
+- `position: ignoriert` — die Differenz ist erklärt und bewusst
+  ausgeklammert (z. B. App vollständiger als die damalige Erklärung,
+  Bagatelle ohne Beleg). Bleibt im Report sichtbar (IGN), zählt aber
+  nicht als Differenz; der Grund gehört als Kommentar daneben.
 - Angabenbasierte Posten der Erklärung tauchen hier bewusst NICHT auf
   (out of scope, siehe Grenze oben).
 
@@ -221,8 +225,11 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
    listet jede Differenz mit Beleg-Herleitung.
 3. **Differenzen klassifizieren**, nicht wegoptimieren: (a) App-Fehler →
    fixen; (b) App fehlt ein Beleg → importieren; (c) **die damalige
-   Erklärung war unvollständig** → Befund dokumentieren, App hat recht.
-   Erst wenn jede Differenz erklärt ist, gilt das Jahr als abgenommen.
+   Erklärung war unvollständig** → Befund dokumentieren, App hat recht
+   (→ `ignoriert`-Vermerk in der Erwartungsdatei). Der Abgleich ist ein
+   Hilfsmittel, um kritische Stellen zu finden — kein hartes Kriterium.
+   Das Jahr gilt als abgenommen, wenn jede Differenz erklärt ist
+   (Nutzer-Entscheidung, kein Exit-Code).
 4. Das „im Aufbau"-Banner der Steuer-Seite fällt erst, wenn mindestens ein
    echtes Jahr abgenommen ist.
 
