@@ -96,7 +96,7 @@
 
 - [x] Volltextsuche über OCR-Inhalte (`document_text`)
     
-- [ ] Suchergebnisse nach Relevanz sortieren
+- [x] Suchergebnisse nach Relevanz sortieren (bm25 über FTS5) ✅ 2026-07-17
     
 - [x] OCR-Text dauerhaft für alle Importwege speichern (`document_text` bei jedem Insert) ✅ 2026-07-15
     
@@ -209,7 +209,7 @@
     
 - [x] Suche nach Vertragsnummern (über Volltext in `extracted_data`) ✅ 2026-07-08
     
-- [ ] SQLite FTS5 statt `LIKE` für die Volltextsuche
+- [x] SQLite FTS5 statt `LIKE` für die Volltextsuche (Trigram-Substring + bm25-Ranking, Schema v2) ✅ 2026-07-17
     
 - [ ] Suche nach Beträgen
     
@@ -255,18 +255,20 @@
     
 - [x] Versicherungsbeiträge sammeln ✅ 2026-07-01
     
-- [ ] Werbungskosten sammeln
+- [x] Werbungskosten sammeln — belegbasiert über tax_purpose-Kennzeichnung; angabenbasierte Pauschalen bewusst out of scope ✅ 2026-07-18
     
-- [ ] Gesundheitskosten sammeln
+- [x] Gesundheitskosten sammeln — Krankheitskosten-Belege über tax_purpose (Anlage agB) ✅ 2026-07-18
     
 
 ### Später
 
-- [ ] ELSTER-Zuordnung: Summen konkreten Anlagen zuordnen (Alleinstellungsmerkmal ggü. Paperless) — **in Arbeit seit 17.07.2026**, Zielbild + Umsetzungsplan in docs/05_Steuerlogik.md (Scope: Anlage N, Vorsorgeaufwand, KAP; Golden-Master-Abgleich gegen eine abgegebene Erklärung)
+- [x] ELSTER-Zuordnung: Summen konkreten Anlagen zuordnen (Anlage N, Vorsorgeaufwand, KAP, agB, § 35a — Ampel + Beleg-Herleitung, tax_check-Golden-Master) ✅ 2026-07-19; offen nur die formale Abnahme eines echten Jahres (dann fällt das „im Aufbau"-Banner)
     
 - [ ] ELSTER-Export vorbereiten
     
 - [ ] Steuerbericht erzeugen
+    
+- [ ] Grafische Auswertung von Zielwerten — erste Ausbaustufe Jahreseinkommen: drei Graphen über die Jahre (Brutto, Steuern, Netto) aus den geprüften Lohnsteuerbescheinigungen; später weitere Zielwerte (z. B. Vorsorge-Summen, § 35a)
     
 - [ ] Steuercheckliste pro Jahr / Jahres-Abschluss-Checkliste („für 2025 fehlt: …" aus Vorjahresbestand)
     

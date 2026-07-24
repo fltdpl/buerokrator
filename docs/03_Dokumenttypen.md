@@ -28,8 +28,8 @@ Zentral in `src/core/document_fields.py` (`KNOWN_SUBTYPES`), dort maßgeblich:
 - **pension**: contract, annual_statement, cost_statement,
   surrender_value_table, pension_information, bauspar_jahresauszug,
   steuerbescheinigung
-- **housing**: nebenkostenabrechnung, mietvertrag, mieterhoehung,
-  hausgeldabrechnung, sonstiges
+- **housing**: nebenkostenabrechnung, heizkostenabrechnung, mietvertrag,
+  mieterhoehung, hausgeldabrechnung, sonstiges
 - **bank**: kontoauszug, kreditkartenabrechnung, depotuebersicht, sonstiges
 
 ---

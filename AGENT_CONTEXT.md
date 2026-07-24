@@ -26,20 +26,26 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
 
 ## Architektur / Pipeline
 
-`inbox` → Dubletten-Prüfung (Inhalts-Hash) → OCR (`src/ocr`) → Klassifikation
-(`src/classifier`: Regel-Vorprüfung vor LLM) → Extraktion (typspezifische Prompts) →
-regelbasierte Nachbearbeitung (`src/extraction`) → Organizer (Umbenennen/Archivieren,
-`src/organizer`) → Datenbank (`src/database`). Steuer-Auswertung in `src/tax`.
+`inbox` → Dubletten-Prüfung (Inhalts-Hash) → Textextraktion (`src/ocr`: digitale
+PDFs LAYOUTTREU über pypdfium2-Zeichenpositionen, Scans über Tesseract) →
+Klassifikation (`src/classifier`: Regel-Vorprüfung vor LLM) → Extraktion
+(typspezifische Prompts) → regelbasierte Nachbearbeitung (`src/extraction`) →
+Organizer (Umbenennen/Archivieren, `src/organizer`) → Datenbank (`src/database`,
+inkl. FTS5-Volltextindex mit Sync-Triggern). Steuer-Auswertung in `src/tax`
+(ELSTER-Anlagen-Mapping mit Ampel/Herleitung, Golden-Master-Abgleich
+`tax_check.py` gegen gitignorierte Erwartungsdatei).
 
-Regelparser in `src/extraction` dürfen nur rechnen und beschriftete Werte lesen —
-niemals Aussteller, Produktname oder Datum konstant setzen. Die App soll Dokumente
-beliebiger Anbieter und (später) mehrerer Nutzer verarbeiten.
+Regelparser in `src/extraction` (Bauspar-Auszug, Lohnsteuerbescheinigung,
+SV-Meldung, Entgeltnachweis) dürfen nur rechnen und beschriftete Werte lesen —
+niemals Aussteller, Produktname oder Datum konstant setzen; bei unbekanntem
+Layout `{}`. Die App soll Dokumente beliebiger Anbieter und (später) mehrerer
+Nutzer verarbeiten.
 
 GUI klar getrennt: NiceGUI-Frontend (`src/frontend`, nur Darstellung/Events) über framework-freie Services (`src/services`: Formular-Schemata, Listen-Filter, Papierkorb, Kennzahlen, Log, Ollama-Modelle, Backup, Systemstatus). Löschen verschiebt Originale nach `trash/` (nie `unlink` auf Archivdateien). Farben und Layout zentral in `src/frontend/theme.py` und `layout.py`; keine Web-Fonts.
 
 DB-Zugriff über `with open_connection() as conn:` (`src/database/database.py`; WAL, timeout, garantiertes close). DB-Zeilen sind dicts mit Zugriff per Spaltenname (`sqlite3.Row`; Queries liefern `dict(row)`) — nie per Position indexieren.
 
-Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, employment, legal, unknown` — **Typ = Lebensbereich** (Gehaltsabrechnung → employment, nicht tax). Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz). Pro Dokument gibt es ein Steuerrelevanz-Flag (`tax_relevant`, Default aus Typ/Subtyp in `src/tax/tax_relevance.py`); `/steuer` zählt Einkommensdokumente nur, wenn steuerrelevant.
+Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, employment, legal, unknown` — **Typ = Lebensbereich** (Gehaltsabrechnung → employment, nicht tax). Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz). Pro Dokument gibt es ein Steuerrelevanz-Flag (`tax_relevant`, Default aus Typ/Subtyp in `src/tax/tax_relevance.py`) und eine Zweck-Kennzeichnung (`tax_purpose`: werbungskosten/krankheitskosten, nur steuerrelevante Rechnungen, vom Nutzer gesetzt); `/steuer` zählt in die Anlagen-Summen nur geprüfte + steuerrelevante Dokumente.
 
 Alle Pfade hängen am App-Home (`src/core/app_home.get_app_home()`: Env `BUEROKRATOR_HOME` → cwd-Devmodus mit vorhandener Config → Benutzer-Datenverzeichnis). Neue Pfade nie relativ zur cwd anlegen; Config-Pfade sind nach `load_config()` bereits absolut.
 

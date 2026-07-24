@@ -23,15 +23,23 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
 ## Hauptfunktionen
 
 - Stapel-Import aus dem `inbox`-Ordner, inklusive Dubletten-Erkennung
-- OCR für Bild- und PDF-Dokumente (Tesseract)
+- Layouttreue Textextraktion aus digitalen PDFs; OCR für gescannte
+  Dokumente (Tesseract)
 - Dokumentklassifikation (Regeln zuerst, LLM für unklare Fälle)
-- Extraktion steuerrelevanter Felder je Dokumenttyp/-subtyp
+- Extraktion steuerrelevanter Felder je Dokumenttyp/-subtyp; amtliche
+  Formulare (Lohnsteuerbescheinigung, SV-Meldung, Entgeltnachweis,
+  Bauspar-Jahresauszug) liest zusätzlich ein deterministischer Regelparser
 - Automatische Umbenennung und Archivierung nach `archive/<Jahr>/<Kategorie>/`
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
-- Steuerübersicht pro Jahr mit Absetzbarkeit je Dokument + CSV-Export
+- Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe)
+- Steuer-Seite mit ELSTER-Anlagen-Ansicht (Anlage N, Vorsorgeaufwand, KAP,
+  außergewöhnliche Belastungen, § 35a): pro Position Ampel und
+  Beleg-Herleitung — in Summen fließen nur geprüfte Dokumente; dazu
+  Jahresübersicht + CSV-Export
 - Löschen in den Papierkorb statt endgültig
-- Backup von Datenbank + Archiv als ZIP auf Knopfdruck
+- Backup von Datenbank + Archiv als ZIP auf Knopfdruck (inkl.
+  Wiederherstellung)
 
 ## Voraussetzungen
 
@@ -40,8 +48,8 @@ Alle Werkzeuge laufen lokal:
 - **Python 3.12+**
 - **Tesseract OCR** mit den Sprachpaketen `deu` und `eng`
   (Ubuntu/Debian: `sudo apt install tesseract-ocr tesseract-ocr-deu`)
-- **pypdfium2** für die Umwandlung gescannter PDF-Seiten in Bilder
-  (wird als Python-Paket über `requirements.txt` mitinstalliert)
+- **pypdfium2** für PDF-Text und die Umwandlung gescannter Seiten in
+  Bilder (wird als Python-Paket über `requirements.txt` mitinstalliert)
 - *Optional, empfohlen:* **[Ollama](https://ollama.com/)** mit einem
   Sprachmodell (Standard `gemma3:4b`): `ollama pull gemma3:4b`.
   Ohne Ollama läuft der Import im eingeschränkten Modus: Dokumente werden

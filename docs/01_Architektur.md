@@ -8,7 +8,11 @@ laufen lokal, keine externen Dienste.
 
 ### OCR (`src/ocr`)
 
-Extrahiert Text aus PDFs und Bildern (Tesseract, pypdfium2 für PDF→Bild).
+Extrahiert Text aus PDFs und Bildern. PDFs mit eingebettetem Text werden
+**layouttreu** rekonstruiert (`pdf_reader.py`: pypdfium2-Zeichenpositionen,
+Zeilen-Clustering per vertikaler Überlappung, Spaltensprünge als
+Doppel-Leerzeichen) — bei Formularen stehen Beschriftung und Wert dadurch
+wieder auf einer Zeile. Bild-PDFs gehen über Tesseract (pypdfium2 rendert).
 
 ### Classifier (`src/classifier`)
 
@@ -50,7 +54,11 @@ Layout und Farben zentral in `layout.py` / `theme.py` (siehe [[011_theme]]).
 
 ### Steuer (`src/tax`)
 
-Jahres-Übersicht und CSV-Export (siehe [[05_Steuerlogik]]).
+Jahres-Übersicht/CSV (`tax_summary.py`), ELSTER-Anlagen-Zuordnung mit
+Ampel und Beleg-Herleitung (`elster_mapping.py`), Golden-Master-Abgleich
+gegen die abgegebene Erklärung (`elster_check.py` + CLI `tax_check.py`),
+Steuerrelevanz (`tax_relevance.py`) und Zweck-Kennzeichnung
+(`tax_purpose.py`). Details: [[05_Steuerlogik]].
 
 ### Evaluation (`src/evaluation`, `evaluate.py`)
 
@@ -86,6 +94,13 @@ beliebiger Nutzer und Anbieter verarbeiten):
 Anbieterunabhängig lesbar sind amtlich normierte Formulare: die
 Steuerbescheinigung über Kapitalerträge etwa trägt nach § 45a EStG bei
 jeder Bank dieselben Beschriftungen.
+
+Aktuelle Parser: Bauspar-Jahreskontoauszug (`account_statement.py`),
+Lohnsteuerbescheinigung (`lohnsteuerbescheinigung.py`, nummerierte Zeilen
+3–28), SV-Meldebescheinigung § 25 DEÜV (`sv_meldung.py`, inkl.
+Storno+Neuausstellung), Entgeltnachweis (`entgeltnachweis.py`,
+SAP-HR-Summenzeilen). Alle arbeiten auf dem layouttreuen Text und
+überschreiben die LLM-Werte nur für sicher gelesene Felder.
 
 ### Watcher (`src/watcher`, `main.py`)
 
