@@ -3,8 +3,9 @@
 Die Zuordnung liegt NICHT im Code, sondern in einer nutzerpflegbaren Datei
 im App-Home (`config/aussteller_aliase.yaml`) — Anbieternamen sind
 Nutzerdaten und gehören nicht ins (öffentliche) Repository. Ohne Datei
-passiert nichts; eine kommentierte Vorlage legt `ensure_aliases_file()` an
-(Einstellungen → Konfiguration).
+passiert nichts; gepflegt wird sie im Einstellungs-Tab „Aliase" (Editor
+mit Validierung, `ensure_aliases_file()` legt die kommentierte Vorlage an)
+oder extern im Texteditor.
 
 Format der Datei (kanonischer Name → Liste der Schreibweisen; ein
 Stern am Ende matcht als Präfix):
@@ -67,6 +68,51 @@ def ensure_aliases_file():
     return path
 
 
+def parse_aliases_text(text):
+    """Parst den Dateiinhalt: (exakte Zuordnung, Präfix-Zuordnungen).
+
+    Wirft ValueError mit verständlicher Meldung — auch der Editor in den
+    Einstellungen validiert hierüber, bevor er speichert.
+    """
+    try:
+        parsed = yaml.safe_load(text) or {}
+
+    except yaml.YAMLError as error:
+        raise ValueError(f"kein gültiges YAML: {error}") from error
+
+    if not isinstance(parsed, dict):
+        raise ValueError(
+            "erwartet ist ein Mapping: kanonischer Name -> Liste der "
+            "Schreibweisen"
+        )
+
+    exact = {}
+    prefixes = []
+
+    for canonical, aliases in parsed.items():
+        if aliases is None:
+            continue
+
+        if isinstance(aliases, str):
+            aliases = [aliases]
+
+        if not isinstance(aliases, list):
+            raise ValueError(
+                f"'{canonical}': erwartet ist eine Liste von Schreibweisen"
+            )
+
+        for alias in aliases:
+            alias = str(alias).strip()
+
+            if alias.endswith("*"):
+                prefixes.append((alias[:-1].rstrip(), str(canonical)))
+
+            elif alias:
+                exact[alias] = str(canonical)
+
+    return exact, tuple(prefixes)
+
+
 def load_aliases():
     """Liest die Alias-Datei: (exakte Zuordnung, Präfix-Zuordnungen).
 
@@ -86,42 +132,15 @@ def load_aliases():
     if _cache["key"] == key:
         return _cache["value"]
 
-    exact = {}
-    prefixes = []
-
     try:
-        parsed = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-
-        if not isinstance(parsed, dict):
-            raise ValueError("erwartet ist ein Mapping Name -> Aliasliste")
-
-        for canonical, aliases in parsed.items():
-            if aliases is None:
-                continue
-
-            if isinstance(aliases, str):
-                aliases = [aliases]
-
-            if not isinstance(aliases, list):
-                raise ValueError(
-                    f"'{canonical}': erwartet ist eine Liste von Schreibweisen"
-                )
-
-            for alias in aliases:
-                alias = str(alias).strip()
-
-                if alias.endswith("*"):
-                    prefixes.append((alias[:-1].rstrip(), str(canonical)))
-
-                elif alias:
-                    exact[alias] = str(canonical)
+        value = parse_aliases_text(path.read_text(encoding="utf-8"))
 
     except Exception as error:
         logger.warning(f"Aussteller-Aliase unlesbar ({path}): {error}")
         return {}, ()
 
     _cache["key"] = key
-    _cache["value"] = (exact, tuple(prefixes))
+    _cache["value"] = value
 
     return _cache["value"]
 

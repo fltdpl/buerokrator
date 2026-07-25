@@ -7,7 +7,11 @@ from src.frontend.pages.trash import render_trash
 from src.services.backup_service import list_backups, run_backup, run_restore
 from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
-from src.organizer.issuer_normalizer import aliases_path, ensure_aliases_file
+from src.organizer.issuer_normalizer import (
+    ensure_aliases_file,
+    load_aliases,
+    parse_aliases_text,
+)
 from src.services.model_service import list_installed_models
 
 
@@ -24,6 +28,7 @@ def settings_page():
 
         with ui.tabs().classes("w-full") as tabs:
             tab_config = ui.tab("Konfiguration", icon="tune")
+            tab_aliases = ui.tab("Aliase", icon="label")
             tab_trash = ui.tab("Papierkorb", icon="delete_outline")
             tab_backup = ui.tab("Backup", icon="save")
             tab_database = ui.tab("Datenbank", icon="storage")
@@ -32,6 +37,9 @@ def settings_page():
         with ui.tab_panels(tabs, value=tab_config).classes("w-full"):
             with ui.tab_panel(tab_config):
                 _render_config(config)
+
+            with ui.tab_panel(tab_aliases):
+                _render_issuer_aliases()
 
             with ui.tab_panel(tab_trash):
                 render_trash()
@@ -165,40 +173,69 @@ def _render_config(config):
 
     ui.button("💾 Speichern", on_click=save).props("color=primary unelevated")
 
-    _render_issuer_aliases()
-
 
 def _render_issuer_aliases():
-    """Hinweis auf die nutzerpflegbare Alias-Datei (Vorlage anlegbar)."""
+    """Editor für die Aussteller-Alias-Datei (nutzerpflegbares YAML).
+
+    Bewusst ein Text-Editor statt Formular: die Datei bleibt die eine
+    Quelle (extern editierbar, Kommentare bleiben erhalten); gespeichert
+    wird nur, was die Validierung besteht.
+    """
     with card("w-full gap-2"):
         ui.label("Aussteller-Aliase").classes("text-xl page-title")
         ui.label(
             "Vereinheitlicht Schreibweisen desselben Ausstellers schon beim "
-            "Import (Dateiname und gespeicherter Aussteller). Die Zuordnung "
-            "pflegst du als Textdatei; Änderungen wirken ohne Neustart. "
-            "Bestandsdokumente vereinheitlicht weiterhin die Bulk-Aktion in "
-            "der Dokumentenliste."
+            "Import (Dateiname und gespeicherter Aussteller). Aufbau: "
+            "kanonischer Name, darunter die Schreibweisen als Liste; ein "
+            "Stern am Ende matcht als Präfix. Änderungen wirken ohne "
+            "Neustart. Bestandsdokumente vereinheitlicht die Bulk-Aktion "
+            "in der Dokumentenliste."
         ).classes("text-sm muted")
 
-        path = aliases_path()
-        ui.label(f"Datei: {path}").classes("text-sm muted")
+        path = ensure_aliases_file()
+        ui.label(f"Datei: {path} (auch extern editierbar)").classes(
+            "text-xs muted"
+        )
+
+        editor = ui.textarea(
+            value=path.read_text(encoding="utf-8")
+        ).classes("w-full font-mono").props("outlined input-style=height:22rem")
 
         @ui.refreshable
-        def action_area():
-            if path.exists():
-                ui.label("✅ Datei vorhanden.").classes("text-sm")
+        def summary():
+            exact, prefixes = load_aliases()
+            ui.label(
+                f"Aktiv: {len(exact)} Schreibweise(n), "
+                f"{len(prefixes)} Präfix(e)."
+            ).classes("text-sm muted")
 
-            else:
-                def create_template():
-                    ensure_aliases_file()
-                    ui.notify("Vorlage angelegt — mit Texteditor befüllen.")
-                    action_area.refresh()
+        def save_aliases():
+            try:
+                exact, prefixes = parse_aliases_text(editor.value)
 
-                ui.button(
-                    "Vorlage anlegen", on_click=create_template
-                ).props("flat no-caps")
+            except ValueError as error:
+                ui.notify(f"Nicht gespeichert — {error}", type="negative")
+                return
 
-        action_area()
+            path.write_text(editor.value, encoding="utf-8")
+            ui.notify(
+                f"Gespeichert: {len(exact)} Schreibweise(n), "
+                f"{len(prefixes)} Präfix(e)."
+            )
+            summary.refresh()
+
+        def reload():
+            editor.value = path.read_text(encoding="utf-8")
+            ui.notify("Neu geladen.")
+            summary.refresh()
+
+        with ui.row().classes("gap-2 items-center"):
+            ui.button("💾 Speichern", on_click=save_aliases).props(
+                "color=primary unelevated"
+            )
+            ui.button("Neu laden", on_click=reload).props("flat no-caps")
+
+        summary()
 
 
 def _render_backup(config):

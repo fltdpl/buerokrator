@@ -151,6 +151,8 @@ async def test_settings_page_renders(user: User):
     await user.should_see("Einstellungen")
     await user.should_see("Gefahrenzone")
     await user.should_see("Beenden")
+    # Aliase-Tab: Editor über der (bei Bedarf angelegten) Vorlagendatei.
+    await user.should_see("Aussteller-Aliase")
 
 
 @pytest.mark.asyncio

@@ -4,12 +4,15 @@ Die conftest-Fixture leitet aliases_path auf tmp_path um — Tests schreiben
 ihre Alias-Datei direkt dorthin.
 """
 
+import pytest
+
 from src.classifier.document_extractor import extract_document
 from src.organizer.issuer_normalizer import (
     apply_issuer_aliases,
     ensure_aliases_file,
     load_aliases,
     normalize_issuer,
+    parse_aliases_text,
 )
 
 
@@ -113,6 +116,22 @@ def test_extract_document_applies_aliases(tmp_path, monkeypatch):
     data = extract_document("invoice", "Beispieltext")
 
     assert data["issuer"] == "Musterbank AG"
+
+
+def test_parse_aliases_text_reports_errors():
+    # Der Einstellungs-Editor validiert hierüber VOR dem Speichern.
+    with pytest.raises(ValueError, match="YAML"):
+        parse_aliases_text("kein: [gültiges: yaml")
+
+    with pytest.raises(ValueError, match="Mapping"):
+        parse_aliases_text("- nur\n- eine\n- liste\n")
+
+    with pytest.raises(ValueError, match="Musterbank"):
+        parse_aliases_text("Musterbank AG:\n  verschachtelt: falsch\n")
+
+    exact, prefixes = parse_aliases_text(ALIASES)
+    assert len(exact) == 2
+    assert len(prefixes) == 1
 
 
 def test_ensure_aliases_file_creates_template_once(tmp_path):

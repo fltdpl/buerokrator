@@ -60,7 +60,7 @@ Beispiele:
 
 Alle LLM-Werte laufen vor dem Dateinamen-Bau durch str-Coercion und `/`-Ersatz (`filename_builder._clean_name` u. a.).
 
-Aussteller-Aliase: nutzerpflegbare Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer Name → Schreibweisen, `*` am Ende = Präfix; gitignored — Anbieternamen sind Nutzerdaten und gehören NIE hartkodiert in den Code). `src/organizer/issuer_normalizer.py` lädt sie mtime-gecacht; angewendet beim Dateinamen-Bau und zentral in `extract_document` auf issuer/employer/insurer. Tests werden per conftest-Fixture von der echten Datei isoliert.
+Aussteller-Aliase: nutzerpflegbare Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer Name → Schreibweisen, `*` am Ende = Präfix; gitignored — Anbieternamen sind Nutzerdaten und gehören NIE hartkodiert in den Code). `src/organizer/issuer_normalizer.py` lädt sie mtime-gecacht; angewendet beim Dateinamen-Bau und zentral in `extract_document` auf issuer/employer/insurer. Pflege im Einstellungs-Tab „Aliase" (Text-Editor mit Validierung über `parse_aliases_text`) oder extern. Tests werden per conftest-Fixture von der echten Datei isoliert.
 
 Archivstruktur: `archive/<Jahr>/<Kategorie>/<Dateiname>`.
 
