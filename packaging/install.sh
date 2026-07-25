@@ -21,8 +21,17 @@ cp -r buerokrator/. "${OPT}/"
 
 ln -sf "${OPT}/buerokrator" "${BIN}/buerokrator"
 
-# Icon für den Menüeintrag (hicolor-Theme, skalierbar + Raster-Fallbacks)
+# Icon für den Menüeintrag. Der Menüeintrag bekommt einen ABSOLUTEN
+# Icon-Pfad ins Installationsverzeichnis — der Theme-Lookup über
+# ~/.local/share/icons zeigte je nach Desktop nur ein generisches Symbol
+# (kein index.theme/Icon-Cache im Nutzer-hicolor). Die hicolor-Kopien
+# bleiben als Zusatz für Umgebungen, die nach Namen auflösen.
+ICON_REF="buerokrator"
 if [ -d icons ]; then
+    mkdir -p "${OPT}/icons"
+    cp icons/buerokrator.svg icons/buerokrator-*.png "${OPT}/icons/"
+    ICON_REF="${OPT}/icons/buerokrator-256.png"
+
     mkdir -p "${ICONS}/scalable/apps" "${ICONS}/256x256/apps" "${ICONS}/128x128/apps" "${ICONS}/64x64/apps"
     cp icons/buerokrator.svg "${ICONS}/scalable/apps/buerokrator.svg"
     cp icons/buerokrator-256.png "${ICONS}/256x256/apps/buerokrator.png"
@@ -31,7 +40,9 @@ if [ -d icons ]; then
     command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -q "${ICONS}" || true
 fi
 
-sed "s|@EXEC@|${OPT}/buerokrator|" buerokrator.desktop > "${APPS}/buerokrator.desktop"
+sed -e "s|@EXEC@|${OPT}/buerokrator|" -e "s|@ICON@|${ICON_REF}|" \
+    buerokrator.desktop > "${APPS}/buerokrator.desktop"
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database -q "${APPS}" || true
 
 if ! command -v tesseract >/dev/null 2>&1; then
     echo "Hinweis: Tesseract OCR fehlt (z. B. 'sudo apt install tesseract-ocr tesseract-ocr-deu')."

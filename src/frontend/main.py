@@ -8,6 +8,9 @@ liegt in src/services.
 """
 
 import os
+import socket
+import urllib.request
+import webbrowser
 from pathlib import Path
 
 from src.core.app_home import get_app_home
@@ -66,8 +69,64 @@ def serve_pdf(document_id: int):
     return FileResponse(path, media_type="application/pdf")
 
 
+def _port_status() -> str:
+    """Belegung von HOST:PORT — "frei", "buerokrator" oder "fremd".
+
+    Im Browser-Modus beendet ein geschlossener Tab den Prozess nicht (dafür
+    gibt es den Beenden-Knopf) — ein zweiter Start über das Anwendungsmenü
+    traf dann auf den belegten Port und starb stumm am Bind-Fehler.
+    """
+    with socket.socket() as sock:
+        sock.settimeout(1.0)
+
+        if sock.connect_ex((HOST, PORT)) != 0:
+            return "frei"
+
+    try:
+        with urllib.request.urlopen(
+            f"http://{HOST}:{PORT}/", timeout=3
+        ) as response:
+            body = response.read(8192).decode("utf-8", errors="ignore")
+
+        if "buerokrator" in body.lower():
+            return "buerokrator"
+
+    except Exception:
+        pass
+
+    return "fremd"
+
+
 def run(*, show: bool = False) -> None:
-    """Startet die App (auch Einstiegspunkt für das gepackte Bundle)."""
+    """Startet die App (auch Einstiegspunkt für das gepackte Bundle).
+
+    Läuft bereits eine Instanz, wird nur der Browser zu ihr geöffnet —
+    das ist beim Klick im Anwendungsmenü das erwartete Verhalten.
+    """
+    # Unter pytest keinen Port-Check: die User-Fixture der Smoke-Tests
+    # führt diese Datei mit gemocktem ui.run aus — parallel darf die echte
+    # App laufen, ohne dass der Check hier abbiegt.
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        status = "frei"
+
+    else:
+        status = _port_status()
+
+    if status == "buerokrator":
+        print(
+            "Buerokrator läuft bereits — öffne die laufende Instanz "
+            f"unter http://{HOST}:{PORT} im Browser."
+        )
+        webbrowser.open(f"http://{HOST}:{PORT}")
+        return
+
+    if status == "fremd":
+        print(
+            f"Start abgebrochen: Port {PORT} auf {HOST} ist durch ein "
+            "anderes Programm belegt."
+        )
+        raise SystemExit(1)
+
     ui.run(
         host=HOST,
         port=PORT,

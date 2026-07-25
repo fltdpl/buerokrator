@@ -8,7 +8,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-VERSION="0.1.0"
+# Version aus dem Paket lesen — eine Quelle, kein Nachziehen beim Release.
+VERSION="$(python -c 'from src import __version__; print(__version__)')"
 ARCH="$(uname -m)"
 NAME="buerokrator-${VERSION}-linux-${ARCH}"
 
