@@ -47,6 +47,18 @@ INFO = DARK_ACTIVE
 ACCENT_A_INK = "#c07f43"
 WARNING = ACCENT_A_INK
 
+# Serienfarben der Analyse-Diagramme (helle Fläche). Als Dreier-Palette
+# gegen Farbfehlsichtigkeit und Verwechselbarkeit geprüft (dataviz-
+# Validator: CVD-Abstände, Chroma, Lightness ok). Die Koralle liegt unter
+# 3:1 Kontrast auf Weiß — deshalb gehören neben das Diagramm immer
+# Direktbeschriftung und eine Tabelle mit denselben Werten.
+CHART_SERIES = {
+    "brutto": "#0081a7",  # Petrol (Farbton der Kartenrahmen)
+    "steuern": ACCENT_B,  # Koralle
+    "netto": "#008300",  # Grün — „was übrig bleibt"
+}
+CHART_GRID = "#e4e8e6"  # zurückhaltende Gitterlinien auf Weiß
+
 # Akzentfarbe je Kennzahl-Karte (wie in der Vorlage: farbiges Icon links).
 ACCENTS = {
     "primary": PRIMARY,

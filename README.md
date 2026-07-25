@@ -33,10 +33,12 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
 - Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe)
-- Steuer-Seite mit ELSTER-Anlagen-Ansicht (Anlage N, Vorsorgeaufwand, KAP,
-  außergewöhnliche Belastungen, § 35a): pro Position Ampel und
-  Beleg-Herleitung — in Summen fließen nur geprüfte Dokumente; dazu
-  Jahresübersicht + CSV-Export
+- Analyse-Seite mit zwei Tabs: „Steuer" mit ELSTER-Anlagen-Ansicht
+  (Anlage N, Vorsorgeaufwand, KAP, außergewöhnliche Belastungen, § 35a) —
+  pro Position Ampel und Beleg-Herleitung, in Summen fließen nur geprüfte
+  Dokumente, dazu Jahresübersicht + CSV-Export; „Einkommen" mit
+  Jahreseinkommens-Diagramm (Brutto, Steuern, rechnerisches Netto) aus den
+  geprüften Lohnsteuerbescheinigungen
 - Löschen in den Papierkorb statt endgültig
 - Backup von Datenbank + Archiv als ZIP auf Knopfdruck (inkl.
   Wiederherstellung)

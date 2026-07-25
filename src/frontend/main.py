@@ -22,6 +22,7 @@ from fastapi.responses import FileResponse  # noqa: E402
 from nicegui import app, ui  # noqa: E402
 
 # Seiten registrieren (Import genügt, @ui.page dekoriert die Routen).
+import src.frontend.pages.analyse  # noqa: F401
 import src.frontend.pages.dashboard  # noqa: F401
 import src.frontend.pages.document_detail  # noqa: F401
 import src.frontend.pages.documents  # noqa: F401
@@ -29,7 +30,6 @@ import src.frontend.pages.help_page  # noqa: F401
 import src.frontend.pages.import_page  # noqa: F401
 import src.frontend.pages.settings  # noqa: F401
 import src.frontend.pages.setup_page  # noqa: F401
-import src.frontend.pages.tax  # noqa: F401
 import src.frontend.pages.trash  # noqa: F401
 from src.database.list_documents import get_document
 

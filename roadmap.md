@@ -268,7 +268,7 @@
     
 - [ ] Steuerbericht erzeugen
     
-- [ ] Grafische Auswertung von Zielwerten — erste Ausbaustufe Jahreseinkommen: drei Graphen über die Jahre (Brutto, Steuern, Netto) aus den geprüften Lohnsteuerbescheinigungen; später weitere Zielwerte (z. B. Vorsorge-Summen, § 35a)
+- [x] Grafische Auswertung von Zielwerten — erste Ausbaustufe Jahreseinkommen ✅ 2026-07-25: Analyse-Seite (`/analyse`, Tabs Steuer/Einkommen; `/steuer` leitet um) mit Liniendiagramm Brutto/Steuern/rechnerisches Netto über die Jahre aus den geprüften Lohnsteuerbescheinigungen (framework-freier `income_service`, SVG ohne Chart-Bibliothek); später weitere Zielwerte (z. B. Vorsorge-Summen, § 35a)
     
 - [ ] Steuercheckliste pro Jahr / Jahres-Abschluss-Checkliste („für 2025 fehlt: …" aus Vorjahresbestand)
     

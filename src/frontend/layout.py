@@ -13,7 +13,7 @@ NAV_ITEMS = [
     ("Dashboard", "/", "dashboard"),
     ("Dokumente", "/dokumente", "description"),
     ("Import", "/import", "file_upload"),
-    ("Steuer", "/steuer", "account_balance"),
+    ("Analyse", "/analyse", "query_stats"),
     ("Anleitung", "/anleitung", "help_outline"),
     ("Einstellungen", "/einstellungen", "settings"),
 ]

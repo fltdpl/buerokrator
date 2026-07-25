@@ -132,9 +132,17 @@ async def test_import_page_renders(user: User):
 
 
 @pytest.mark.asyncio
-async def test_tax_page_renders_empty(user: User):
-    await user.open("/steuer")
+async def test_analyse_page_renders_empty(user: User):
+    await user.open("/analyse")
+    # Tab Steuer (vorgewählt) und Tab Einkommen, beide mit Leer-Hinweis.
     await user.should_see("Noch keine archivierten Dokumente vorhanden.")
+    await user.should_see("Noch keine geprüften Lohnsteuerbescheinigungen")
+
+
+@pytest.mark.asyncio
+async def test_steuer_route_redirects_to_analyse(user: User):
+    await user.open("/steuer")
+    await user.should_see("Analyse")
 
 
 @pytest.mark.asyncio
@@ -195,16 +203,18 @@ async def test_detail_marks_empty_required_field(user: User):
 
 
 @pytest.mark.asyncio
-async def test_tax_page_renders_anlagen_view(user: User, monkeypatch):
-    # Mit Bestand: die Anlagen-Ansicht baut (Ampel, Positionen). Zahlen erfunden.
+async def test_analyse_page_renders_anlagen_and_income_view(user: User, monkeypatch):
+    # Mit Bestand: Anlagen-Ansicht (Tab Steuer) und Einkommens-Auswertung
+    # (Tab Einkommen) bauen beide. Zahlen erfunden.
     import src.database.database as database
     from src.database.document_repository import insert_document
+    from src.database.set_document_verified import set_document_verified
 
     # Schema-Migration im frischen tmp_path erneut ausführen (das Flag ist
     # prozess-global und durch vorherige Tests schon gesetzt).
     monkeypatch.setattr(database, "_schema_ready", False)
 
-    insert_document(
+    document_id = insert_document(
         filename="lstb.pdf",
         archive_path="archive/2025/Arbeit/lstb.pdf",
         document_type="employment",
@@ -215,12 +225,16 @@ async def test_tax_page_renders_anlagen_view(user: User, monkeypatch):
             "gross_amount": 38500.0,
         },
     )
+    set_document_verified(document_id, 1)
 
-    await user.open("/steuer")
+    await user.open("/analyse")
     await user.should_see("Anlage N")
     await user.should_see("Anlage Vorsorgeaufwand")
     await user.should_see("Anlage KAP")
     await user.should_see("Bruttoarbeitslohn (LStB Zeile 3)")
+    # Einkommen-Tab: Jahreszeile mit Summen aus der geprüften LStB.
+    await user.should_see("Jahreseinkommen")
+    await user.should_see("Werte je Jahr")
 
 
 # Bewusst der LETZTE Test der Datei: der direkte Import von src.frontend.main

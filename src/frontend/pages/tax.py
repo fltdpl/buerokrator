@@ -1,8 +1,15 @@
+"""Tab „Steuer" der Analyse-Seite: ELSTER-Anlagen-Ansicht + Jahresliste.
+
+Frühere eigene Seite /steuer — seit dem Analyse-Umbau eine Render-Funktion,
+die pages/analyse.py in ihren Tab einbaut (die Route /steuer leitet dorthin
+um).
+"""
+
 from nicegui import ui
 
 from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.database.list_documents import list_documents
-from src.frontend.layout import format_euro, page_layout
+from src.frontend.layout import format_euro
 from src.tax.elster_mapping import (
     EMPTY,
     INCOMPLETE,
@@ -108,116 +115,113 @@ def _anlagen_section(year):
                 _position_row(position)
 
 
-@ui.page("/steuer")
-def tax_page():
+def render_tax_tab():
     documents = list_documents()
     years = available_tax_years(documents)
 
-    with page_layout("Steuer"):
-        ui.label("💰 Steuer").classes("text-3xl page-title")
-        ui.label(
-            "🚧 Die Steuer-Funktion ist noch im Aufbau — die Summen und die"
-            " Absetzbarkeits-Einordnung sind eine erste Orientierung, kein"
-            " geprüftes Ergebnis."
-        ).classes("text-sm text-orange-700")
+    ui.label(
+        "🚧 Die Steuer-Funktion ist noch im Aufbau — die Summen und die"
+        " Absetzbarkeits-Einordnung sind eine erste Orientierung, kein"
+        " geprüftes Ergebnis."
+    ).classes("text-sm text-orange-700")
 
-        if not years:
-            ui.label("Noch keine archivierten Dokumente vorhanden.").classes(
-                "muted"
+    if not years:
+        ui.label("Noch keine archivierten Dokumente vorhanden.").classes(
+            "muted"
+        )
+        return
+
+    state = {"year": years[-1]}
+
+    @ui.refreshable
+    def summary_area():
+        summary = build_tax_summary(state["year"], documents)
+        totals = summary["totals"]
+
+        ui.label(f"{totals['count']} Dokumente im Jahr {state['year']}").classes(
+            "muted"
+        )
+
+        # Anlagen-Ansicht: nur geprüfte + steuerrelevante Belege zählen,
+        # jede Summe ist über die Belegliste herleitbar.
+        _anlagen_section(state["year"])
+
+        ui.button(
+            "📥 Jahres-Export (CSV)",
+            on_click=lambda: ui.download(
+                export_tax_summary_csv(
+                    build_tax_summary(state["year"], documents)
+                ).encode("utf-8"),
+                f"steuer_{state['year']}.csv",
+            ),
+        ).props("flat")
+
+        ui.separator()
+        ui.label("Alle Dokumente des Jahres (nach Lebensbereich)").classes(
+            "text-xl page-title"
+        )
+
+        for category in summary["categories"]:
+            hint = " · absetzbar (je nach Art)" if category["deductible"] else ""
+            header = (
+                f"{category['label']}{hint}  —  {category['count']} Dok."
+                f"  ·  {format_euro(category['amount'])}"
             )
-            return
 
-        state = {"year": years[-1]}
+            with ui.expansion(header).classes("w-full"):
+                if category["verified_count"] < category["count"]:
+                    ui.label(
+                        f"🟡 {category['count'] - category['verified_count']} "
+                        "ungeprüft · geprüfte Summe: "
+                        f"{format_euro(category['verified_amount'])}"
+                    ).classes("text-sm muted")
 
-        @ui.refreshable
-        def summary_area():
-            summary = build_tax_summary(state["year"], documents)
-            totals = summary["totals"]
+                for document in category["documents"]:
+                    status = "🟢" if document["verified"] else "🟡"
+                    type_label = DOCUMENT_TYPE_LABELS.get(
+                        document["document_type"], document["document_type"]
+                    )
+                    amount_text = (
+                        format_euro(document["amount"])
+                        if document["amount"] is not None
+                        else "—"
+                    )
+                    deductibility = ""
 
-            ui.label(f"{totals['count']} Dokumente im Jahr {state['year']}").classes(
-                "muted"
-            )
+                    if category["deductible"]:
+                        deductibility = DEDUCTIBILITY_HINTS.get(
+                            document["deductibility"], ""
+                        )
+                        deductibility = f" · {deductibility}" if deductibility else ""
 
-            # Anlagen-Ansicht: nur geprüfte + steuerrelevante Belege zählen,
-            # jede Summe ist über die Belegliste herleitbar.
-            _anlagen_section(state["year"])
+                    # Nicht steuerrelevante Dokumente (z. B. redundante
+                    # Monats-Gehaltsabrechnungen) sind gelistet, zählen aber
+                    # nicht in die Summe — kenntlich machen.
+                    relevance = (
+                        "" if document.get("tax_relevant") else " · nicht steuerrelevant"
+                    )
 
-            ui.button(
-                "📥 Jahres-Export (CSV)",
-                on_click=lambda: ui.download(
-                    export_tax_summary_csv(
-                        build_tax_summary(state["year"], documents)
-                    ).encode("utf-8"),
-                    f"steuer_{state['year']}.csv",
-                ),
-            ).props("flat")
-
-            ui.separator()
-            ui.label("Alle Dokumente des Jahres (nach Lebensbereich)").classes(
-                "text-xl page-title"
-            )
-
-            for category in summary["categories"]:
-                hint = " · absetzbar (je nach Art)" if category["deductible"] else ""
-                header = (
-                    f"{category['label']}{hint}  —  {category['count']} Dok."
-                    f"  ·  {format_euro(category['amount'])}"
-                )
-
-                with ui.expansion(header).classes("w-full"):
-                    if category["verified_count"] < category["count"]:
+                    with ui.row().classes("gap-2 items-center"):
                         ui.label(
-                            f"🟡 {category['count'] - category['verified_count']} "
-                            "ungeprüft · geprüfte Summe: "
-                            f"{format_euro(category['verified_amount'])}"
-                        ).classes("text-sm muted")
-
-                    for document in category["documents"]:
-                        status = "🟢" if document["verified"] else "🟡"
-                        type_label = DOCUMENT_TYPE_LABELS.get(
-                            document["document_type"], document["document_type"]
+                            f"{status} {document['document_date'] or 'ohne Datum'}"
+                        ).classes("text-sm w-36")
+                        ui.link(
+                            document["issuer"] or type_label,
+                            f"/dokumente/{document['id']}",
                         )
-                        amount_text = (
-                            format_euro(document["amount"])
-                            if document["amount"] is not None
-                            else "—"
-                        )
-                        deductibility = ""
-
-                        if category["deductible"]:
-                            deductibility = DEDUCTIBILITY_HINTS.get(
-                                document["deductibility"], ""
-                            )
-                            deductibility = f" · {deductibility}" if deductibility else ""
-
-                        # Nicht steuerrelevante Dokumente (z. B. redundante
-                        # Monats-Gehaltsabrechnungen) sind gelistet, zählen aber
-                        # nicht in die Summe — kenntlich machen.
-                        relevance = (
-                            "" if document.get("tax_relevant") else " · nicht steuerrelevant"
+                        ui.label(f"{amount_text}{deductibility}{relevance}").classes(
+                            "text-sm font-bold"
                         )
 
-                        with ui.row().classes("gap-2 items-center"):
-                            ui.label(
-                                f"{status} {document['document_date'] or 'ohne Datum'}"
-                            ).classes("text-sm w-36")
-                            ui.link(
-                                document["issuer"] or type_label,
-                                f"/dokumente/{document['id']}",
-                            )
-                            ui.label(f"{amount_text}{deductibility}{relevance}").classes(
-                                "text-sm font-bold"
-                            )
+    def change_year(year):
+        state["year"] = year
+        summary_area.refresh()
 
-        def change_year(year):
-            state["year"] = year
-            summary_area.refresh()
+    ui.select(
+        years,
+        value=years[-1],
+        label="Steuerjahr",
+        on_change=lambda event: change_year(event.value),
+    ).classes("w-36")
 
-        ui.select(
-            years,
-            value=years[-1],
-            label="Steuerjahr",
-            on_change=lambda event: change_year(event.value),
-        ).classes("w-36")
-
-        summary_area()
+    summary_area()

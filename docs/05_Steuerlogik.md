@@ -1,6 +1,9 @@
 # Steuerlogik
 
-Implementiert in `src/tax/tax_summary.py`; GUI-Seite „Steuer".
+Implementiert in `src/tax/tax_summary.py`; GUI: Seite „Analyse", Tab
+„Steuer" (Route `/analyse`; `/steuer` leitet um). Der zweite Tab
+„Einkommen" zeigt die Jahreseinkommens-Auswertung
+(`src/services/income_service.py`).
 
 ## Kategorien der Übersicht
 
