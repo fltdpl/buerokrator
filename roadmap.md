@@ -179,7 +179,7 @@
     
 - [x] Dokument wiederherstellen (Papierkorb → Inbox) ✅ 2026-07-15
     
-- [ ] Aussteller-Alias-Datei im App-Home (Stufe 2 zur Bulk-Aktion „Aussteller vereinheitlichen", 23.07.2026): die hartkodierte KNOWN_ISSUERS-Liste (filename_builder) in eine nutzerpflegbare Datei heben, damit NEUE Importe direkt den kanonischen Namen bekommen (Dateiname UND gespeicherter Aussteller)
+- [x] Aussteller-Alias-Datei im App-Home ✅ 2026-07-25 (Stufe 2 zur Bulk-Aktion „Aussteller vereinheitlichen"): nutzerpflegbare `config/aussteller_aliase.yaml` (kanonischer Name → Schreibweisen, `*` = Präfix; Änderungen wirken ohne Neustart) ersetzt die hartkodierte KNOWN_ISSUERS-Liste — NEUE Importe und „Erneut prüfen" bekommen direkt den kanonischen Namen (Dateiname UND gespeicherte Felder issuer/employer/insurer); Vorlage über Einstellungen → Konfiguration; zugleich Datenschutz-Fix: persönliche Anbieternamen raus aus dem öffentlichen Code (Datei gitignored)
     
 - [ ] Dokumente zusammenführen
     

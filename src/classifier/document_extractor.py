@@ -25,6 +25,7 @@ from src.extraction.entgeltnachweis import (
     parse_entgeltnachweis,
 )
 from src.extraction.pension_refiner import refine_pension_fields
+from src.organizer.issuer_normalizer import apply_issuer_aliases
 from src.extraction.sv_meldung import is_sv_meldung, parse_sv_meldung
 
 # Steuer- und Vorsorgedokumente brauchen mehr Kontext: Titel steht oben,
@@ -235,6 +236,9 @@ def extract_document(
 
     extractor = extractors.get(document_type)
     if extractor:
-        return extractor(text)
+        # Zentraler Punkt für Import UND „Erneut prüfen": Aussteller-Aliase
+        # anwenden, damit gespeicherter Name und Dateiname direkt den
+        # kanonischen Namen tragen (nutzerpflegbare Datei im App-Home).
+        return apply_issuer_aliases(extractor(text))
 
     return {}

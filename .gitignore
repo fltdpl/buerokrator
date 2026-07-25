@@ -56,6 +56,10 @@ backups/
 # Golden-Master-Erwartungen (echte Steuerdaten, nur lokal)
 tax_expected_*.yaml
 
+# Aussteller-Aliase (persönliche Anbieternamen, nur lokal —
+# im Entwickler-Modus liegt das App-Home im Repo)
+config/aussteller_aliase.yaml
+
 # First-Run-Marker (lokaler Zustand, nie committen)
 .setup_done
 .nicegui/

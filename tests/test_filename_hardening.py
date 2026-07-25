@@ -35,18 +35,25 @@ def test_invoice_with_none_values_uses_defaults():
     assert filename == "unknown_date_unknown_issuer.pdf"
 
 
-def test_insurance_with_numeric_policy_number():
+def test_insurance_with_numeric_policy_number(tmp_path):
+    # Alias-Datei im (test-isolierten) App-Home: der lange Vereinsname wird
+    # im Dateinamen auf den kanonischen Namen vereinheitlicht.
+    (tmp_path / "aussteller_aliase.yaml").write_text(
+        "Musterkasse:\n  - Musterkasse Lebensversicherungsverein a. G.\n",
+        encoding="utf-8",
+    )
+
     filename = build_insurance_filename(
         {
             "document_date": "01.01.2024",
-            "issuer": "Musterbau Lebensversicherungsverein a. G.",
+            "issuer": "Musterkasse Lebensversicherungsverein a. G.",
             "insurance_type": "Haftpflicht",
             "policy_number": 987654,
         },
         ".pdf",
     )
 
-    assert filename == "2024-01-01_Musterbau_Haftpflicht_987654.pdf"
+    assert filename == "2024-01-01_Musterkasse_Haftpflicht_987654.pdf"
 
 
 def test_pension_subtype_with_slash_is_sanitized():
@@ -54,7 +61,7 @@ def test_pension_subtype_with_slash_is_sanitized():
     filename = build_pension_filename(
         {
             "document_date": "01.01.2024",
-            "issuer": "Musterbau",
+            "issuer": "Musterkasse",
             "document_subtype": "contract/../../etc",
             "policy_number": "P-1",
         },
@@ -62,7 +69,7 @@ def test_pension_subtype_with_slash_is_sanitized():
     )
 
     assert "/" not in filename
-    assert filename == "2024-01-01_Musterbau_contract_.._.._etc_P-1.pdf"
+    assert filename == "2024-01-01_Musterkasse_contract_.._.._etc_P-1.pdf"
 
 
 def test_bank_issuer_with_slash_is_sanitized():

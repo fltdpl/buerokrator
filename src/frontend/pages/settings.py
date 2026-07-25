@@ -7,6 +7,7 @@ from src.frontend.pages.trash import render_trash
 from src.services.backup_service import list_backups, run_backup, run_restore
 from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
+from src.organizer.issuer_normalizer import aliases_path, ensure_aliases_file
 from src.services.model_service import list_installed_models
 
 
@@ -163,6 +164,41 @@ def _render_config(config):
         ui.notify("Einstellungen gespeichert.")
 
     ui.button("💾 Speichern", on_click=save).props("color=primary unelevated")
+
+    _render_issuer_aliases()
+
+
+def _render_issuer_aliases():
+    """Hinweis auf die nutzerpflegbare Alias-Datei (Vorlage anlegbar)."""
+    with card("w-full gap-2"):
+        ui.label("Aussteller-Aliase").classes("text-xl page-title")
+        ui.label(
+            "Vereinheitlicht Schreibweisen desselben Ausstellers schon beim "
+            "Import (Dateiname und gespeicherter Aussteller). Die Zuordnung "
+            "pflegst du als Textdatei; Änderungen wirken ohne Neustart. "
+            "Bestandsdokumente vereinheitlicht weiterhin die Bulk-Aktion in "
+            "der Dokumentenliste."
+        ).classes("text-sm muted")
+
+        path = aliases_path()
+        ui.label(f"Datei: {path}").classes("text-sm muted")
+
+        @ui.refreshable
+        def action_area():
+            if path.exists():
+                ui.label("✅ Datei vorhanden.").classes("text-sm")
+
+            else:
+                def create_template():
+                    ensure_aliases_file()
+                    ui.notify("Vorlage angelegt — mit Texteditor befüllen.")
+                    action_area.refresh()
+
+                ui.button(
+                    "Vorlage anlegen", on_click=create_template
+                ).props("flat no-caps")
+
+        action_area()
 
 
 def _render_backup(config):
