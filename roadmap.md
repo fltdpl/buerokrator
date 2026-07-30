@@ -124,7 +124,7 @@
 
 - [ ] Fehlende Felder erkennen und markieren
     
-- [x] Extraktionsqualität messen (`evaluate.py`; Baseline 15.07.2026: Klassifikation 98 %, Felder 85 % bei 40 Dokumenten) ✅ 2026-07-08
+- [x] Extraktionsqualität messen (`evaluate.py`; Baseline 15.07.2026: Klassifikation 98 %, Felder 85 % bei 40 Dokumenten — am 25.07.2026 nach den Juli-Umbauten mit 98 %/84 % bestätigt) ✅ 2026-07-08
     
 - [ ] Validierung von Datumsangaben
     
@@ -223,6 +223,12 @@
 - [ ] Dokumentzusammenfassungen
     
 - [x] Dublettenerkennung (Inhalts-Hash vor OCR/LLM, Dublette → Papierkorb) ✅ 2026-07-15
+    
+- [ ] **Inhaltliche Dubletten-Warnung** — der Inhalts-Hash erkennt nur
+  byte-gleiche Dateien; bei der Steuer-Abnahme lagen drei Scans derselben
+  Rechnung im Bestand (gleicher OCR-Text, andere Bytes). Idee: nach der
+  Extraktion auf gleichen Aussteller + Betrag + Datum/Rechnungsnummer prüfen
+  und im Prüf-Workflow als Hinweis zeigen (kein Auto-Löschen)
     
 - [ ] Ähnliche Dokumente finden
     
@@ -338,9 +344,12 @@
 ## Installierbarkeit / Packaging (Plan & Details: todo.md)
 
 Entschieden (15.07.2026): Desktop-Einzelplatz, **Linux zuerst**, Windows
-später; kein Server, 0.1.0 bleibt Single-User. Multinutzer = geteilter
+später; kein Server, vorerst Single-User. Multinutzer = geteilter
 Laptop (getrennte Linux-Konten trennen die Daten bereits; später ggf.
 Profil-Umschalter).
+
+Stand: Linux-Paket released (v0.1.0, v0.2.0, v0.2.1 als Tarball + rootloses
+`install.sh`). Release-Ablauf und Version-Quelle siehe `docs/08_Betrieb.md`.
 
 - [x] cwd-Entkopplung: App-Home-Konzept (`BUEROKRATOR_HOME` / Dev-Modus / Benutzer-Datenverzeichnis) ✅ 2026-07-15
     
@@ -350,8 +359,16 @@ Profil-Umschalter).
     
 - [x] Bundling + Installer (PyInstaller-onedir, Browser-Modus + Beenden-Button, Tarball + rootloses install.sh mit .desktop-Eintrag; AppImage/.deb zurückgestellt) ✅ 2026-07-16
     
-- [ ] Ollama-Entscheidung: geführte Installation vs. eingebettetes llama.cpp
+- [x] CHANGELOG + Release-Ablauf etabliert; Version nur noch in `src/__init__.py`, der Build liest sie von dort ✅ 2026-07-25
     
-- [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [[012_kein_update_check]]) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16 — offen nur Code-Signing (erst fürs Windows-Paket)
+- [x] Zweitstart öffnet die laufende Instanz statt am belegten Port zu scheitern; Menüeintrag mit absolutem Icon-Pfad ✅ 2026-07-25 (v0.2.1)
+    
+- [ ] **Windows-Paket** (erklärtes Ziel): braucht eine Windows-Maschine/VM — PyInstaller kann nicht cross-kompilieren. Offen: `build_windows.ps1` (Zip + Startmenü-Verknüpfung), Windows-Zweig der Spec, Windows-Hinweise im First-Run. Vorarbeit steht (App-Home kennt `%APPDATA%`, Tesseract-Pfad konfigurierbar, keine nativen Extra-Abhängigkeiten)
+    
+- [ ] Code-Signing (SmartScreen) — erst mit dem Windows-Paket, Zertifikat kostet Geld
+    
+- [ ] Ollama-Entscheidung: geführte Installation vs. eingebettetes llama.cpp — wird mit dem Windows-Paket drängender (manuelle Installation ist dort eine höhere Hürde)
+    
+- [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [[012_kein_update_check]]) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16
     
 - [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen

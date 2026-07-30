@@ -12,6 +12,8 @@ archive/
     - Vorsorge (pension)
     - Bank (bank)
     - Wohnen (housing)
+    - Arbeit (employment)
+    - Recht (legal)
     - Sonstiges (unknown)
 
 Beispiel:

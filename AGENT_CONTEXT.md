@@ -2,6 +2,10 @@
 
 Projektname: Buerokrator
 
+Grundkontext für Agenten. **Aktueller Projektstand, letzter Arbeitsblock und
+nächste Schritte stehen in `HANDOVER.md`** (lokal, gitignored), die
+Aufgabenliste in `todo.md`, die Langfrist-Sicht in `roadmap.md`.
+
 ## Ziel
 
 Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steuerrelevante Unterlagen.
@@ -21,8 +25,12 @@ Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steu
   (Regel-Klassifikation, keine Feld-Extraktion); „Erneut prüfen" und
   `evaluate.py` verweigern dann mit klarer Meldung
 - Tesseract OCR (+ pypdfium2 für PDF→Bild, reines Python-Wheel)
-- NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081)
-- Packaging: PyInstaller-onedir + Linux-Tarball (`bash packaging/build_linux.sh`)
+- NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081).
+  Läuft dort bereits eine Instanz, öffnet ein zweiter Start nur den Browser
+  dorthin (Browser-Modus: ein geschlossener Tab beendet die App nicht).
+- Packaging: PyInstaller-onedir + Linux-Tarball (`bash packaging/build_linux.sh`).
+  Version steht NUR in `src/__init__.py`; Änderungen je Release in `CHANGELOG.md`.
+  Ein Windows-Paket ist erklärtes Ziel, aber noch nicht gebaut.
 
 ## Architektur / Pipeline
 
@@ -71,6 +79,10 @@ Archivstruktur: `archive/<Jahr>/<Kategorie>/<Dateiname>`.
 - Geldbeträge werden als Betrag (Magnitude) gespeichert; nur `settlement_amount` behält sein Vorzeichen (Erstattung negativ).
 - DB-Migration läuft automatisch beim ersten Zugriff (`database.get_connection`).
 - Tests neben jedem Feature; `python -m pytest -q` grün halten (venv: `~/venvs/buerokrator`).
+  **Zahlen und Namen in Tests immer erfinden** (Repo ist öffentlich, es gab
+  Vorfälle — Lehren in `HANDOVER.md`). `tests/conftest.py` isoliert die
+  Aussteller-Alias-Datei; `src.frontend.main` nie auf Modulebene eines
+  Testmoduls importieren (verstellt die App-Registrierung der Smoke-Tests).
 
 ## Entwicklungsprinzipien
 

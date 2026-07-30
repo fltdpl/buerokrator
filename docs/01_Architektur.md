@@ -24,12 +24,24 @@ Bestimmt den Dokumenttyp zweistufig:
 
 Enthält außerdem die **Extraktion** (`document_extractor.py`): typspezifische
 Prompts; das Ergebnis wird gegen die Feld-Whitelist in
-`src/core/document_fields.py` gefiltert.
+`src/core/document_fields.py` gefiltert und zum Schluss durch die
+Aussteller-Aliase geschickt (siehe Organizer).
 
 ### Organizer (`src/organizer`)
 
 Benennt Dateien typabhängig um und archiviert sie nach
 `archive/<Jahr>/<Kategorie>/`.
+
+**Aussteller-Aliase** (`issuer_normalizer.py`): vereinheitlicht Schreibweisen
+desselben Ausstellers. Die Zuordnung steht NICHT im Code, sondern in der
+nutzerpflegbaren Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer
+Name → Liste der Schreibweisen, `*` am Ende matcht als Präfix; gitignored —
+Anbieternamen sind Nutzerdaten). Geladen wird mtime-gecacht, Änderungen wirken
+ohne Neustart; unlesbares YAML ergibt eine leere Zuordnung plus Log-Warnung,
+nie einen Import-Abbruch. Angewendet an zwei Stellen: beim Dateinamen-Bau und
+zentral in `extract_document` auf `issuer`/`employer`/`insurer` — damit tragen
+neue Importe und „Erneut prüfen" direkt den kanonischen Namen. Bestandsdokumente
+vereinheitlicht die Bulk-Aktion in der Dokumentenliste.
 
 ### Database (`src/database`)
 
@@ -38,27 +50,40 @@ SQLite, Tabelle `documents`; Migration läuft automatisch beim ersten Zugriff.
 ### Services (`src/services`)
 
 Framework-freie Anwendungslogik zwischen GUI und Kernmodulen:
-Formular-Schemata je Typ/Subtyp (`form_schema.py`), Listen-Filter und
-Papierkorb-Löschen (`document_service.py`), Kennzahlen, Log-Zugriff.
+Formular-Schemata je Typ/Subtyp (`form_schema.py`), Listen-Filter,
+Bulk-Aktionen und Neuanalyse (`document_service.py`), Jahreseinkommen aus
+geprüften Lohnsteuerbescheinigungen (`income_service.py`), Stapel-Import
+(`import_job.py`), Kennzahlen, Backup, Systemstatus, Log-Zugriff.
 Nur Plain Data rein/raus — ohne GUI testbar.
 
 ### Frontend (`src/frontend`, NiceGUI)
 
-Start: `python -m src.frontend.main` (Port 8081, nur localhost).
-Dashboard, Dokumentenliste (mit Bulk-Aktionen), Detail-/Prüfseite (Formular
-+ PDF⇄OCR-Panel, Shortcuts), Import (mit Dubletten-Erkennung), Steuer-
-Übersicht, Papierkorb, Einstellungen mit Log-Ansicht.
+Start: `python -m src.frontend.main` (Port 8081, nur localhost). Läuft dort
+schon eine Instanz, öffnet der Start nur den Browser dorthin, statt am
+belegten Port zu scheitern (im Browser-Modus beendet ein geschlossener Tab
+die App nicht — dafür gibt es den Beenden-Knopf).
+
+Seiten: Dashboard, Dokumentenliste (Filter + Bulk-Aktionen), Detail-/Prüfseite
+(Formular + PDF⇄OCR-Panel, Shortcuts), Import (mit Dubletten-Erkennung),
+**Analyse** (`/analyse` mit den Tabs „Steuer" und „Einkommen"; `/steuer`
+leitet um), Papierkorb, Einrichtung, Einstellungen (Tabs Konfiguration,
+Aliase, Papierkorb, Backup, Datenbank, Log).
+
 Enthält nur Darstellung und Event-Verdrahtung; PDFs kommen über die
 Route `/pdf/<id>` direkt aus dem Archiv (siehe [[010_nicegui]]).
 Layout und Farben zentral in `layout.py` / `theme.py` (siehe [[011_theme]]).
+Diagramme baut `chart.py` als Inline-SVG — bewusst ohne Chart-Bibliothek
+(NiceGUI bündelt keine; das hielte eine weitere Abhängigkeit vom Bundle fern).
+Die Serienfarben stehen in `theme.py` und sind auf Farbfehlsichtigkeit geprüft.
 
 ### Steuer (`src/tax`)
 
 Jahres-Übersicht/CSV (`tax_summary.py`), ELSTER-Anlagen-Zuordnung mit
 Ampel und Beleg-Herleitung (`elster_mapping.py`), Golden-Master-Abgleich
-gegen die abgegebene Erklärung (`elster_check.py` + CLI `tax_check.py`),
-Steuerrelevanz (`tax_relevance.py`) und Zweck-Kennzeichnung
-(`tax_purpose.py`). Details: [[05_Steuerlogik]].
+gegen die abgegebene Erklärung (`elster_check.py` + CLI `tax_check.py` —
+ein Hinweis-Werkzeug, kein hartes Abnahme-Kriterium; erklärte Differenzen
+werden per `ignoriert` ausgeklammert), Steuerrelevanz (`tax_relevance.py`)
+und Zweck-Kennzeichnung (`tax_purpose.py`). Details: [[05_Steuerlogik]].
 
 ### Evaluation (`src/evaluation`, `evaluate.py`)
 
@@ -117,13 +142,13 @@ OCR
 ↓
 Klassifikation (Regeln → LLM)
 ↓
-Extraktion (+ Feld-Whitelist)
+Extraktion (+ Feld-Whitelist, + Aussteller-Aliase)
 ↓
 Organizer (Umbenennen, Archiv)
 ↓
 Datenbank
 ↓
-GUI: Prüfen/Korrigieren → Steuer-Übersicht
+GUI: Prüfen/Korrigieren → Analyse (Steuer / Einkommen)
 
 ## Relevante Entscheidungen
 

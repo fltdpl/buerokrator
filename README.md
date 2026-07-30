@@ -1,6 +1,6 @@
 # Buerokrator
 
-Version 0.2.0 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
+Version 0.2.1 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
 
 Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
 Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
@@ -39,6 +39,9 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
   Dokumente, dazu Jahresübersicht + CSV-Export; „Einkommen" mit
   Jahreseinkommens-Diagramm (Brutto, Steuern, rechnerisches Netto) aus den
   geprüften Lohnsteuerbescheinigungen
+- Aussteller-Aliase: verschiedene Schreibweisen desselben Ausstellers
+  werden schon beim Import vereinheitlicht — pflegbar in der App
+  (*Einstellungen → Aliase*) oder als Textdatei
 - Löschen in den Papierkorb statt endgültig
 - Backup von Datenbank + Archiv als ZIP auf Knopfdruck (inkl.
   Wiederherstellung)
@@ -71,8 +74,8 @@ selbst baubar, siehe *Entwicklung*) — installiert ohne root für den
 aktuellen Benutzer und legt einen Menüeintrag an:
 
 ```bash
-tar xzf buerokrator-0.2.0-linux-x86_64.tar.gz
-cd buerokrator-0.2.0-linux-x86_64
+tar xzf buerokrator-0.2.1-linux-x86_64.tar.gz
+cd buerokrator-0.2.1-linux-x86_64
 ./install.sh
 ```
 
@@ -80,6 +83,10 @@ Start über das Anwendungsmenü oder `~/.local/bin/buerokrator` — die App
 öffnet sich im Browser. Beim ersten Start führt ein Einrichtungsassistent
 durch Systemcheck und Speicherorte. Beenden über
 *Einstellungen → Konfiguration → Anwendung → Beenden*.
+
+Das Schließen des Browser-Tabs beendet die App **nicht** (dafür ist der
+Beenden-Knopf da); ein erneuter Start öffnet dann einfach wieder die schon
+laufende Instanz.
 
 Tesseract (erforderlich) und Ollama (optional, siehe *Voraussetzungen*)
 bleiben auch beim Paket Systemabhängigkeiten. Alle Nutzerdaten liegen getrennt vom Programm in
@@ -113,8 +120,13 @@ Eine Kurzanleitung findest du in der App unter *Anleitung*.
 ```bash
 python -m pytest -q              # Testsuite
 python evaluate.py --limit 40    # Qualitätsmessung gegen geprüfte Dokumente
+python tax_check.py 2025         # Steuerwerte gegen die eigene Erklärung prüfen
 bash packaging/build_linux.sh    # Linux-Release-Tarball bauen (dist/)
 ```
+
+Die Versionsnummer steht ausschließlich in `src/__init__.py`; der
+Build-Aufruf liest sie von dort. Änderungen je Release stehen in
+[CHANGELOG.md](CHANGELOG.md).
 
 ## Technik
 
