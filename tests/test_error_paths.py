@@ -1,11 +1,11 @@
 """Fehlerpfade der Pipeline (Review P5): OCR-Ausfall und kaputte LLM-Antworten
-dürfen die Verarbeitung nicht crashen — sie enden kontrolliert (None bzw. {})."""
+dürfen die Verarbeitung nicht crashen — sie enden kontrolliert und BENANNT."""
 
 import src.classifier.document_extractor as document_extractor
 import src.processor.document_processor as document_processor
 
 
-def test_process_returns_none_when_ocr_fails(tmp_path, monkeypatch):
+def test_process_meldet_die_ursache_wenn_ocr_scheitert(tmp_path, monkeypatch):
     # Echte Datei, damit wait_for_file/file_hash normal durchlaufen.
     pdf = tmp_path / "kaputt.pdf"
     pdf.write_bytes(b"%PDF-1.5 fake")
@@ -22,9 +22,14 @@ def test_process_returns_none_when_ocr_fails(tmp_path, monkeypatch):
 
     result = document_processor.process(str(pdf))
 
-    # Kontrolliert gescheitert: None (Frontend zählt die Datei als
-    # fehlgeschlagen), Datei bleibt in der Inbox liegen.
-    assert result is None
+    # Kontrolliert gescheitert: die Ursache steht im Ergebnis, nicht nur im
+    # Log — sonst sieht der Nutzer in der Import-Seite nur "fehlgeschlagen".
+    assert result["source_name"] == "kaputt.pdf"
+    assert "OCR fehlgeschlagen" in result["error"]
+    assert "RuntimeError" in result["error"]
+    assert "document_id" not in result
+
+    # Datei bleibt unangetastet in der Inbox liegen.
     assert pdf.exists()
 
 

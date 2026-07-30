@@ -61,7 +61,10 @@ def test_import_inbox_documents_splits_success_duplicate_and_failure(
     # bereits archivierte Dublette.
     def fake_process(file_path):
         if file_path.endswith("bad.pdf"):
-            return None
+            return {
+                "source_name": "bad.pdf",
+                "error": "RuntimeError: OCR fehlgeschlagen",
+            }
 
         if file_path.endswith("dup.pdf"):
             return {
@@ -90,7 +93,49 @@ def test_import_inbox_documents_splits_success_duplicate_and_failure(
     assert succeeded[0]["document_type"] == "invoice"
     # Eine Dublette ist kein Fehler, sondern ein eigenes Ergebnis.
     assert [result["duplicate_of"] for result in duplicates] == [7]
-    assert failed == ["bad.pdf"]
+    # Fehlschläge tragen ihre Ursache mit.
+    assert failed == [
+        {"source_name": "bad.pdf", "error": "RuntimeError: OCR fehlgeschlagen"}
+    ]
     # progress_callback für jede Datei aufgerufen.
     assert len(calls) == 3
     assert calls[0][1] == 3
+
+
+def test_fehlgeschlagene_dateien_tragen_ihre_ursache(monkeypatch, tmp_path):
+    """Die Import-Seite soll den Grund nennen können, nicht nur den Namen."""
+    monkeypatch.setattr(
+        batch_import,
+        "find_inbox_documents",
+        lambda: [tmp_path / "kaputt.pdf"],
+    )
+    monkeypatch.setattr(
+        batch_import,
+        "process",
+        lambda path: {
+            "source_name": "kaputt.pdf",
+            "error": "RuntimeError: OCR fehlgeschlagen",
+        },
+    )
+
+    succeeded, duplicates, failed = batch_import.import_inbox_documents()
+
+    assert succeeded == []
+    assert duplicates == []
+    assert failed == [
+        {"source_name": "kaputt.pdf", "error": "RuntimeError: OCR fehlgeschlagen"}
+    ]
+
+
+def test_ergebnisloser_prozess_zaehlt_als_fehlschlag(monkeypatch, tmp_path):
+    """Defensive Rückfallebene: process() ohne Ergebnis darf nicht als
+    Erfolg durchgehen, auch wenn keine Ursache bekannt ist."""
+    monkeypatch.setattr(
+        batch_import, "find_inbox_documents", lambda: [tmp_path / "leer.pdf"]
+    )
+    monkeypatch.setattr(batch_import, "process", lambda path: None)
+
+    succeeded, duplicates, failed = batch_import.import_inbox_documents()
+
+    assert succeeded == []
+    assert failed == [{"source_name": "leer.pdf", "error": "unbekannter Fehler"}]

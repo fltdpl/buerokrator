@@ -7,7 +7,10 @@ ihn mit der Konfiguration.
 
 import os
 import shutil
+import sqlite3
+import tempfile
 import zipfile
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +20,48 @@ from src.core.logger import logger
 
 def _default_backup_name(now):
     return f"buerokrator_backup_{now.strftime('%Y%m%d_%H%M%S')}.zip"
+
+
+@contextmanager
+def _database_snapshot(db_path, workspace_dir):
+    """Konsistente Momentaufnahme der Datenbank als temporäre Datei.
+
+    Bewusst NICHT die .db-Datei kopieren: im WAL-Modus stehen committete
+    Transaktionen in der -wal-Datei, bis ein Checkpoint läuft — und der
+    läuft nicht, solange eine andere Verbindung offen ist (Stapel-Import).
+    Eine reine Dateikopie lieferte dann still eine Sicherung ohne die
+    zuletzt importierten Dokumente.
+
+    sqlite3.Connection.backup() liest über die SQLite-API und schließt den
+    WAL-Inhalt ein; es ist außerdem gegen parallele Schreiber sicher (kein
+    halb geschriebener Zustand). Ein defektes DB-File lässt die
+    sqlite3.DatabaseError durch — eine Sicherung, die die Datenbank nicht
+    lesen kann, darf nicht scheinbar gelingen.
+
+    Der Snapshot entsteht bewusst in workspace_dir (dem Backup-Zielordner)
+    und NICHT in /tmp: die Datei ist eine vollständige Kopie der DB samt
+    aller OCR-Volltexte. Sie gehört nicht auf ein fremdes Dateisystem, das
+    der Nutzer nicht als privat einstuft. mkdtemp legt das Verzeichnis mit
+    0700 an; der Snapshot ist damit nur für den Besitzer lesbar.
+    """
+    with tempfile.TemporaryDirectory(dir=workspace_dir) as workspace:
+        snapshot = Path(workspace) / db_path.name
+
+        source = sqlite3.connect(db_path)
+
+        try:
+            target = sqlite3.connect(snapshot)
+
+            try:
+                source.backup(target)
+
+            finally:
+                target.close()
+
+        finally:
+            source.close()
+
+        yield snapshot
 
 
 def create_backup(db_path, archive_dir, target_dir, backup_name):
@@ -36,7 +81,8 @@ def create_backup(db_path, archive_dir, target_dir, backup_name):
 
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
         if db_path.exists():
-            archive.write(db_path, arcname=f"database/{db_path.name}")
+            with _database_snapshot(db_path, target_dir) as snapshot:
+                archive.write(snapshot, arcname=f"database/{db_path.name}")
 
         if archive_dir.exists():
             for file in sorted(archive_dir.rglob("*")):

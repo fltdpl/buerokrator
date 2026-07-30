@@ -56,8 +56,9 @@ KEYWORD_WEIGHTS = {
         ("arbeitgeber", 1),
     ),
     PENSION: (
-        # kein bloßes "bauspar": die Musterbau-Tagline "Versichern · Bausparen"
-        # steht auf JEDEM Musterbau-Dokument, auch Versicherungen
+        # kein bloßes "bauspar": manche Anbieter führen eine Tagline wie
+        # "Versichern · Bausparen" auf JEDEM Briefbogen, auch auf reinen
+        # Versicherungsdokumenten
         ("bausparvertrag", 3),
         ("bausparkasse", 3),
         ("für ihre rentenversicherung", 3),

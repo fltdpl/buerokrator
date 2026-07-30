@@ -1,11 +1,25 @@
 import re
 
+# Ein einzelner Trenner in Dreiergruppen ("1.234", "12,345,678") ist eine
+# Tausendertrennung, kein Dezimaltrenner: Geldbeträge haben keine drei
+# Nachkommastellen. Ohne diese Regel erzeugt float() still einen
+# Faktor-1000-Fehler.
+def _is_thousands_grouping(text: str, separator: str) -> bool:
+    return bool(
+        re.fullmatch(rf"-?\d{{1,3}}(\{separator}\d{{3}})+", text)
+    )
+
 
 def normalize_amount(value: object) -> float | None:
     """Wandelt einen Betrag (LLM-Ausgabe oder Benutzereingabe) in einen float um.
 
     Behandelt Währungszeichen sowie deutsche (1.234,56) und englische
-    (1234.56) Zahlenformate. Gibt None zurück, wenn kein Betrag erkennbar ist.
+    (1,234.56) Zahlenformate. Gibt None zurück, wenn kein Betrag erkennbar ist.
+
+    Regel bei zwei verschiedenen Trennern: der HINTERE ist der Dezimaltrenner
+    ("1.234,56" deutsch, "1,234.56" englisch). Das Format wird also am Text
+    erkannt und nicht angenommen — ein deutsches Dokument kann sehr wohl
+    englisch formatierte Beträge tragen, und das LLM gibt beide Formen aus.
     """
     if value is None:
         return None
@@ -19,19 +33,23 @@ def normalize_amount(value: object) -> float | None:
     if not text:
         return None
 
-    if "," in text and "." in text:
-        # Deutsches Format: Punkt = Tausender, Komma = Dezimal
-        text = text.replace(".", "").replace(",", ".")
+    last_comma = text.rfind(",")
+    last_dot = text.rfind(".")
 
-    elif "," in text:
-        text = text.replace(",", ".")
+    if last_comma >= 0 and last_dot >= 0:
+        decimal, thousands = (
+            (",", ".") if last_comma > last_dot else (".", ",")
+        )
+        text = text.replace(thousands, "").replace(decimal, ".")
 
-    elif re.fullmatch(r"-?\d{1,3}(\.\d{3})+", text):
-        # Deutsche Tausenderpunkte OHNE Dezimalkomma: "1.234" ist in
-        # deutschen Dokumenten 1234, nicht 1,234 — float() würde sonst
-        # still einen Faktor-1000-Fehler erzeugen. Greift nur beim
-        # eindeutigen Muster (Dreiergruppen); "1.23" und "1234.56"
-        # bleiben englische Dezimalzahlen.
+    elif last_comma >= 0:
+        if _is_thousands_grouping(text, ","):
+            text = text.replace(",", "")
+
+        else:
+            text = text.replace(",", ".")
+
+    elif last_dot >= 0 and _is_thousands_grouping(text, "."):
         text = text.replace(".", "")
 
     try:

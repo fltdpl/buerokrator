@@ -6,6 +6,10 @@ Grundkontext für Agenten. **Aktueller Projektstand, letzter Arbeitsblock und
 nächste Schritte stehen in `HANDOVER.md`** (lokal, gitignored), die
 Aufgabenliste in `todo.md`, die Langfrist-Sicht in `roadmap.md`.
 
+Neue Session? **Zuerst den Skill `/onboarding` aufrufen** — er nimmt die Lage
+per Befehl auf (Doku veraltet zwischen Sessions), führt durch die Dokumente
+und endet mit Statusbericht und Vorschlag.
+
 ## Ziel
 
 Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steuerrelevante Unterlagen.
@@ -66,7 +70,13 @@ Beispiele:
 - Lohnsteuerbescheinigung: `2021-01-01_bis_2021-06-30_Arbeitgeber_Lohnsteuerbescheinigung.pdf` (mit Bescheinigungszeitraum; ohne: `2024-12_…`)
 - Gehaltsabrechnung: `2021-01-01_bis_2021-01-31_Arbeitgeber_Gehaltsabrechnung.pdf` (Abrechnungszeitraum; Altbestand: `2024-03_…`)
 
-Alle LLM-Werte laufen vor dem Dateinamen-Bau durch str-Coercion und `/`-Ersatz (`filename_builder._clean_name` u. a.).
+Alle LLM-Werte laufen durch str-Coercion (`filename_builder._text_value`).
+Die Pfadsicherheit sitzt zentral in `filename_builder._safe_filename` (per
+`@_sanitized` auf jedem `build_*_filename`): der fertige Name ist garantiert
+EINE Pfadkomponente — keine Separatoren, keine unter Windows verbotenen
+Zeichen, kein führender Punkt, kein Gerätename, nie leer, max. 255 Bytes.
+Feldweise Bereinigung reichte nicht: `document_date`, `tax_year` und `month`
+liefen daran vorbei, und `normalize_date` gibt unparsbare Werte roh zurück.
 
 Aussteller-Aliase: nutzerpflegbare Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer Name → Schreibweisen, `*` am Ende = Präfix; gitignored — Anbieternamen sind Nutzerdaten und gehören NIE hartkodiert in den Code). `src/organizer/issuer_normalizer.py` lädt sie mtime-gecacht; angewendet beim Dateinamen-Bau und zentral in `extract_document` auf issuer/employer/insurer. Pflege im Einstellungs-Tab „Aliase" (Text-Editor mit Validierung über `parse_aliases_text`) oder extern. Tests werden per conftest-Fixture von der echten Datei isoliert.
 

@@ -4,6 +4,9 @@ Läuft gegen eine leere Test-Datenbank (tmp_path): prüft, dass alle Seiten
 fehlerfrei bauen und die Kern-Navigation funktioniert.
 """
 
+import os
+from pathlib import Path
+
 import pytest
 
 from nicegui.testing import User
@@ -241,17 +244,102 @@ async def test_analyse_page_renders_anlagen_and_income_view(user: User, monkeypa
 
 # Bewusst der LETZTE Test der Datei: der direkte Import von src.frontend.main
 # verstellt die App-Registrierung — User-Fixture-Tests danach laufen ins 404.
-def test_nicegui_storage_path_points_to_app_home():
+def test_nicegui_storage_path_points_to_app_home(tmp_path):
     """NiceGUI-Storage darf nicht cwd-relativ liegen (Packaging).
 
-    Die Env-Variable wird einmalig beim ersten Import von src.frontend.main
-    gesetzt (App-Home zum Importzeitpunkt) — hier nur: gesetzt und absolut.
+    src.frontend.main setzt NICEGUI_STORAGE_PATH beim Import auf das
+    App-Home. Geprüft wird in einem SUBPROZESS: ein Import im Testprozess
+    legt das Modul in sys.modules ab, sodass die @ui.page-Dekoratoren beim
+    Neuaufbau der App für nachfolgende Tests nicht mehr laufen — jede
+    weitere Seite antwortete dann mit 404.
     """
-    import os
-    from pathlib import Path
+    import subprocess
+    import sys
 
-    import src.frontend.main  # noqa: F401 — setzt die Env-Variable beim Import
+    # main.py setzt die Variable per setdefault — eine geerbte Belegung
+    # aus dem Testprozess würde gewinnen und den Test wertlos machen.
+    child_env = {
+        key: value
+        for key, value in os.environ.items()
+        if key != "NICEGUI_STORAGE_PATH"
+    }
+    child_env["BUEROKRATOR_HOME"] = str(tmp_path)
 
-    storage_path = Path(os.environ["NICEGUI_STORAGE_PATH"])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import os; import src.frontend.main; "
+            "print(os.environ['NICEGUI_STORAGE_PATH'])",
+        ],
+        capture_output=True,
+        text=True,
+        cwd=Path(__file__).resolve().parents[1],
+        env=child_env,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    storage_path = Path(result.stdout.strip())
+
     assert storage_path.is_absolute()
     assert storage_path.name == ".nicegui"
+    assert storage_path.parent == tmp_path
+
+
+@pytest.mark.asyncio
+async def test_import_seite_nennt_die_fehlerursache(user: User):
+    """Ein Fehlschlag darf nicht nur als Dateiname erscheinen (Review).
+
+    Vorher schluckte process() jede Exception zu None; die Import-Seite
+    zeigte den Namen und nichts sonst — die Ursache stand ausschließlich
+    in der Logdatei.
+    """
+    from src.services import import_job
+
+    import_job.finish(
+        succeeded=[],
+        duplicates=[],
+        failed=[
+            {
+                "source_name": "kaputt.pdf",
+                "error": "TesseractNotFoundError: tesseract nicht gefunden",
+            }
+        ],
+    )
+
+    try:
+        await user.open("/import")
+        await user.should_see("1 Dokument(e) fehlgeschlagen")
+        await user.should_see("tesseract nicht gefunden")
+        await user.should_see("liegen unverändert im Inbox-Ordner")
+
+    finally:
+        import_job._reset_for_tests()
+
+
+@pytest.mark.asyncio
+async def test_dokumentenliste_baut_mit_bestand_und_bulk_leiste(user: User):
+    """Die leere Liste allein deckt den Seitenaufbau nicht ab.
+
+    Ohne Zeilen wird der Tabellen- und Bulk-Aktions-Zweig nie ausgeführt —
+    ein Fehler dort (z. B. ein nicht mehr existierender Aufruf) blieb
+    unbemerkt grün.
+    """
+    from src.database.document_repository import insert_document
+
+    insert_document(
+        "2024-01-01_Musterversand_42EUR.pdf",
+        "archive/2024/Rechnungen/2024-01-01_Musterversand_42EUR.pdf",
+        "invoice",
+        {"issuer": "Musterversand", "amount": 42.0, "document_date": "01.01.2024"},
+    )
+
+    await user.open("/dokumente")
+    # Der Tabellenzweig lief (die leere Liste bricht vorher ab) …
+    await user.should_see("1 Dokumente gefunden")
+    await user.should_not_see("Keine Dokumente gefunden.")
+    # Die Bulk-Leiste ist bei leerer Auswahl unsichtbar und damit nicht
+    # prüfbar — dass sie fehlerfrei GEBAUT wurde, zeigt das vollständige
+    # Rendern der Seite bis zum Fuß.
+    await user.should_see("CSV Export")

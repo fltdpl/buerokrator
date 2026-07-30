@@ -86,6 +86,167 @@ def _default_filters():
 _FILTER_STATE = _default_filters()
 
 
+def _bulk_actions(table, on_changed):
+    """Aktionen für die ausgewählten Zeilen (nur sichtbar, wenn ausgewählt).
+
+    Braucht aus der Seite nur die Tabelle und einen Rückruf, der die
+    Ergebnisliste neu aufbaut — deshalb hier auf Modulebene statt als
+    Closure im Seitenkörper.
+    """
+    def selected_ids():
+        return [row["id"] for row in table.selected]
+
+    def delete_selected():
+        deleted = move_documents_to_trash(selected_ids())
+        delete_dialog.close()
+        ui.notify(f"{deleted} Dokument(e) in den Papierkorb verschoben.")
+        on_changed()
+
+    def reclassify_selected(document_type):
+        if not document_type:
+            ui.notify("Bitte eine Kategorie wählen.")
+            return
+
+        changed = reclassify_documents(selected_ids(), document_type)
+        ui.notify(
+            f"{changed} Dokument(e) auf "
+            f"{DOCUMENT_TYPE_LABELS.get(document_type, document_type)} gesetzt "
+            "und zum erneuten Prüfen markiert."
+        )
+        on_changed()
+
+    def unify_issuer(name):
+        if not (name or "").strip():
+            ui.notify("Bitte einen Aussteller-Namen eingeben.")
+            return
+
+        changed = set_documents_issuer(selected_ids(), name)
+        ui.notify(
+            f"Aussteller von {changed} Dokument(en) auf "
+            f"„{name.strip()}“ vereinheitlicht."
+        )
+        on_changed()
+
+    def revoke_selected():
+        changed = revoke_documents_verification(selected_ids())
+        ui.notify(
+            f"Freigabe von {changed} Dokument(en) widerrufen — "
+            "sie stehen wieder zur Prüfung an."
+        )
+        on_changed()
+
+    def selected_types():
+        types = {row.get("document_type") for row in table.selected}
+        types.discard(None)
+        return types
+
+    def apply_subtype(subtype):
+        if not subtype:
+            ui.notify("Bitte eine Unterart wählen.")
+            return
+
+        changed = set_documents_subtype(selected_ids(), subtype)
+        ui.notify(
+            f"{changed} Dokument(e) auf Unterart gesetzt "
+            "und zum erneuten Prüfen markiert."
+        )
+        on_changed()
+
+    with ui.dialog() as delete_dialog, ui.card():
+        confirm_label = ui.label("")
+
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
+            ui.button("Ja, löschen", on_click=delete_selected).props(
+                "color=negative"
+            )
+
+    def open_delete_dialog():
+        confirm_label.text = (
+            f"{len(table.selected)} Dokument(e) in den Papierkorb verschieben?"
+        )
+        delete_dialog.open()
+
+    # Reklassifizieren: Kategorie wählen + Anwenden.
+    reclassify_choice = {"value": None}
+
+    # Unterart setzen: die Optionen richten sich nach der Kategorie der
+    # Auswahl (nur sinnvoll bei einheitlichem Typ). Refresh via table.on
+    # ("selection") unten.
+    @ui.refreshable
+    def subtype_bulk():
+        types = selected_types()
+
+        if len(types) != 1:
+            ui.label(
+                "Unterart: erst eine einheitliche Kategorie auswählen."
+            ).classes("text-xs muted")
+            return
+
+        config = subtype_config(next(iter(types)))
+        if not config:
+            ui.label("Unterart: diese Kategorie hat keine Unterarten.").classes(
+                "text-xs muted"
+            )
+            return
+
+        options = {
+            value: config["labels"].get(value, value)
+            for value in config["options"]
+        }
+        choice = {"value": None}
+        select = ui.select(
+            options, label="Unterart setzen", with_input=True
+        ).props("dense").classes("w-56")
+        select.bind_value(choice, "value")
+        ui.button(
+            "Anwenden", on_click=lambda: apply_subtype(choice["value"])
+        ).props("dense unelevated")
+
+    with ui.row().classes("items-center gap-3").bind_visibility_from(
+        table, "selected", backward=bool
+    ):
+        ui.label().bind_text_from(
+            table, "selected", lambda rows: f"{len(rows)} ausgewählt"
+        ).classes("muted")
+
+        reclass_select = ui.select(
+            {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
+            label="Umklassifizieren nach",
+        ).props("dense").classes("w-56")
+        reclass_select.bind_value(reclassify_choice, "value")
+        ui.button(
+            "Anwenden",
+            on_click=lambda: reclassify_selected(reclassify_choice["value"]),
+        ).props("dense unelevated")
+
+        subtype_bulk()
+
+        # Aussteller/Arbeitgeber vereinheitlichen (Kurz- vs. Langname
+        # desselben Ausstellers): Prüfstatus und Datei bleiben.
+        issuer_input = ui.input("Aussteller vereinheitlichen").props(
+            "dense"
+        ).classes("w-56")
+        ui.button(
+            "Anwenden",
+            on_click=lambda: unify_issuer(issuer_input.value),
+        ).props("dense unelevated")
+
+        # Kein Bestätigungsdialog: der Widerruf ist verlustfrei (Felder
+        # bleiben, nur der Prüfstatus fällt) und per Prüfen umkehrbar.
+        ui.button("↩ Freigabe widerrufen", on_click=revoke_selected).props(
+            "flat dense"
+        )
+
+        ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(
+            "flat dense color=negative"
+        )
+
+    # Optionen der Unterart-Auswahl an die aktuelle Selektion anpassen
+    # (feuert, nachdem table.selected aktualisiert wurde).
+    table.on_select(lambda event: subtype_bulk.refresh())
+
+
 @ui.page("/dokumente")
 def documents_page():
     filters = _FILTER_STATE
@@ -162,162 +323,7 @@ def documents_page():
             lambda event: ui.navigate.to(f"/dokumente/{event.args[1]['id']}"),
         )
 
-        bulk_actions(table)
-
-    def bulk_actions(table):
-        """Aktionen für die ausgewählten Zeilen (nur sichtbar, wenn ausgewählt)."""
-        def selected_ids():
-            return [row["id"] for row in table.selected]
-
-        def delete_selected():
-            deleted = move_documents_to_trash(selected_ids())
-            delete_dialog.close()
-            ui.notify(f"{deleted} Dokument(e) in den Papierkorb verschoben.")
-            results.refresh()
-
-        def reclassify_selected(document_type):
-            if not document_type:
-                ui.notify("Bitte eine Kategorie wählen.")
-                return
-
-            changed = reclassify_documents(selected_ids(), document_type)
-            ui.notify(
-                f"{changed} Dokument(e) auf "
-                f"{DOCUMENT_TYPE_LABELS.get(document_type, document_type)} gesetzt "
-                "und zum erneuten Prüfen markiert."
-            )
-            results.refresh()
-
-        def unify_issuer(name):
-            if not (name or "").strip():
-                ui.notify("Bitte einen Aussteller-Namen eingeben.")
-                return
-
-            changed = set_documents_issuer(selected_ids(), name)
-            ui.notify(
-                f"Aussteller von {changed} Dokument(en) auf "
-                f"„{name.strip()}“ vereinheitlicht."
-            )
-            results.refresh()
-
-        def revoke_selected():
-            changed = revoke_documents_verification(selected_ids())
-            ui.notify(
-                f"Freigabe von {changed} Dokument(en) widerrufen — "
-                "sie stehen wieder zur Prüfung an."
-            )
-            results.refresh()
-
-        def selected_types():
-            types = {row.get("document_type") for row in table.selected}
-            types.discard(None)
-            return types
-
-        def apply_subtype(subtype):
-            if not subtype:
-                ui.notify("Bitte eine Unterart wählen.")
-                return
-
-            changed = set_documents_subtype(selected_ids(), subtype)
-            ui.notify(
-                f"{changed} Dokument(e) auf Unterart gesetzt "
-                "und zum erneuten Prüfen markiert."
-            )
-            results.refresh()
-
-        with ui.dialog() as delete_dialog, ui.card():
-            confirm_label = ui.label("")
-
-            with ui.row().classes("justify-end w-full"):
-                ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
-                ui.button("Ja, löschen", on_click=delete_selected).props(
-                    "color=negative"
-                )
-
-        def open_delete_dialog():
-            confirm_label.text = (
-                f"{len(table.selected)} Dokument(e) in den Papierkorb verschieben?"
-            )
-            delete_dialog.open()
-
-        # Reklassifizieren: Kategorie wählen + Anwenden.
-        reclassify_choice = {"value": None}
-
-        # Unterart setzen: die Optionen richten sich nach der Kategorie der
-        # Auswahl (nur sinnvoll bei einheitlichem Typ). Refresh via table.on
-        # ("selection") unten.
-        @ui.refreshable
-        def subtype_bulk():
-            types = selected_types()
-
-            if len(types) != 1:
-                ui.label(
-                    "Unterart: erst eine einheitliche Kategorie auswählen."
-                ).classes("text-xs muted")
-                return
-
-            config = subtype_config(next(iter(types)))
-            if not config:
-                ui.label("Unterart: diese Kategorie hat keine Unterarten.").classes(
-                    "text-xs muted"
-                )
-                return
-
-            options = {
-                value: config["labels"].get(value, value)
-                for value in config["options"]
-            }
-            choice = {"value": None}
-            select = ui.select(
-                options, label="Unterart setzen", with_input=True
-            ).props("dense").classes("w-56")
-            select.bind_value(choice, "value")
-            ui.button(
-                "Anwenden", on_click=lambda: apply_subtype(choice["value"])
-            ).props("dense unelevated")
-
-        with ui.row().classes("items-center gap-3").bind_visibility_from(
-            table, "selected", backward=bool
-        ):
-            ui.label().bind_text_from(
-                table, "selected", lambda rows: f"{len(rows)} ausgewählt"
-            ).classes("muted")
-
-            reclass_select = ui.select(
-                {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
-                label="Umklassifizieren nach",
-            ).props("dense").classes("w-56")
-            reclass_select.bind_value(reclassify_choice, "value")
-            ui.button(
-                "Anwenden",
-                on_click=lambda: reclassify_selected(reclassify_choice["value"]),
-            ).props("dense unelevated")
-
-            subtype_bulk()
-
-            # Aussteller/Arbeitgeber vereinheitlichen (Kurz- vs. Langname
-            # desselben Ausstellers): Prüfstatus und Datei bleiben.
-            issuer_input = ui.input("Aussteller vereinheitlichen").props(
-                "dense"
-            ).classes("w-56")
-            ui.button(
-                "Anwenden",
-                on_click=lambda: unify_issuer(issuer_input.value),
-            ).props("dense unelevated")
-
-            # Kein Bestätigungsdialog: der Widerruf ist verlustfrei (Felder
-            # bleiben, nur der Prüfstatus fällt) und per Prüfen umkehrbar.
-            ui.button("↩ Freigabe widerrufen", on_click=revoke_selected).props(
-                "flat dense"
-            )
-
-            ui.button("🗑 Auswahl löschen", on_click=open_delete_dialog).props(
-                "flat dense color=negative"
-            )
-
-        # Optionen der Unterart-Auswahl an die aktuelle Selektion anpassen
-        # (feuert, nachdem table.selected aktualisiert wurde).
-        table.on_select(lambda event: subtype_bulk.refresh())
+        _bulk_actions(table, results.refresh)
 
     def set_filter(key, value):
         filters[key] = value

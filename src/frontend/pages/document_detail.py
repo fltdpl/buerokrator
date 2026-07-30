@@ -43,6 +43,174 @@ def _amount_input_value(amount):
     return str(amount)
 
 
+def _confirm_dialog(question, confirm_label, on_confirm):
+    """Rückfrage-Dialog mit Abbrechen + einer roten Bestätigung.
+
+    Die Seite braucht drei davon (erneut prüfen, löschen, Änderungen
+    verwerfen) — vorher stand der gleiche Aufbau dreimal im Seitenkörper.
+    """
+    with ui.dialog() as dialog, ui.card():
+        ui.label(question)
+
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=dialog.close).props("flat")
+            ui.button(confirm_label, on_click=on_confirm).props("color=negative")
+
+    return dialog
+
+
+def _meta_button(label, on_click, color=None):
+    """Kleiner, flacher Button in der Optik der Meta-Zeile."""
+    button = ui.button(label, on_click=on_click).props(
+        "flat dense no-caps" + (f" color={color}" if color else "")
+    )
+    # Quasar-Buttons bringen eine eigene Schriftgröße mit — die Zeile
+    # soll aber durchgehend wie die Meta-Beschriftung aussehen.
+    button.style("font-size: inherit;")
+
+    return button
+
+
+def _meta_row(document_id, type_label, status_text, *, downloadable, verified, actions):
+    """EINE kleine Zeile unter dem Titel: links Kennzahlen und Blättern,
+    rechts die Aktionen.
+
+    Bewusst eine Zeile statt einer Button-Leiste: lange Titel brechen so
+    nicht um, und die Aktionen gehören sichtbar zur ganzen Seite.
+    `actions` bündelt die Rückrufe der Seite (previous, next, download,
+    reanalyze, unverify, delete).
+    """
+    with ui.row().classes("w-full items-center gap-1 muted"):
+        ui.label(f"ID {document_id} · {type_label} · {status_text} ·")
+
+        _meta_button("←", actions["previous"]).tooltip(
+            "Vorheriges Dokument (Pfeil links)"
+        )
+        _meta_button("→", actions["next"]).tooltip("Nächstes Dokument (Pfeil rechts)")
+
+        ui.space()
+
+        if downloadable:
+            _meta_button("📥 Download", actions["download"])
+            ui.label("·")
+
+        _meta_button("🔄 Erneut prüfen", actions["reanalyze"]).tooltip(
+            "Klassifikation + Extraktion auf dem gespeicherten Text"
+            " wiederholen — überschreibt korrigierte Werte"
+        )
+
+        if verified:
+            ui.label("·")
+            _meta_button("↩️ Widerrufen", actions["unverify"])
+
+        ui.label("·")
+        _meta_button("🗑 Löschen", actions["delete"], color="negative")
+
+
+def _source_panel(document_id, document_text):
+    """Rechte Spalte: umschaltbares Panel PDF ⇄ OCR-Text.
+
+    Persistent aufgebaut statt refreshable: das Bearbeiten der Formularfelder
+    darf die PDF-Ansicht nicht neu laden (Scrollposition!).
+    """
+    panel_toggle = ui.toggle(["PDF", "OCR-Text"], value="PDF").props("dense")
+
+    pdf_frame = (
+        ui.element("iframe")
+        .props(f'src="/pdf/{document_id}" type="application/pdf"')
+        .classes("w-full")
+        .style("height: 75vh; border: none;")
+    )
+
+    text_area = (
+        ui.textarea(value=document_text or "Kein Dokumentinhalt gespeichert.")
+        .props("readonly outlined")
+        .classes("w-full")
+        .style("height: 75vh;")
+    )
+    text_area.set_visibility(False)
+
+    def switch_panel(event):
+        pdf_frame.set_visibility(event.value == "PDF")
+        text_area.set_visibility(event.value == "OCR-Text")
+
+    panel_toggle.on_value_change(switch_panel)
+
+
+def _render_field(field, data, missing, empty, on_tax_relevant_amount):
+    """Ein Formularfeld aufbauen; liefert (Element, Ausgangswert).
+
+    Der Ausgangswert geht in den Dirty-Check der Seite.
+    """
+    key = field["key"]
+
+    if field["kind"] == "amount":
+        default = _amount_input_value(data.get(key))
+
+    else:
+        default = data.get(key) or ""
+
+    label = f"{field['label']} *" if field.get("required") else field["label"]
+    element = ui.input(label, value=default).classes("w-full")
+
+    # Leere Pflichtfelder auffällig, sonstige Lücken dezent: beides ist eine
+    # Information, aber nur das eine hält das Dokument auf.
+    if key in missing:
+        element.props("error error-message=Pflichtfeld")
+
+    elif key in empty:
+        element.props('hint="nicht erkannt"')
+
+    # § 35a-Beträge machen das Dokument steuerrelevant: die Checkbox wurde
+    # beim Seitenaufbau (Felder noch leer) initialisiert und wird beim
+    # Speichern IMMER explizit übernommen — ohne den Automatismus fiele der
+    # Beleg still aus der § 35a-Summe.
+    if key in ("household_services_amount", "craftsman_services_amount"):
+        element.on_value_change(
+            lambda event: event.value
+            and event.value.strip()
+            and on_tax_relevant_amount()
+        )
+
+    return element, default
+
+
+def _render_type_selects(state, on_type_change, on_subtype_change):
+    """Auswahl von Dokumenttyp und (falls der Typ welche kennt) Unterart."""
+    ui.select(
+        {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
+        value=state["document_type"],
+        label="Dokumenttyp",
+        on_change=lambda event: on_type_change(event.value),
+    ).classes("w-full")
+
+    sub_config = subtype_config(state["document_type"])
+
+    if not sub_config:
+        return
+
+    options = dict.fromkeys(
+        [state["subtype"], *sub_config["options"]]
+        if state["subtype"]
+        else sub_config["options"]
+    )
+    labels = {value: sub_config["labels"].get(value, value) for value in options}
+
+    ui.select(
+        labels,
+        value=state["subtype"] or sub_config["options"][0],
+        label="Unterart",
+        on_change=lambda event: on_subtype_change(event.value),
+    ).classes("w-full")
+
+    if state["subtype"] and not is_known_subtype(
+        state["document_type"], state["subtype"]
+    ):
+        ui.label(
+            "Unbekannte Unterart — bestehende Felder bleiben unverändert."
+        ).classes("text-xs muted")
+
+
 @ui.page("/dokumente/{document_id}")
 def document_detail_page(document_id: int):
     row = get_document(document_id)
@@ -155,25 +323,19 @@ def document_detail_page(document_id: int):
                 f"Analyse fehlgeschlagen: {result['error']}", color="negative"
             )
 
-    with ui.dialog() as reanalyze_dialog, ui.card():
-        ui.label(
-            "Achtung: Alle korrigierten Werte werden durch eine neue"
-            " automatische Analyse überschrieben und die Freigabe wird"
-            " widerrufen. Fortfahren?"
-        )
+    reanalyze_dialog = _confirm_dialog(
+        "Achtung: Alle korrigierten Werte werden durch eine neue"
+        " automatische Analyse überschrieben und die Freigabe wird"
+        " widerrufen. Fortfahren?",
+        "Ja, erneut prüfen",
+        reanalyze,
+    )
 
-        with ui.row().classes("justify-end w-full"):
-            ui.button("Abbrechen", on_click=reanalyze_dialog.close).props("flat")
-            ui.button("Ja, erneut prüfen", on_click=reanalyze).props(
-                "color=negative"
-            )
-
-    with ui.dialog() as delete_dialog, ui.card():
-        ui.label("Dokument wirklich in den Papierkorb verschieben?")
-
-        with ui.row().classes("justify-end w-full"):
-            ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
-            ui.button("Ja, löschen", on_click=delete).props("color=negative")
+    delete_dialog = _confirm_dialog(
+        "Dokument wirklich in den Papierkorb verschieben?",
+        "Ja, löschen",
+        delete,
+    )
 
     # ------------------------------------------------------------------
     # Dirty-Check: Navigation verwirft Änderungen nicht mehr kommentarlos.
@@ -210,14 +372,11 @@ def document_detail_page(document_id: int):
         if pending_leave["action"]:
             pending_leave["action"]()
 
-    with ui.dialog() as leave_dialog, ui.card():
-        ui.label("Ungespeicherte Änderungen gehen verloren — fortfahren?")
-
-        with ui.row().classes("justify-end w-full"):
-            ui.button("Abbrechen", on_click=leave_dialog.close).props("flat")
-            ui.button("Verwerfen & weiter", on_click=discard_and_leave).props(
-                "color=negative"
-            )
+    leave_dialog = _confirm_dialog(
+        "Ungespeicherte Änderungen gehen verloren — fortfahren?",
+        "Verwerfen & weiter",
+        discard_and_leave,
+    )
 
     def guarded(action):
         """Führt eine Navigation aus; bei ungespeicherten Änderungen erst
@@ -264,38 +423,7 @@ def document_detail_page(document_id: int):
         inputs.clear()
         initial_values.clear()
 
-        ui.select(
-            {dtype: DOCUMENT_TYPE_LABELS.get(dtype, dtype) for dtype in DOCUMENT_TYPES},
-            value=state["document_type"],
-            label="Dokumenttyp",
-            on_change=lambda event: change_type(event.value),
-        ).classes("w-full")
-
-        sub_config = subtype_config(state["document_type"])
-
-        if sub_config:
-            options = dict.fromkeys(
-                [state["subtype"], *sub_config["options"]]
-                if state["subtype"]
-                else sub_config["options"]
-            )
-            labels = {
-                value: sub_config["labels"].get(value, value) for value in options
-            }
-
-            ui.select(
-                labels,
-                value=state["subtype"] or sub_config["options"][0],
-                label="Unterart",
-                on_change=lambda event: change_subtype(event.value),
-            ).classes("w-full")
-
-            if state["subtype"] and not is_known_subtype(
-                state["document_type"], state["subtype"]
-            ):
-                ui.label(
-                    "Unbekannte Unterart — bestehende Felder bleiben unverändert."
-                ).classes("text-xs muted")
+        _render_type_selects(state, change_type, change_subtype)
 
         subtype = state["subtype"] or None
         missing = set(missing_required_fields(state["document_type"], data, subtype))
@@ -308,38 +436,16 @@ def document_detail_page(document_id: int):
             ).classes("text-sm text-orange-700")
 
         for field in form_fields(state["document_type"], subtype):
-            key = field["key"]
+            element, default = _render_field(
+                field,
+                data,
+                missing,
+                empty,
+                lambda: tax_relevant_checkbox.set_value(True),
+            )
 
-            if field["kind"] == "amount":
-                default = _amount_input_value(data.get(key))
-
-            else:
-                default = data.get(key) or ""
-
-            label = f"{field['label']} *" if field.get("required") else field["label"]
-            element = ui.input(label, value=default).classes("w-full")
-
-            # Leere Pflichtfelder auffällig, sonstige Lücken dezent: beides
-            # ist eine Information, aber nur das eine hält das Dokument auf.
-            if key in missing:
-                element.props("error error-message=Pflichtfeld")
-
-            elif key in empty:
-                element.props('hint="nicht erkannt"')
-
-            # § 35a-Beträge machen das Dokument steuerrelevant: die Checkbox
-            # wurde beim Seitenaufbau (Felder noch leer) initialisiert und
-            # wird beim Speichern IMMER explizit übernommen — ohne den
-            # Automatismus fiele der Beleg still aus der § 35a-Summe.
-            if key in ("household_services_amount", "craftsman_services_amount"):
-                element.on_value_change(
-                    lambda event: event.value
-                    and event.value.strip()
-                    and tax_relevant_checkbox.set_value(True)
-                )
-
-            inputs[key] = element
-            initial_values[key] = default
+            inputs[field["key"]] = element
+            initial_values[field["key"]] = default
 
     def refresh_tax_relevance_default():
         # Nach Typ-/Subtypwechsel gilt ein anderer Steuerrelevanz-Default
@@ -381,17 +487,6 @@ def document_detail_page(document_id: int):
     )
     unverified_count = get_verification_statistics()[0]
 
-    def _meta_button(label, on_click, color=None):
-        """Kleiner, flacher Button in der Optik der Meta-Zeile."""
-        button = ui.button(label, on_click=on_click).props(
-            "flat dense no-caps" + (f" color={color}" if color else "")
-        )
-        # Quasar-Buttons bringen eine eigene Schriftgröße mit — die Zeile
-        # soll aber durchgehend wie die Meta-Beschriftung aussehen.
-        button.style("font-size: inherit;")
-
-        return button
-
     with page_layout(display_name):
         # Kopf: Titel, darunter EINE Meta-/Aktionszeile (klein): links
         # ID · Typ · Status · ←/→, rechts die Aktionen — lange Titel brechen
@@ -399,36 +494,21 @@ def document_detail_page(document_id: int):
         with ui.column().classes("gap-0 w-full"):
             ui.label(display_name).classes("text-3xl page-title")
 
-            with ui.row().classes("w-full items-center gap-1 muted"):
-                ui.label(f"ID {document_id} · {type_label} · {status_text} ·")
-
-                _meta_button(
-                    "←", lambda: guarded(lambda: navigate_adjacent(-1))
-                ).tooltip("Vorheriges Dokument (Pfeil links)")
-                _meta_button(
-                    "→", lambda: guarded(lambda: navigate_adjacent(1))
-                ).tooltip("Nächstes Dokument (Pfeil rechts)")
-
-                ui.space()
-
-                if Path(document["archive_path"]).exists():
-                    _meta_button(
-                        "📥 Download",
-                        lambda: ui.download(document["archive_path"]),
-                    )
-                    ui.label("·")
-
-                _meta_button("🔄 Erneut prüfen", reanalyze_dialog.open).tooltip(
-                    "Klassifikation + Extraktion auf dem gespeicherten"
-                    " Text wiederholen — überschreibt korrigierte Werte"
-                )
-
-                if document["verified"]:
-                    ui.label("·")
-                    _meta_button("↩️ Widerrufen", unverify)
-
-                ui.label("·")
-                _meta_button("🗑 Löschen", delete_dialog.open, color="negative")
+            _meta_row(
+                document_id,
+                type_label,
+                status_text,
+                downloadable=Path(document["archive_path"]).exists(),
+                verified=document["verified"],
+                actions={
+                    "previous": lambda: guarded(lambda: navigate_adjacent(-1)),
+                    "next": lambda: guarded(lambda: navigate_adjacent(1)),
+                    "download": lambda: ui.download(document["archive_path"]),
+                    "reanalyze": reanalyze_dialog.open,
+                    "unverify": unverify,
+                    "delete": delete_dialog.open,
+                },
+            )
 
         with ui.row().classes("w-full gap-6 flex-nowrap items-start"):
             # Links: Formular + Aktionen + Notizen
@@ -487,28 +567,6 @@ def document_detail_page(document_id: int):
                     value=document["notes"] or "",
                 ).classes("w-full")
 
-            # Rechts: umschaltbares Panel PDF ⇄ OCR-Text (persistent, lädt
-            # beim Bearbeiten der Felder nicht neu).
+            # Rechts: Quelle des Dokuments (PDF oder OCR-Text).
             with card("w-1/2 gap-2"):
-                panel_toggle = ui.toggle(
-                    ["PDF", "OCR-Text"],
-                    value="PDF",
-                ).props("dense")
-
-                pdf_frame = ui.element("iframe").props(
-                    f'src="/pdf/{document_id}" type="application/pdf"'
-                ).classes("w-full").style("height: 75vh; border: none;")
-
-                text_area = (
-                    ui.textarea(value=document["document_text"] or "Kein Dokumentinhalt gespeichert.")
-                    .props("readonly outlined")
-                    .classes("w-full")
-                    .style("height: 75vh;")
-                )
-                text_area.set_visibility(False)
-
-                def switch_panel(event):
-                    pdf_frame.set_visibility(event.value == "PDF")
-                    text_area.set_visibility(event.value == "OCR-Text")
-
-                panel_toggle.on_value_change(switch_panel)
+                _source_panel(document_id, document["document_text"])

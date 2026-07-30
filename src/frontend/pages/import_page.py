@@ -14,6 +14,85 @@ from src.processor.batch_import import (
 from src.services import import_job
 
 
+def _render_result(result, on_reset):
+    """Ergebnis eines beendeten Laufs: archiviert, Dubletten, Fehlschläge.
+
+    Braucht aus der Seite nur das Ergebnis-dict und einen Rückruf für
+    „Neuer Import" — deshalb hier auf Modulebene.
+    """
+    ui.label(
+        f"✅ {len(result['succeeded'])} Dokument(e) archiviert."
+    ).classes("text-green-700")
+
+    # "none" = Ollama war beim Import nicht erreichbar.
+    limited = [
+        entry
+        for entry in result["succeeded"]
+        if entry.get("classification_source") == "none"
+    ]
+
+    if limited:
+        ui.label(
+            f"⚠️ {len(limited)} Dokument(e) ohne automatische"
+            " Analyse archiviert (Ollama nicht erreichbar) —"
+            " Typ und Felder bitte im Prüf-Workflow nachtragen"
+            " oder später „Erneut prüfen“ nutzen."
+        ).classes("text-orange-700")
+
+    for entry in result["succeeded"]:
+        type_label = DOCUMENT_TYPE_LABELS.get(
+            entry["document_type"], entry["document_type"]
+        )
+        ui.label(
+            f"• {entry['source_name']} → {type_label} · "
+            f"{entry['filename']}"
+        ).classes("text-sm muted")
+
+    if result["duplicates"]:
+        ui.label(
+            f"♻️ {len(result['duplicates'])} Dublette(n) übersprungen "
+            "(liegen im Papierkorb):"
+        ).classes("text-amber-700")
+
+        for entry in result["duplicates"]:
+            with ui.row().classes("items-center gap-1"):
+                ui.label(
+                    f"• {entry['source_name']} ist bereits"
+                    " archiviert als"
+                ).classes("text-sm muted")
+                ui.link(
+                    entry["duplicate_filename"],
+                    f"/dokumente/{entry['duplicate_of']}",
+                ).classes("text-sm")
+
+    if result["failed"]:
+        ui.label(
+            f"❌ {len(result['failed'])} Dokument(e) fehlgeschlagen:"
+        ).classes("text-red-600")
+
+        for entry in result["failed"]:
+            ui.label(
+                f"• {entry['source_name']} — {entry['error']}"
+            ).classes("text-sm text-red-600")
+
+        ui.label(
+            "Die Dateien liegen unverändert im Inbox-Ordner und"
+            " können nach Behebung der Ursache erneut importiert"
+            " werden."
+        ).classes("text-sm muted")
+
+    next_id = get_next_unverified_id()
+
+    with ui.row().classes("gap-2"):
+        if next_id is not None:
+            ui.button(
+                "✅ Jetzt prüfen",
+                on_click=lambda: ui.navigate.to(f"/dokumente/{next_id}"),
+            ).props("color=primary unelevated")
+
+        ui.button("Neuer Import", on_click=on_reset).props("flat")
+
+
 @ui.page("/import")
 def import_page():
     with page_layout("Import"):
@@ -31,76 +110,11 @@ def import_page():
                 "läuft im Hintergrund weiter, auch wenn du die Seite wechselst."
             ).classes("muted")
 
-            def render_result(result):
-                ui.label(
-                    f"✅ {len(result['succeeded'])} Dokument(e) archiviert."
-                ).classes("text-green-700")
 
-                # "none" = Ollama war beim Import nicht erreichbar.
-                limited = [
-                    entry
-                    for entry in result["succeeded"]
-                    if entry.get("classification_source") == "none"
-                ]
-
-                if limited:
-                    ui.label(
-                        f"⚠️ {len(limited)} Dokument(e) ohne automatische"
-                        " Analyse archiviert (Ollama nicht erreichbar) —"
-                        " Typ und Felder bitte im Prüf-Workflow nachtragen"
-                        " oder später „Erneut prüfen“ nutzen."
-                    ).classes("text-orange-700")
-
-                for entry in result["succeeded"]:
-                    type_label = DOCUMENT_TYPE_LABELS.get(
-                        entry["document_type"], entry["document_type"]
-                    )
-                    ui.label(
-                        f"• {entry['source_name']} → {type_label} · "
-                        f"{entry['filename']}"
-                    ).classes("text-sm muted")
-
-                if result["duplicates"]:
-                    ui.label(
-                        f"♻️ {len(result['duplicates'])} Dublette(n) übersprungen "
-                        "(liegen im Papierkorb):"
-                    ).classes("text-amber-700")
-
-                    for entry in result["duplicates"]:
-                        with ui.row().classes("items-center gap-1"):
-                            ui.label(
-                                f"• {entry['source_name']} ist bereits"
-                                " archiviert als"
-                            ).classes("text-sm muted")
-                            ui.link(
-                                entry["duplicate_filename"],
-                                f"/dokumente/{entry['duplicate_of']}",
-                            ).classes("text-sm")
-
-                if result["failed"]:
-                    ui.label(
-                        f"❌ {len(result['failed'])} Dokument(e) fehlgeschlagen:"
-                    ).classes("text-red-600")
-
-                    for name in result["failed"]:
-                        ui.label(f"• {name}").classes("text-sm text-red-600")
-
-                next_id = get_next_unverified_id()
-
-                with ui.row().classes("gap-2"):
-                    if next_id is not None:
-                        ui.button(
-                            "✅ Jetzt prüfen",
-                            on_click=lambda: ui.navigate.to(f"/dokumente/{next_id}"),
-                        ).props("color=primary unelevated")
-
-                    ui.button(
-                        "Neuer Import",
-                        on_click=lambda: (
-                            import_job.clear_result(),
-                            import_area.refresh(),
-                        ),
-                    ).props("flat")
+            def reset_and_refresh():
+                """„Neuer Import": letztes Ergebnis verwerfen, Bereich neu bauen."""
+                import_job.clear_result()
+                import_area.refresh()
 
             @ui.refreshable
             def import_area():
@@ -144,18 +158,14 @@ def import_page():
                     ui.label(
                         f"❌ Import abgebrochen: {state['error']}"
                     ).classes("text-red-600")
-                    ui.button(
-                        "Neuer Import",
-                        on_click=lambda: (
-                            import_job.clear_result(),
-                            import_area.refresh(),
-                        ),
-                    ).props("flat")
+                    ui.button("Neuer Import", on_click=reset_and_refresh).props(
+                        "flat"
+                    )
                     return
 
                 # Zuletzt beendeter Lauf: Ergebnis zeigen, bis "Neuer Import".
                 if state["result"] is not None:
-                    render_result(state["result"])
+                    _render_result(state["result"], reset_and_refresh)
                     return
 
                 pending = find_inbox_documents()

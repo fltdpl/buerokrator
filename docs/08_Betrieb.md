@@ -56,7 +56,11 @@ unter Linux `~/.local/share/buerokrator`):
 ## Backup
 
 Regelmäßige Sicherung (oder Backup-Knopf in den Einstellungen, der
-Datenbank + Archiv als ZIP sichert und wiederherstellen kann):
+Datenbank + Archiv als ZIP sichert und wiederherstellen kann). Die Datenbank
+wird dabei über die SQLite-Backup-API gelesen, nicht als Datei kopiert: im
+WAL-Modus stehen frisch committete Dokumente in der `-wal`-Datei, solange
+eine Verbindung offen ist — eine Dateikopie hätte sie still ausgelassen.
+Zu sichern:
 
 - archive/
 - database/

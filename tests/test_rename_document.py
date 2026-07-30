@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from src.organizer.filename_builder import rename_document
 
 

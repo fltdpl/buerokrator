@@ -1,12 +1,22 @@
+import sqlite3
 import zipfile
 
 from src.services.backup_service import create_backup
 
 
+def _make_database(path, filename):
+    """Echte SQLite-Datei — create_backup liest die DB über die SQLite-API."""
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY, filename TEXT)")
+    conn.execute("INSERT INTO documents (filename) VALUES (?)", (filename,))
+    conn.commit()
+    conn.close()
+
+
 def test_create_backup_contains_db_and_archive(tmp_path):
     db = tmp_path / "database" / "buerokrator.db"
     db.parent.mkdir()
-    db.write_bytes(b"SQLITE")
+    _make_database(db, "erste.pdf")
 
     archive = tmp_path / "archive"
     (archive / "2024" / "Wohnen").mkdir(parents=True)
@@ -66,7 +76,7 @@ def _make_backup(tmp_path):
 
     db = tmp_path / "database" / "buerokrator.db"
     db.parent.mkdir()
-    db.write_bytes(b"ALTE-DB")
+    _make_database(db, "alt.pdf")
 
     archive = tmp_path / "archive"
     (archive / "2026" / "Rechnungen").mkdir(parents=True)
@@ -90,7 +100,13 @@ def test_restore_backup_replaces_db_and_archive(tmp_path):
     result = restore_backup(zip_path, db_path=db, archive_dir=archive)
 
     assert result == {"database": True, "archive_files": 1}
-    assert db.read_bytes() == b"ALTE-DB"
+
+    restored = sqlite3.connect(db)
+    assert [row[0] for row in restored.execute("SELECT filename FROM documents")] == [
+        "alt.pdf"
+    ]
+    restored.close()
+
     assert (archive / "2026" / "Rechnungen" / "a.pdf").read_bytes() == b"PDF-A"
     assert not (archive / "2026" / "Rechnungen" / "b.pdf").exists()
 
@@ -149,3 +165,74 @@ def test_list_backups_newest_first(tmp_path):
 
     assert names == ["neu.zip", "alt.zip"]
     assert list_backups(tmp_path / "fehlt") == []
+
+
+def test_backup_enthaelt_committete_daten_trotz_offener_wal(tmp_path):
+    """Regression: unter WAL lag der Neustand in der -wal-Datei, nicht in der .db.
+
+    Solange irgendeine Verbindung offen ist (laufender Stapel-Import),
+    checkpointet SQLite nicht. Ein reines Kopieren der .db-Datei lieferte
+    dann eine ZIP ohne die zuletzt importierten Dokumente — still, ohne
+    Fehler. Das ist bei einem Backup der schlimmste Fehlermodus.
+    """
+    db = tmp_path / "database" / "buerokrator.db"
+    db.parent.mkdir()
+
+    writer = sqlite3.connect(db)
+    writer.execute("PRAGMA journal_mode=WAL")
+    writer.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY, filename TEXT)")
+    writer.commit()
+
+    # Zweite Verbindung offen halten: verhindert den Checkpoint beim Close.
+    reader = sqlite3.connect(db)
+    reader.execute("PRAGMA journal_mode=WAL")
+
+    writer.execute("INSERT INTO documents (filename) VALUES ('frisch_importiert.pdf')")
+    writer.commit()
+    writer.close()
+
+    zip_path = create_backup(
+        db_path=db,
+        archive_dir=tmp_path / "archive",
+        target_dir=tmp_path / "backups",
+        backup_name="wal.zip",
+    )
+
+    restored = tmp_path / "restored.db"
+
+    with zipfile.ZipFile(zip_path) as backup:
+        restored.write_bytes(backup.read("database/buerokrator.db"))
+
+    check = sqlite3.connect(restored)
+    filenames = [row[0] for row in check.execute("SELECT filename FROM documents")]
+    check.close()
+    reader.close()
+
+    assert filenames == ["frisch_importiert.pdf"]
+
+
+def test_snapshot_bleibt_im_zielordner_und_wird_aufgeraeumt(tmp_path):
+    """Die Momentaufnahme ist eine Vollkopie der DB samt OCR-Volltexten.
+
+    Sie darf nicht in /tmp landen (fremdes Dateisystem) und nach dem Backup
+    nicht liegen bleiben.
+    """
+    from src.services.backup_service import _database_snapshot
+
+    db = tmp_path / "database" / "buerokrator.db"
+    db.parent.mkdir()
+    _make_database(db, "geheim.pdf")
+
+    target = tmp_path / "backups"
+    target.mkdir()
+
+    with _database_snapshot(db, target) as snapshot:
+        assert target in snapshot.parents
+        # mkdtemp legt das Verzeichnis nur für den Besitzer lesbar an.
+        assert snapshot.parent.stat().st_mode & 0o077 == 0
+
+    assert not snapshot.exists()
+
+    create_backup(db, tmp_path / "archive", target, "fertig.zip")
+
+    assert [p.name for p in target.iterdir()] == ["fertig.zip"]

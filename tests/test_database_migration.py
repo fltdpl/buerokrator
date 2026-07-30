@@ -1,3 +1,4 @@
+import time
 import sqlite3
 
 from src.database.init_database import init_database
@@ -239,3 +240,102 @@ def test_init_database_rejects_newer_schema_version(tmp_path, monkeypatch):
 
     with pytest.raises(RuntimeError, match="Schemaversion"):
         init_database()
+
+
+def test_zweiter_thread_wartet_auf_die_migration(tmp_path, monkeypatch):
+    """Regression: das Fertig-Flag wurde VOR der Migration gesetzt.
+
+    Ein zweiter Thread (Stapel-Import läuft parallel zur UI) sprang dadurch
+    an der noch laufenden Migration vorbei und arbeitete auf einem Schema
+    ohne die Tabellen.
+    """
+    import threading
+
+    import src.database.database as database
+    import src.database.init_database as init_module
+
+    monkeypatch.chdir(tmp_path)
+    write_test_config(tmp_path, tmp_path / "test.db")
+    monkeypatch.setattr(database, "_schema_ready", False)
+
+    migration_started = threading.Event()
+    real_init = init_module.init_database
+
+    def slow_init_database():
+        migration_started.set()
+        # Fenster, in dem der zweite Thread ohne Sperre vorbeiziehen würde.
+        time.sleep(0.3)
+        real_init()
+
+    monkeypatch.setattr(init_module, "init_database", slow_init_database)
+
+    errors = []
+
+    def migrating_thread():
+        try:
+            database.get_connection().close()
+
+        except Exception as error:  # pragma: no cover - nur bei Regression
+            errors.append(("migrierer", error))
+
+    def second_thread():
+        migration_started.wait(timeout=5)
+
+        try:
+            conn = database.get_connection()
+            conn.execute("SELECT id FROM documents LIMIT 1").fetchall()
+            conn.close()
+
+        except Exception as error:
+            errors.append(("zweiter", error))
+
+    first = threading.Thread(target=migrating_thread)
+    second = threading.Thread(target=second_thread)
+    first.start()
+    second.start()
+    first.join(timeout=10)
+    second.join(timeout=10)
+
+    assert errors == []
+
+
+def test_gescheiterte_migration_wird_beim_naechsten_zugriff_wiederholt(
+    tmp_path, monkeypatch
+):
+    """Regression: das Flag wurde auch im Fehlerfall gesetzt.
+
+    Ein einmaliger Migrationsfehler (z. B. kurzzeitig gesperrte Datei) legte
+    die Migration damit für die gesamte Prozesslaufzeit still — die App lief
+    weiter, nur ohne Schema.
+    """
+    import pytest
+
+    import src.database.database as database
+    import src.database.init_database as init_module
+
+    monkeypatch.chdir(tmp_path)
+    write_test_config(tmp_path, tmp_path / "test.db")
+    monkeypatch.setattr(database, "_schema_ready", False)
+
+    real_init = init_module.init_database
+    attempts = []
+
+    def failing_once():
+        attempts.append(1)
+
+        if len(attempts) == 1:
+            raise OSError("Datenbank vorübergehend gesperrt")
+
+        real_init()
+
+    monkeypatch.setattr(init_module, "init_database", failing_once)
+
+    with pytest.raises(OSError):
+        database.get_connection()
+
+    # Zweiter Anlauf muss die Migration erneut versuchen.
+    conn = database.get_connection()
+    conn.execute("SELECT id FROM documents LIMIT 1").fetchall()
+    conn.close()
+
+    assert len(attempts) == 2

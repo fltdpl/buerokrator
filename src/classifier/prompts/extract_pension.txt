@@ -25,10 +25,12 @@ Schema:
 Extrahiere:
 
 - issuer = Anbieter / Gesellschaft
-  (z. B. "Musterbau Bausparkasse AG", "VBL")
+  (der Absender im Briefkopf, z. B. "<Name> Bausparkasse AG",
+  "<Name> Lebensversicherung a. G.", Zusatzversorgungskasse)
 
 - product_name = Bezeichnung des PRODUKTS bzw. Tarifs
-  (z. B. "Bausparvertrag", "Zusatzversorgung klassik", "Rentenversicherung")
+  (z. B. "Bausparvertrag", "Rentenversicherung", Tarifname der
+  Zusatzversorgung)
   NICHT der Titel des Dokuments ("Steuerbescheinigung",
   "Jahreskontoauszug", "Bausparkasse" sind KEINE Produktnamen).
   Bei allen Dokumenten einer Bausparkasse ist das Produkt

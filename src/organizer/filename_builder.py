@@ -1,3 +1,5 @@
+import functools
+import re
 from pathlib import Path
 
 from src.core.amount_utils import normalize_amount
@@ -15,6 +17,83 @@ from src.organizer.category_mapper import get_archive_category, get_archive_root
 from src.core.logger import logger
 from src.organizer.date_utils import extract_year, normalize_date, normalize_month
 from src.organizer.issuer_normalizer import normalize_issuer
+
+
+# Zeichen, die in EINER Pfadkomponente nichts zu suchen haben. "/" ist unter
+# Linux der Separator, "\" unter Windows (das Paket ist erklärtes Ziel); die
+# übrigen verbietet Windows in Dateinamen.
+_FORBIDDEN_CHARS = '<>:"|?*\\/'
+
+# Windows-Gerätenamen: eine Datei "CON.pdf" lässt sich dort nicht anlegen.
+_WINDOWS_RESERVED = frozenset(
+    ["CON", "PRN", "AUX", "NUL"]
+    + [f"COM{i}" for i in range(1, 10)]
+    + [f"LPT{i}" for i in range(1, 10)]
+)
+
+# Grenze je Pfadkomponente auf ext4 und NTFS.
+_MAX_FILENAME_BYTES = 255
+
+_FALLBACK_STEM = "dokument"
+
+
+def _truncate_stem(stem: str, suffix: str) -> str:
+    """Kürzt den Namensteil, bis Name + Endung ins Limit passen.
+
+    Byteweise, nicht zeichenweise: Umlaute belegen in UTF-8 zwei Bytes, und
+    das Dateisystem zählt Bytes. Geschnitten wird am Zeichen, damit kein
+    halbes Multibyte-Zeichen entsteht.
+    """
+    budget = _MAX_FILENAME_BYTES - len(suffix.encode("utf-8"))
+
+    while len(stem.encode("utf-8")) > budget:
+        stem = stem[:-1]
+
+    return stem
+
+
+def _safe_filename(name: str) -> str:
+    """Macht aus einem gebauten Namen garantiert EINE gültige Pfadkomponente.
+
+    Zentrale Absicherung statt feldweiser Bereinigung: die Bauer setzen den
+    Namen aus Modell- und Nutzerwerten zusammen (Datum, Jahr, Monat,
+    Aussteller, Betreff …), und `normalize_date` reicht unparsbare Werte
+    unverändert durch. Ein einziges "/" oder ".." im falschen Feld ließ die
+    Archivierung sonst aus dem Archiv ausbrechen — `shutil.move` folgt dem
+    Pfad, den es bekommt.
+
+    Nach dieser Funktion gilt: kein Separator, keine unter Windows
+    verbotenen Zeichen, kein führender Punkt (also kein "." oder ".." als
+    Verzeichnisverweis), kein reservierter Gerätename, nie leer, nie länger
+    als das Dateisystem erlaubt.
+    """
+    cleaned = "".join(
+        "_" if char in _FORBIDDEN_CHARS or ord(char) < 32 else char for char in name
+    )
+
+    suffix = Path(cleaned).suffix
+    stem = cleaned[: len(cleaned) - len(suffix)] if suffix else cleaned
+
+    # Führende/abschließende Punkte und Leerzeichen: Windows schneidet sie
+    # ohnehin ab, und ein führender Punkt macht aus dem Namen einen
+    # Verzeichnisverweis bzw. eine versteckte Datei.
+    stem = stem.strip(" .")
+    stem = re.sub(r"_{3,}", "__", stem)
+
+    if not stem or stem.upper() in _WINDOWS_RESERVED:
+        stem = f"{_FALLBACK_STEM}_{stem}" if stem else _FALLBACK_STEM
+
+    return _truncate_stem(stem, suffix) + suffix
+
+
+def _sanitized(builder):
+    """Garantiert die Zusage von _safe_filename für jeden Dateinamen-Bauer."""
+
+    @functools.wraps(builder)
+    def wrapper(extracted_data, suffix):
+        return _safe_filename(builder(extracted_data, suffix))
+
+    return wrapper
 
 
 def get_unique_target_path(target):
@@ -50,7 +129,7 @@ def build_filename(classification, extracted_data, original_file_path):
     if builder:
         return builder(extracted_data, suffix)
 
-    return f"{document_type}{suffix}"
+    return _safe_filename(f"{document_type}{suffix}")
 
 
 def rename_document(
@@ -119,8 +198,9 @@ def _text_value(value, default):
 
 
 def _clean_name(value, default):
-    # str-Coercion + "/"-Ersatz: kein unbereinigter Modellwert darf als
-    # Pfadseparator wirken.
+    # Formatierung: Leerzeichen zu Unterstrichen. Die Pfadsicherheit liegt
+    # NICHT hier, sondern zentral in _safe_filename — feldweise Bereinigung
+    # hatte genau die Felder übersehen, die kein _clean_name durchliefen.
     return _text_value(value, default).replace(" ", "_").replace("/", "_")
 
 
@@ -129,6 +209,7 @@ def _issuer_name(value, default):
     return _clean_name(normalize_issuer(_text_value(value, default)), default)
 
 
+@_sanitized
 def build_invoice_filename(extracted_data, suffix):
 
     document_date = normalize_date(
@@ -149,6 +230,7 @@ def build_invoice_filename(extracted_data, suffix):
     return f"{document_date}_{issuer}{suffix}"
 
 
+@_sanitized
 def build_tax_filename(extracted_data, suffix):
 
     tax_year = extracted_data.get("tax_year") or "unknown_year"
@@ -181,6 +263,7 @@ def _period_prefix(extracted_data):
     return None
 
 
+@_sanitized
 def build_employment_filename(extracted_data, suffix):
 
     subtype = (extracted_data.get("document_subtype") or "").lower()
@@ -231,6 +314,7 @@ def build_employment_filename(extracted_data, suffix):
     return f"{document_date}_{issuer}_{subject}{suffix}"
 
 
+@_sanitized
 def build_insurance_filename(extracted_data, suffix):
 
     document_date = normalize_date(
@@ -254,6 +338,7 @@ def build_insurance_filename(extracted_data, suffix):
     return f"{document_date}_{issuer}_{insurance_type}_{policy_number}{suffix}"
 
 
+@_sanitized
 def build_pension_filename(
     extracted_data,
     suffix,
@@ -279,6 +364,7 @@ def build_pension_filename(
     return f"{document_date}_{issuer}_{document_subtype}_{policy_number}{suffix}"
 
 
+@_sanitized
 def build_bank_filename(
     extracted_data,
     suffix,
@@ -300,6 +386,7 @@ def build_bank_filename(
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
 
 
+@_sanitized
 def build_housing_filename(
     extracted_data,
     suffix,
@@ -321,6 +408,7 @@ def build_housing_filename(
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
 
 
+@_sanitized
 def build_legal_filename(
     extracted_data,
     suffix,

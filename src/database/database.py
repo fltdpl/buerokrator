@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -8,35 +9,64 @@ from src.core.config import load_config
 
 _schema_ready = False
 
+# Serialisiert die Migration: der Stapel-Import läuft in einem eigenen
+# Thread, während die UI weiter liest.
+_schema_lock = threading.Lock()
+
+# Thread, der gerade migriert. init_database ruft selbst get_connection —
+# dieser eine Thread muss durchgelassen werden, sonst blockiert er sich
+# an der eigenen Sperre.
+_migrating_thread: "int | None" = None
+
 
 def _ensure_schema() -> None:
     """Führt die Schema-Migration einmal pro Prozess aus.
 
     So läuft die Migration automatisch beim ersten Datenbankzugriff (App-Start),
     statt nur in Tests oder beim manuellen Zurücksetzen.
+
+    Das Fertig-Flag wird NACH der Migration gesetzt und die Migration von
+    einer Sperre geschützt: vorher zog ein zweiter Thread am noch laufenden
+    init_database vorbei und arbeitete auf einem Schema ohne Tabellen.
+    Scheitert die Migration, bleibt das Flag false — der nächste Zugriff
+    versucht es erneut, statt den Fehler für die Prozesslaufzeit
+    festzuschreiben.
     """
-    global _schema_ready
+    global _schema_ready, _migrating_thread
+
     if _schema_ready:
         return
 
-    # Flag zuerst setzen, um Rekursion zu vermeiden (init_database nutzt selbst
-    # get_connection).
-    _schema_ready = True
+    if _migrating_thread == threading.get_ident():
+        return
 
-    from src.database.init_database import init_database
+    with _schema_lock:
+        # Zweite Prüfung: ein anderer Thread kann inzwischen fertig sein.
+        if _schema_ready:
+            return
 
-    init_database()
+        from src.database.init_database import init_database
 
-    # Die DB enthält OCR-Volltexte aller Dokumente — nur für den Besitzer
-    # lesbar. Einmal pro Prozess; die WAL-/SHM-Dateien erben die Rechte
-    # der Hauptdatei.
-    db_path = load_config()["database"]["path"]
+        _migrating_thread = threading.get_ident()
 
-    try:
-        os.chmod(db_path, 0o600)
+        try:
+            init_database()
 
-    except OSError:
-        pass
+            # Die DB enthält OCR-Volltexte aller Dokumente — nur für den
+            # Besitzer lesbar. Einmal pro Prozess; die WAL-/SHM-Dateien
+            # erben die Rechte der Hauptdatei.
+            db_path = load_config()["database"]["path"]
+
+            try:
+                os.chmod(db_path, 0o600)
+
+            except OSError:
+                pass
+
+            _schema_ready = True
+
+        finally:
+            _migrating_thread = None
 
 
 def get_connection() -> sqlite3.Connection:

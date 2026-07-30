@@ -1,8 +1,10 @@
 """Regelparser für Jahreskontoauszüge und Steuerbescheinigungen.
 
-Die Textausschnitte stammen aus echten OCR-Ergebnissen der Ground Truth und
-decken die zwei Layouts ab, die Tesseract liefert: Beschriftung und Betrag
-nebeneinander, oder spaltenweise getrennte Blöcke.
+Die Textausschnitte bilden die zwei Layouts nach, die Tesseract liefert:
+Beschriftung und Betrag nebeneinander, oder spaltenweise getrennte Blöcke.
+Anbieternamen, Vertragsnummern und Beträge sind erfunden (Repo ist
+öffentlich); die Beträge sind in sich stimmig gerechnet, damit die
+Summenprüfungen etwas aussagen.
 """
 
 from src.extraction.account_statement import parse_account_statement
@@ -129,7 +131,7 @@ def test_bausparsumme_wird_nicht_als_saldo_gelesen():
 
 def test_parser_raet_weder_aussteller_noch_produkt_noch_datum():
     # Diese Felder sind je Anbieter verschieden. Ein Layout-Treffer darf sie
-    # NICHT setzen, sonst bekäme ein Zweitbau-Auszug den Aussteller
+    # NICHT setzen, sonst bekäme ein Auszug eines anderen Anbieters den Aussteller
     # des Anbieters, für den das Muster einmal geschrieben wurde.
     fields = parse_account_statement(INLINE_STATEMENT)
 

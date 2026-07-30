@@ -157,11 +157,16 @@ def archive_analyzed_document(
 def process(file_path):
     """Verarbeitet eine Datei komplett.
 
-    Gibt bei Erfolg ein Ergebnis-dict zurück (truthy, für das Frontend:
-    was wurde erkannt, wohin archiviert), bei Fehler None (falsy).
-    Ist die Datei eine Dublette eines bereits archivierten Dokuments, trägt
-    das Ergebnis `duplicate_of` und die Datei wandert unverarbeitet in den
-    Papierkorb.
+    Gibt immer ein Ergebnis-dict zurück. Es trägt genau eine der drei
+    Kennzeichnungen:
+    - `document_id` — archiviert (was erkannt wurde, wohin archiviert)
+    - `duplicate_of` — bereits archiviert, Datei ging in den Papierkorb
+    - `error` — gescheitert, mit Klartext-Ursache
+
+    Die Ursache gehört ins Ergebnis, nicht nur ins Log: sonst sieht der
+    Nutzer auf der Import-Seite bloß „fehlgeschlagen" und muss die
+    Logdatei öffnen, um zu erfahren, ob Tesseract fehlt oder die PDF
+    unlesbar ist.
     """
     logger.info(f"Verarbeitung gestartet: {file_path}")
     try:
@@ -214,4 +219,7 @@ def process(file_path):
             f"{type(e).__name__}: Fehler bei der Verarbeitung des Dokuments {file_path}: {e}"
         )
 
-        return None
+        return {
+            "source_name": Path(file_path).name,
+            "error": f"{type(e).__name__}: {e}",
+        }

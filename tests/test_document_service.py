@@ -129,7 +129,7 @@ def test_filter_documents_combined():
     docs = [
         make_row(1, "invoice", 2023, {"issuer": "Musterversand"}, verified=1),
         make_row(2, "invoice", 2024, {"issuer": "Musterfunk"}, verified=0),
-        make_row(3, "insurance", 2024, {"insurer": "Musterbau"}, verified=1),
+        make_row(3, "insurance", 2024, {"insurer": "Musterversicherung"}, verified=1),
     ]
 
     assert [r["id"] for r in filter_documents(docs, document_type="invoice")] == [1, 2]
@@ -138,7 +138,7 @@ def test_filter_documents_combined():
     # Vertauschte Grenzen werden korrigiert.
     assert [r["id"] for r in filter_documents(docs, from_year=2024, to_year=2023)] == [1, 2, 3]
     # Aussteller-Filter findet auch insurer.
-    assert [r["id"] for r in filter_documents(docs, issuer="debeka")] == [3]
+    assert [r["id"] for r in filter_documents(docs, issuer="musterversich")] == [3]
     assert [r["id"] for r in filter_documents(docs, filename="2023")] == [1]
 
 

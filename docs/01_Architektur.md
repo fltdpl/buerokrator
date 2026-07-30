@@ -46,6 +46,10 @@ vereinheitlicht die Bulk-Aktion in der Dokumentenliste.
 ### Database (`src/database`)
 
 SQLite, Tabelle `documents`; Migration läuft automatisch beim ersten Zugriff.
+Sie ist durch eine Sperre serialisiert und das Fertig-Flag wird erst NACH
+erfolgreicher Migration gesetzt — der Stapel-Import läuft in einem eigenen
+Thread neben der lesenden UI, und ein zweiter Thread darf weder an einer
+laufenden Migration vorbeiziehen noch eine gescheiterte als erledigt sehen.
 
 ### Services (`src/services`)
 

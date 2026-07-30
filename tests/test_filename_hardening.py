@@ -97,3 +97,101 @@ def test_employment_with_non_string_issuer():
     )
 
     assert filename == "2024-03-01_42_kuendigung.pdf"
+
+
+# --------------------------------------------- Datums-/Jahresfelder (Review)
+#
+# `_clean_name` deckte nur issuer/subtype ab. document_date, tax_year, month
+# und period_start/-end liefen ungefiltert in den Dateinamen — `normalize_date`
+# gibt unparsbare Werte unverändert zurück.
+
+
+def test_document_date_kann_nicht_aus_dem_archiv_ausbrechen():
+    filename = build_invoice_filename(
+        {"document_date": "../../../tmp/pwned", "issuer": "ACME"},
+        ".pdf",
+    )
+
+    assert "/" not in filename
+    assert not filename.startswith("..")
+
+
+def test_tax_year_kann_nicht_aus_dem_archiv_ausbrechen():
+    from src.organizer.filename_builder import build_tax_filename
+
+    filename = build_tax_filename(
+        {"tax_year": "../../../tmp/pwned", "issuer": "Finanzamt"},
+        ".pdf",
+    )
+
+    assert "/" not in filename
+    assert not filename.startswith("..")
+
+
+def test_monat_kann_kein_unterverzeichnis_erzeugen():
+    filename = build_employment_filename(
+        {
+            "document_subtype": "gehaltsabrechnung",
+            "tax_year": 2024,
+            "month": "../x",
+            "employer": "Musterfirma",
+        },
+        ".pdf",
+    )
+
+    assert "/" not in filename
+
+
+def test_datum_mit_schraegstrichen_erzeugt_keine_unterordner():
+    # Häufigster Alltagsfall: das LLM liefert "01/03/2024". normalize_date
+    # parst nur "%d.%m.%Y" und reichte den Rohwert durch -> der Import scheiterte
+    # anschließend am fehlenden Elternverzeichnis.
+    filename = build_invoice_filename(
+        {
+            "document_date": "01/03/2024",
+            "issuer": "ACME",
+            "invoice_number": "R1",
+            "amount": 10,
+        },
+        ".pdf",
+    )
+
+    assert filename == "01_03_2024_ACME_R1_10EUR.pdf"
+
+
+def test_windows_verbotene_zeichen_werden_ersetzt():
+    # Windows-Paket ist erklärtes Ziel: < > : " | ? * und "\" sind dort
+    # in Dateinamen unzulässig, "\" ist zusätzlich Pfadseparator.
+    filename = build_invoice_filename(
+        {
+            "document_date": "01.03.2024",
+            "issuer": r"..\..\windows",
+            "invoice_number": 'R:1?"',
+        },
+        ".pdf",
+    )
+
+    assert not any(char in filename for char in '<>:"|?*\\/')
+
+
+def test_reservierter_windows_name_wird_entschaerft():
+    from src.organizer.filename_builder import build_legal_filename
+
+    filename = build_legal_filename(
+        {"document_date": "", "issuer": "", "subject": ""},
+        ".pdf",
+    )
+
+    # Ein leerer Bau darf keinen leeren oder reservierten Namen liefern.
+    assert filename not in ("", ".pdf")
+
+
+def test_sehr_langer_name_bleibt_im_dateisystem_limit():
+    # 255 Bytes ist die Grenze je Pfadkomponente (ext4, NTFS).
+    filename = build_invoice_filename(
+        {"document_date": "01.03.2024", "issuer": "A" * 400, "invoice_number": "R1"},
+        ".pdf",
+    )
+
+    assert len(filename.encode("utf-8")) <= 255
+    assert filename.endswith(".pdf")
