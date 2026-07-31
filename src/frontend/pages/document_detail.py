@@ -24,6 +24,7 @@ from src.services.document_service import (
     parse_document_row,
     reanalyze_document,
 )
+from src.services.duplicate_service import find_content_duplicates
 from src.tax.tax_purpose import TAX_PURPOSE_LABELS
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
@@ -135,6 +136,36 @@ def _source_panel(document_id, document_text):
         text_area.set_visibility(event.value == "OCR-Text")
 
     panel_toggle.on_value_change(switch_panel)
+
+
+def _duplicate_hint(document_id):
+    """Hinweis, wenn ein anderes Dokument denselben Beleg zeigt.
+
+    Bewusst nur ein Hinweis mit Link: die Entscheidung, welcher Scan bleibt,
+    trifft der Nutzer im Prüf-Workflow. Nichts wird automatisch gelöscht oder
+    zusammengeführt.
+    """
+    duplicates = find_content_duplicates(document_id)
+
+    if not duplicates:
+        return
+
+    with ui.column().classes("gap-0 w-full"):
+        ui.label(
+            f"⚠️ Mögliche Dublette — {len(duplicates)} anderes Dokument zeigt"
+            " denselben Beleg:"
+            if len(duplicates) == 1
+            else f"⚠️ Mögliche Dublette — {len(duplicates)} andere Dokumente"
+            " zeigen denselben Beleg:"
+        ).classes("text-sm text-orange-700")
+
+        for duplicate in duplicates:
+            with ui.row().classes("items-center gap-1 text-sm"):
+                ui.link(
+                    f"#{duplicate['id']} {duplicate['filename']}",
+                    f"/dokumente/{duplicate['id']}",
+                )
+                ui.label(f"({duplicate['reason']})").classes("text-xs muted")
 
 
 def _render_field(field, data, missing, empty, on_tax_relevant_amount):
@@ -513,6 +544,10 @@ def document_detail_page(document_id: int):
         with ui.row().classes("w-full gap-6 flex-nowrap items-start"):
             # Links: Formular + Aktionen + Notizen
             with card("w-1/2 gap-3"):
+                # Vor dem Formular: wer gleich freigeben will, soll vorher
+                # wissen, dass derselbe Beleg schon im Bestand liegt.
+                _duplicate_hint(document_id)
+
                 form_area()
 
                 tax_relevant_checkbox = ui.checkbox(

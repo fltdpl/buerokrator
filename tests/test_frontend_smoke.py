@@ -343,3 +343,51 @@ async def test_dokumentenliste_baut_mit_bestand_und_bulk_leiste(user: User):
     # prüfbar — dass sie fehlerfrei GEBAUT wurde, zeigt das vollständige
     # Rendern der Seite bis zum Fuß.
     await user.should_see("CSV Export")
+
+
+@pytest.mark.asyncio
+async def test_detail_warnt_vor_inhaltlicher_dublette(user: User):
+    """Zwei Scans desselben Belegs: der Prüf-Workflow zeigt den Hinweis.
+
+    Der Inhalts-Hash greift hier nicht (verschiedene Dateien), die Warnung
+    kommt aus dem Vergleich der erkannten Werte.
+    """
+    from src.database.document_repository import insert_document
+
+    beleg = {
+        "issuer": "Musterversand",
+        "amount": 42.0,
+        "document_date": "01.01.2024",
+    }
+    insert_document(
+        "2024-01-01_Musterversand_42EUR.pdf",
+        "archive/2024/Rechnungen/2024-01-01_Musterversand_42EUR.pdf",
+        "invoice",
+        dict(beleg),
+    )
+    zweiter = insert_document(
+        "2024-01-01_Musterversand_42EUR_scan.pdf",
+        "archive/2024/Rechnungen/2024-01-01_Musterversand_42EUR_scan.pdf",
+        "invoice",
+        dict(beleg),
+    )
+
+    await user.open(f"/dokumente/{zweiter}")
+    await user.should_see("Mögliche Dublette")
+    await user.should_see("2024-01-01_Musterversand_42EUR.pdf")
+
+
+@pytest.mark.asyncio
+async def test_detail_ohne_dublette_zeigt_keinen_hinweis(user: User):
+    from src.database.document_repository import insert_document
+
+    document_id = insert_document(
+        "2024-01-01_Musterversand_42EUR.pdf",
+        "archive/2024/Rechnungen/2024-01-01_Musterversand_42EUR.pdf",
+        "invoice",
+        {"issuer": "Musterversand", "amount": 42.0, "document_date": "01.01.2024"},
+    )
+
+    await user.open(f"/dokumente/{document_id}")
+    await user.should_see("Speichern & Freigeben")
+    await user.should_not_see("Mögliche Dublette")

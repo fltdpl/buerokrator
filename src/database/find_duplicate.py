@@ -24,3 +24,27 @@ def find_document_by_hash(content_hash):
         ).fetchone()
 
     return (row["id"], row["filename"]) if row is not None else None
+
+
+def list_duplicate_candidates(exclude_id):
+    """Alle Dokumente außer einem — nur die für den Inhaltsvergleich nötigen
+    Spalten.
+
+    Bewusst NICHT `list_documents()`: das liefert zusätzlich den
+    OCR-Volltext jedes Dokuments. Der Vergleich läuft bei jedem Aufruf der
+    Detailseite, da darf nicht der halbe Bestand durch den Speicher.
+    """
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        rows = cursor.execute(
+            """
+            SELECT id, filename, document_type, extracted_data
+            FROM documents
+            WHERE id != ?
+            ORDER BY id ASC
+            """,
+            (exclude_id if exclude_id is not None else -1,),
+        ).fetchall()
+
+    return [dict(row) for row in rows]

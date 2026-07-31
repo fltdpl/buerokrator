@@ -1,4 +1,6 @@
-# Changelog
+# Buerokrator
+
+## Changelog
 
 ## v0.2.1 — 25.07.2026
 
