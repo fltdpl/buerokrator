@@ -17,13 +17,21 @@ normale Dokumente.
 BEKANNTE GRENZE: verglichen werden `amount`, `document_date` und
 `invoice_number`. Dokumenttypen, die diese Felder nicht führen — vor allem
 `employment` mit `period_start`/`period_end` und `gross_amount` —, lösen die
-Warnung praktisch nie aus. Am Bestand nachgemessen: von 800 textähnlichen,
-nicht gemeldeten Paaren widersprechen 754 in einem Feld (verschiedene Belege
-desselben Anbieters, korrekt stumm); die übrigen 46 sind fast durchweg
-employment-Dokumente, bei denen alle drei Vergleichsfelder leer sind. Eine
-Erweiterung um Zeitraum + Bruttobetrag wäre der nächste Schritt — sie braucht
-aber einen eigenen Fehlalarm-Test, weil sich Abrechnungen desselben
-Arbeitgebers stark ähneln.
+Warnung praktisch nie aus. Eine Erweiterung um Zeitraum + Bruttobetrag wäre
+der nächste Schritt; sie braucht aber einen eigenen Fehlalarm-Test, weil sich
+Abrechnungen desselben Arbeitgebers stark ähneln.
+
+Eine Gegenprobe über die OCR-Textähnlichkeit zeigte: fast alle textähnlichen,
+NICHT gemeldeten Paare widersprechen in einem beidseitig gefüllten Feld —
+Serienrechnungen desselben Anbieters mit gleichem Textbaustein, also korrekt
+stumm. Reine Textähnlichkeit wäre als Kriterium eine Fehlalarm-Maschine.
+
+WARUM HINWEIS UND KEINE AUTOMATIK: unter den Meldungen war bei der Prüfung am
+Original auch ein Fehlalarm — gleicher Aussteller, gleicher Betrag, gleiches
+Datum, aber verschiedene Rechnungsnummern, also zwei echte Belege. Umgekehrt
+taugt eine abweichende Rechnungsnummer NICHT als Ausschluss: bei einer echten
+Dublette wich sie ebenfalls ab (OCR-Fehler in einer der beiden). Sie gehört
+angezeigt, nicht gefiltert.
 """
 
 import json

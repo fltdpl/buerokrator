@@ -124,7 +124,7 @@
 
 - [ ] Fehlende Felder erkennen und markieren
     
-- [x] Extraktionsqualität messen (`evaluate.py`; Baseline 15.07.2026: Klassifikation 98 %, Felder 85 % bei 40 Dokumenten — am 25.07.2026 nach den Juli-Umbauten mit 98 %/84 % bestätigt) ✅ 2026-07-08
+- [x] Extraktionsqualität messen (`evaluate.py` gegen geprüfte Dokumente als Ground Truth; Baseline 15.07.2026 aufgenommen und am 25.07.2026 nach den Juli-Umbauten bestätigt — Messwerte lokal in `HANDOVER.md`) ✅ 2026-07-08
     
 - [ ] Validierung von Datumsangaben
     
@@ -306,6 +306,8 @@
 
 ### Später
 
+- [ ] Dubletten-Hinweis quittieren („keine Dublette"): ein geprüftes Paar dauerhaft aus der inhaltlichen Dubletten-Warnung nehmen, damit ein erklärter Fehlalarm nicht bei jedem Öffnen erneut erscheint. **Geringe Priorität** — vorher die billigere Maßnahme: der Hinweis soll auch die ABWEICHENDEN Felder nennen, dann ist ein Fehlalarm in Sekunden erkennbar und braucht keinen gespeicherten Vermerk. Offene Fragen für den Bau: Speicherung paarweise (nicht pro Dokument), und der Vermerk muss an die verglichenen Werte gebunden sein und verfallen, sobald sie sich ändern — sonst versteckt er später eine echte Dublette. Bricht die bewusste Zustandslosigkeit von `duplicate_service` (Live-Berechnung).
+    
 - [ ] Konfidenz-gesteuertes Prüfen: sichere Dokumente automatisch freigeben, nur unsichere vorlegen. **Zurückgestellt (17.07.2026): vorerst prüft der Nutzer alles.** Design-Skizze für später: Kriterium = Regel-Klassifikation + vollständige Pflichtfelder + plausibles Datum; neue Spalten `classification_source` und `verified_source` (user/auto) — Auto-Freigaben dürfen NICHT als Ground Truth für evaluate.py zählen; Opt-in-Schalter, Default aus.
     
 
