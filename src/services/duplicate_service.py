@@ -28,21 +28,16 @@ Arbeitgebers stark ähneln.
 
 import json
 import re
-from datetime import datetime
 
 from src.core.amount_utils import normalize_amount
 from src.database.find_duplicate import list_duplicate_candidates
 from src.database.list_documents import get_document
+from src.organizer.date_utils import normalize_date
 from src.organizer.issuer_normalizer import normalize_issuer
 
 # Felder, die den Aussteller tragen — gleiche Auflösung wie Liste und Filter
 # (employment-Dokumente nennen ihn "employer").
 _ISSUER_FIELDS = ("issuer", "insurer", "employer")
-
-# Datumsformate, die in extrahierten Werten vorkommen. `normalize_date` deckt
-# nur DD.MM.YYYY ab; für den Vergleich zweier Scans desselben Belegs zählt
-# aber auch die zweistellige Jahresschreibweise als dasselbe Datum.
-_DATE_FORMATS = ("%d.%m.%Y", "%d.%m.%y", "%Y-%m-%d", "%d/%m/%Y")
 
 
 def _data_of(row):
@@ -86,16 +81,7 @@ def _date_key(data):
     if not isinstance(value, str) or not value.strip():
         return ""
 
-    value = value.strip()
-
-    for date_format in _DATE_FORMATS:
-        try:
-            return datetime.strptime(value, date_format).strftime("%Y-%m-%d")
-
-        except ValueError:
-            continue
-
-    return value.casefold()
+    return str(normalize_date(value.strip())).casefold()
 
 
 def _invoice_key(data):
