@@ -1,7 +1,7 @@
 """ELSTER-Anlagen-Zuordnung (framework-frei, testbar).
 
 Berechnet je Steuerjahr die Positionen der Anlagen N, Vorsorgeaufwand und
-KAP aus dem Dokumentbestand — siehe Zielbild in docs/05_Steuerlogik.md.
+KAP aus dem Dokumentbestand — siehe Zielbild in docs/04_Steuerlogik.md.
 
 Grundregeln:
 - In die Summen fließen NUR geprüfte UND steuerrelevante Dokumente.

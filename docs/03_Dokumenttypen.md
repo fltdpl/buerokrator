@@ -1,6 +1,10 @@
 # Dokumenttypen
 
-## Gewählte Typen (implementiert)
+Maßgeblich ist der Code: `src/core/document_types.py` (Typen, gespiegelt in
+`config/settings.yaml`) und `src/core/document_fields.py` (Subtypen und ihre
+Feldsätze).
+
+## Typen
 
 - invoice
 - tax (nur noch Finanzamt-Dokumente; Lohn/Gehalt siehe employment)
@@ -8,23 +12,22 @@
 - pension (inkl. Bausparen — kein eigener Typ)
 - bank
 - housing
-- employment (Arbeit: Verträge, Kündigungen, Zeugnisse, Lohnsteuer/Gehalt, SV-Meldungen)
+- employment (Arbeit: Verträge, Kündigungen, Zeugnisse, Lohnsteuer/Gehalt,
+  SV-Meldungen)
 - legal (Recht: Anwalt/Gericht/Behörde; Korrespondenzpartner + Betreff)
 - unknown (mit Freitext-Betreff)
-
-Quelle: `src/core/document_types.py` bzw. `config/settings.yaml`.
 
 **Konvention: Typ = Lebensbereich.** Eine Nebenkostenabrechnung ist
 `housing`, nicht `invoice`; der Zahlungsaspekt ist das Feld `amount`.
 
 ## Kanonische Subtypen (`document_subtype`)
 
-Zentral in `src/core/document_fields.py` (`KNOWN_SUBTYPES`), dort maßgeblich:
+Nur diese fünf Typen kennen Subtypen (`KNOWN_SUBTYPES`); bei den übrigen
+gilt der Feldsatz des Typs.
 
-- **tax**: einkommensbescheinigung, bescheinigung
-  (lohnsteuerbescheinigung/gehaltsabrechnung nach employment umgezogen)
 - **employment**: arbeitsvertrag, kuendigung, arbeitszeugnis,
   lohnsteuerbescheinigung, gehaltsabrechnung, sv_meldung, sonstiges
+- **tax**: einkommensbescheinigung, bescheinigung
 - **pension**: contract, annual_statement, cost_statement,
   surrender_value_table, pension_information, bauspar_jahresauszug,
   steuerbescheinigung
@@ -32,182 +35,25 @@ Zentral in `src/core/document_fields.py` (`KNOWN_SUBTYPES`), dort maßgeblich:
   mieterhoehung, hausgeldabrechnung, sonstiges
 - **bank**: kontoauszug, kreditkartenabrechnung, depotuebersicht, sonstiges
 
----
+Frei eingegebene oder vom Modell erfundene Subtypen werden über
+`SUBTYPE_ALIASES` und einen Fuzzy-Match auf dieses Vokabular normalisiert
+(`normalize_subtype`).
 
-# Ideenspeicher: mögliche Dokumenttypen (nicht umgesetzt)
+**Altlast bei tax:** `lohnsteuerbescheinigung` und `gehaltsabrechnung` sind
+nach employment umgezogen (Aussteller = Arbeitgeber, also Arbeits- und nicht
+Steuer-Lebensbereich). In `TAX_SUBTYPE_FIELDS` stehen sie weiterhin — nicht
+mehr als Formular, sondern nur noch als Whitelist, damit noch nicht
+umsortierte Bestandsdokumente beim Speichern keine Felder verlieren.
 
-Brainstorming aus der Konzeptphase — kein Ist-Stand.
+## Feldsätze
 
-## Arbeit
+Welche Felder je Typ/Subtyp gültig sind, steht zentral in
+`src/core/document_fields.py` und wirkt als Whitelist bei Extraktion **und**
+Speichern. Neue Felder nur über die Checkliste des `/neues-feld`-Skills —
+sonst verwirft die Whitelist sie still. Siehe
+[Datenmodell](02_Datenmodell.md).
 
-### Dokumente
-- [ ] Arbeitsvertrag
-- [ ] Änderungsverträge
-- [ ] Tarifinformationen
-- [ ] Gehaltsmitteilungen
-- [ ] Arbeitszeugnisse
-- [ ] Fortbildungsnachweise
-- [ ] Sozialversicherungsmeldungen
-- [ ] Arbeitgeberbescheinigungen
-- [ ] Bescheinigungen für Behörden
-- [ ] Arbeitszeitnachweise
+## Nicht umgesetzt
 
----
-
-# Steuern
-
-### Dokumente
-- [ ] Lohnsteuerbescheinigung
-- [ ] Einkommensteuerbescheid
-- [ ] Kirchensteuerbescheid
-- [ ] Solidaritätszuschlag
-- [ ] Vorauszahlungsbescheide
-- [ ] ELSTER-Unterlagen
-- [ ] Steuerliche Bescheinigungen
-- [ ] Spendenbescheinigungen
-- [ ] Bescheinigungen für außergewöhnliche Belastungen
-
----
-
-# Bank
-
-### Dokumente
-- [ ] Kontoauszüge
-- [ ] Kreditkartenabrechnungen
-- [ ] Tagesgeldkonto-Unterlagen
-- [ ] Festgeldkonto-Unterlagen
-- [ ] Depotunterlagen
-- [ ] Wertpapierabrechnungen
-- [ ] Darlehensunterlagen
-- [ ] Kreditunterlagen
-- [ ] Kontoeröffnungen
-- [ ] Vertragsänderungen
-
----
-
-# Wohnen
-
-### Dokumente
-- [ ] Mietvertrag
-- [ ] Vertragsänderungen
-- [ ] Mieterhöhungen
-- [ ] Nebenkostenabrechnungen
-- [ ] Hausgeldabrechnungen
-- [ ] Schriftverkehr mit Vermietern
-- [ ] Wohnungsübergabeprotokolle
-- [ ] Grundsteuerbescheide
-- [ ] Energieausweise
-- [ ] Handwerkerrechnungen für Wohneigentum
-
----
-
-# Gesundheit
-
-### Dokumente
-- [ ] Arztrechnungen
-- [ ] Zahnarztrechnungen
-- [ ] Krankenhausrechnungen
-- [ ] Rezepte
-- [ ] Heil- [ ] und Kostenpläne
-- [ ] Leistungsabrechnungen
-- [ ] Bonusprogramme
-- [ ] Gesundheitsbescheinigungen
-- [ ] Impfbescheinigungen
-- [ ] Pflegeunterlagen
-
----
-
-# Versicherungen
-
-### Versicherungsarten
-- [ ] Haftpflichtversicherung
-- [ ] Hausratversicherung
-- [ ] Rechtsschutzversicherung
-- [ ] Unfallversicherung
-- [ ] Kfz-Versicherung
-- [ ] Krankenzusatzversicherung
-- [ ] Risikolebensversicherung
-
-### Dokumente
-- [ ] Versicherungsschein
-- [ ] Nachtrag zum Versicherungsschein
-- [ ] Beitragsrechnung
-- [ ] Beitragsanpassung
-- [ ] Vertragsänderung
-- [ ] Kündigung
-- [ ] Leistungsfall
-- [ ] Schadensmeldung
-- [ ] Leistungsabrechnung
-
----
-
-# Vorsorge
-
-### Deutsche Rentenversicherung (DRV)
-
-#### Dokumente
-- [ ] Renteninformation
-- [ ] Rentenauskunft
-- [ ] Versicherungsverlauf
-- [ ] Kontenklärungsverfahren
-- [ ] Rentenbescheid
-
-### VBL / Zusatzversorgung
-
-#### Dokumente
-- [ ] Anmeldebestätigung
-- [ ] Änderungsmitteilungen
-- [ ] Stand des Versorgungskontos
-- [ ] Renteninformation
-
-### Private Rentenversicherung
-
-#### Dokumente
-- [ ] Versicherungsschein
-- [ ] Nachtrag Versicherungsschein
-- [ ] Anträge
-- [ ] Geschäftsbedingungen
-- [ ] Jahresinformationen
-- [ ] Kosteninformationen
-- [ ] Rückkaufswerte
-- [ ] Kapitalwahlrecht
-
-### Bausparen
-
-#### Dokumente
-- [ ] Bausparvertrag
-- [ ] Jahreskontoauszüge
-- [ ] Zuteilungsmitteilungen
-- [ ] Vertragsänderungen
-
-### Kapitalbildende Lebensversicherung
-
-#### Dokumente
-- [ ] Versicherungsschein
-- [ ] Nachtrag Versicherungsschein
-- [ ] Anträge
-- [ ] Geschäftsbedingungen
-- [ ] Jahresinformationen
-- [ ] Rückkaufswerte
-
-### Berufsunfähigkeitsversicherung
-
-#### Dokumente
-- [ ] Versicherungsschein
-- [ ] Nachtrag Versicherungsschein
-- [ ] Leistungsinformationen
-- [ ] Vertragsänderungen
-
----
-
-# Sonstiges
-
-### Dokumente
-- [ ] Vereinsbeiträge
-- [ ] Gewerkschaftsbeiträge
-- [ ] Mitgliedsbescheinigungen
-- [ ] Urkunden
-- [ ] Allgemeine Bescheinigungen
-- [ ] Schriftverkehr ohne feste Kategorie
-- [ ] Informationsschreiben
-- [ ] Sonstige Nachweise
+Die Sammlung möglicher Papierarten aus der Konzeptphase steht in
+[Ideenspeicher](06_Ideen.md).

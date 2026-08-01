@@ -2,6 +2,38 @@
 
 ## Changelog
 
+## Unveröffentlicht
+
+- **Neu: Hinweis auf inhaltliche Dubletten.** Derselbe Beleg ein zweites Mal
+  eingescannt hat andere Bytes und rutschte an der Dubletten-Prüfung des
+  Imports vorbei. Der Prüf-Workflow vergleicht jetzt zusätzlich die
+  erkannten Werte (gleicher Aussteller plus gleiche Rechnungsnummer oder
+  gleicher Betrag und gleiches Datum) und verlinkt das mögliche Gegenstück
+  — ohne automatisch zu löschen.
+- **Behoben: Datumsangaben mit zweistelligem Jahr oder ausgeschriebenem
+  Monat** („05.03.19", „7. Juni 2016") landeten roh im Dateinamen; sie
+  werden jetzt normalisiert. Bestehende Dateien werden beim nächsten
+  Speichern umbenannt.
+- **Behoben: Backup war unter WAL nicht konsistent** — frisch gespeicherte
+  Dokumente konnten in der Sicherung fehlen, wenn parallel ein Import lief.
+  Die Datenbank wird jetzt über die SQLite-Backup-API gelesen.
+- **Behoben: Beträge im englischen Zahlenformat** („1,234.56") wurden um
+  den Faktor 1000 falsch verrechnet.
+- **Behoben: Sonderzeichen in erkannten Datumsangaben** konnten beim
+  Archivieren aus dem Archivordner herausführen; der Dateiname wird jetzt
+  zentral abgesichert (inkl. der unter Windows verbotenen Zeichen).
+- **Behoben: Import meldet jetzt die Ursache** eines fehlgeschlagenen
+  Dokuments statt nur den Dateinamen.
+- Datenbank-Migration ist gegen gleichzeitige Zugriffe abgesichert.
+- **Entfernt: der alte Live-Ordner-Watcher.** Er überwachte den
+  `inbox`-Ordner und verarbeitete Dateien sofort, kannte aber keine
+  Dubletten-Erkennung und war seit dem Stapel-Import über die Import-Seite
+  ohne Zweck. Damit entfällt auch die Abhängigkeit `watchdog`.
+  `python main.py` startet jetzt einfach die App.
+- Die CLI-Werkzeuge liegen in `tools/`: `python -m tools.evaluate` und
+  `python -m tools.tax_check <jahr>` statt der bisherigen Skripte im
+  Wurzelverzeichnis.
+
 ## v0.2.1 — 25.07.2026
 
 - Behoben: Ein zweiter Start (z. B. Klick im Anwendungsmenü, während die

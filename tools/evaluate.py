@@ -5,9 +5,9 @@ ihre korrigierten Felder gelten als Sollwerte, der gespeicherte OCR-Text
 als Eingabe. Für jedes Dokument läuft Klassifikation + Extraktion neu und
 wird mit den Sollwerten verglichen.
 
-  python evaluate.py                  # alle geprüften Dokumente
-  python evaluate.py --type pension   # nur ein Dokumenttyp
-  python evaluate.py --limit 20       # Stichprobe für schnelle Läufe
+  python -m tools.evaluate                  # alle geprüften Dokumente
+  python -m tools.evaluate --type pension   # nur ein Dokumenttyp
+  python -m tools.evaluate --limit 20       # Stichprobe für schnelle Läufe
 
 Textreport auf stdout, JSON-Report in exports/evaluation_report.json.
 """

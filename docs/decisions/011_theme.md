@@ -32,4 +32,4 @@ Akzente. Heller Inhaltsbereich, dunkle Seitenleiste.
   taugen als Fläche, nicht als Schrift- oder Iconfarbe (deshalb
   `ACCENT_A_INK` neben `ACCENT_A`).
 
-Ersetzt nichts; ergänzt [[010_nicegui]].
+Ersetzt nichts; ergänzt [010 NiceGUI](010_nicegui.md).

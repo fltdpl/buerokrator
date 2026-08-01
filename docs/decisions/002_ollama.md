@@ -19,4 +19,4 @@ qwen3:1.7b liefert vergleichbare Ergebnisse bei wesentlich kürzerer Laufzeit.
 ## Status
 
 Akzeptiert — die konkrete Modellwahl (qwen3:1.7b) ist ersetzt durch
-[[007_gemma3]]; die Grundsatzentscheidung für Ollama gilt weiter.
+[007 Modellwahl](007_gemma3.md); die Grundsatzentscheidung für Ollama gilt weiter.

@@ -59,7 +59,7 @@ TAX_CATEGORY_ORDER = [
 # Ob ein einzelnes Dokument zählt, entscheidet document_deductibility().
 DEDUCTIBLE_CATEGORIES = {"vorsorgeaufwendungen"}
 
-# Absetzbarkeit je Dokument (siehe docs/05_Steuerlogik.md, bewusst grob):
+# Absetzbarkeit je Dokument (siehe docs/04_Steuerlogik.md, bewusst grob):
 # Versicherungen werden nach insurance_type unterschieden — Vorsorge
 # (Sonderausgaben/sonstige Vorsorgeaufwendungen) ist absetzbar, reine
 # Sachversicherungen nicht. Unbekannte Arten landen in "unclear" und werden
@@ -319,7 +319,7 @@ def build_tax_summary(year: int, documents: list[dict] | None = None) -> dict:
 
 
 def export_tax_summary_csv(summary: dict) -> str:
-    """Jahres-CSV je Dokument gemäß docs/05_Steuerlogik.md.
+    """Jahres-CSV je Dokument gemäß docs/04_Steuerlogik.md.
 
     Spalten: Datum, Kategorie, Betrag, Absetzbar, Geprueft, Dokumentreferenz.
     """

@@ -12,5 +12,5 @@ Streamlit als Oberfläche
 
 ## Status
 
-Ersetzt durch [[010_nicegui]] (Streamlits Rerun-Modell verhinderte
+Ersetzt durch [010 NiceGUI](010_nicegui.md) (Streamlits Rerun-Modell verhinderte
 Shortcuts, persistenten PDF-Viewer und flüssige Bedienung).

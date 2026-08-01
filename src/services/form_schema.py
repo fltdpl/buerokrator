@@ -1,8 +1,8 @@
 """Framework-neutrale Formular-Schemata für die Dokument-Detailansicht.
 
 Beschreibt deklarativ, welche Felder je Dokumenttyp (und ggf. Subtyp)
-bearbeitbar sind. Frontends (Streamlit, NiceGUI) rendern nur noch dieses
-Schema; die Feldauswahl selbst ist damit testbar und konsistent zur
+bearbeitbar sind. Das Frontend rendert nur noch dieses Schema;
+die Feldauswahl selbst ist damit testbar und konsistent zur
 Whitelist in `src/core/document_fields.py` (ein Test erzwingt das).
 
 Feld-Spezifikation: {"key", "label", "kind", "required"} mit kind:

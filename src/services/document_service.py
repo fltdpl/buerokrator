@@ -1,7 +1,7 @@
 """Framework-neutrale Dokument-Operationen für die GUI-Schicht.
 
-Nimmt und liefert nur Plain Data (dicts/Listen) — kein Streamlit/NiceGUI,
-kein Session-State. Frontends verdrahten hier nur noch Events.
+Nimmt und liefert nur Plain Data (dicts/Listen) — kein NiceGUI, kein
+Session-State. Das Frontend verdrahtet hier nur noch Events.
 """
 
 import json

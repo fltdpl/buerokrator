@@ -1,6 +1,6 @@
 # Architektur
 
-Monolithische Python-Anwendung (siehe [[004_folder_structure]]) mit klarer
+Monolithische Python-Anwendung (siehe [004 Projektstruktur](decisions/004_folder_structure.md)) mit klarer
 Trennung Frontend (NiceGUI) / Services / Kernmodule. Alle Komponenten
 laufen lokal, keine externen Dienste.
 
@@ -60,6 +60,20 @@ geprüften Lohnsteuerbescheinigungen (`income_service.py`), Stapel-Import
 (`import_job.py`), Kennzahlen, Backup, Systemstatus, Log-Zugriff.
 Nur Plain Data rein/raus — ohne GUI testbar.
 
+**Inhaltliche Dubletten** (`duplicate_service.py`): der Inhalts-Hash beim
+Import erkennt nur byte-gleiche Dateien — derselbe Beleg ein zweites Mal
+eingescannt rutscht durch. Der Service vergleicht deshalb die erkannten
+Werte: Treffer nur bei übereinstimmendem Aussteller plus entweder gleicher
+Rechnungsnummer oder gleichem Betrag UND Datum. Leere Werte matchen NIE,
+sonst wirft ein unerkanntes Feld den halben Bestand zusammen; die
+Policennummer ist bewusst kein Merkmal (sie steht über Jahre auf jedem
+Dokument eines Vertrags). Live berechnet statt beim Import gespeichert —
+die Werte ändern sich im Prüf-Workflow, eine gespeicherte Warnung stünde
+nach der ersten Korrektur falsch da. Angezeigt wird ein Hinweis mit Link;
+kein Auto-Löschen, die Wertung bleibt beim Nutzer. Bekannte Grenze: Typen
+ohne `amount`/`document_date` (employment arbeitet mit Zeitraum und
+`gross_amount`) lösen die Warnung nie aus.
+
 ### Frontend (`src/frontend`, NiceGUI)
 
 Start: `python -m src.frontend.main` (Port 8081, nur localhost). Läuft dort
@@ -74,8 +88,8 @@ leitet um), Papierkorb, Einrichtung, Einstellungen (Tabs Konfiguration,
 Aliase, Papierkorb, Backup, Datenbank, Log).
 
 Enthält nur Darstellung und Event-Verdrahtung; PDFs kommen über die
-Route `/pdf/<id>` direkt aus dem Archiv (siehe [[010_nicegui]]).
-Layout und Farben zentral in `layout.py` / `theme.py` (siehe [[011_theme]]).
+Route `/pdf/<id>` direkt aus dem Archiv (siehe [010 NiceGUI](decisions/010_nicegui.md)).
+Layout und Farben zentral in `layout.py` / `theme.py` (siehe [011 Theme](decisions/011_theme.md)).
 Diagramme baut `chart.py` als Inline-SVG — bewusst ohne Chart-Bibliothek
 (NiceGUI bündelt keine; das hielte eine weitere Abhängigkeit vom Bundle fern).
 Die Serienfarben stehen in `theme.py` und sind auf Farbfehlsichtigkeit geprüft.
@@ -84,12 +98,12 @@ Die Serienfarben stehen in `theme.py` und sind auf Farbfehlsichtigkeit geprüft.
 
 Jahres-Übersicht/CSV (`tax_summary.py`), ELSTER-Anlagen-Zuordnung mit
 Ampel und Beleg-Herleitung (`elster_mapping.py`), Golden-Master-Abgleich
-gegen die abgegebene Erklärung (`elster_check.py` + CLI `tax_check.py` —
+gegen die abgegebene Erklärung (`elster_check.py` + CLI `tools/tax_check.py` —
 ein Hinweis-Werkzeug, kein hartes Abnahme-Kriterium; erklärte Differenzen
 werden per `ignoriert` ausgeklammert), Steuerrelevanz (`tax_relevance.py`)
-und Zweck-Kennzeichnung (`tax_purpose.py`). Details: [[05_Steuerlogik]].
+und Zweck-Kennzeichnung (`tax_purpose.py`). Details: [Steuerlogik](04_Steuerlogik.md).
 
-### Evaluation (`src/evaluation`, `evaluate.py`)
+### Evaluation (`src/evaluation`, `tools/evaluate.py`)
 
 Misst Klassifikations- und Extraktionsqualität gegen die in der App
 geprüften Dokumente (Ground Truth).
@@ -115,7 +129,7 @@ beliebiger Nutzer und Anbieter verarbeiten):
 3. Bei unsicherem Layout `{}` zurückgeben, damit die LLM-Werte stehen
    bleiben. Ein fehlendes Feld kostet einen Prüfklick, ein falsches Feld
    ist eine falsche Tatsache in fremden Daten.
-4. `evaluate.py` misst den Bestand eines einzigen Nutzers und kann einen
+4. `tools/evaluate.py` misst den Bestand eines einzigen Nutzers und kann einen
    Verstoß gegen 1.–3. **nicht bemerken** — im Gegenteil, es belohnt ihn
    mit einer höheren Trefferquote. Vor weiterer Optimierung braucht es
    einen zweiten Datensatz mit Dokumenten anderer Anbieter.
@@ -130,11 +144,6 @@ Lohnsteuerbescheinigung (`lohnsteuerbescheinigung.py`, nummerierte Zeilen
 Storno+Neuausstellung), Entgeltnachweis (`entgeltnachweis.py`,
 SAP-HR-Summenzeilen). Alle arbeiten auf dem layouttreuen Text und
 überschreiben die LLM-Werte nur für sicher gelesene Felder.
-
-### Watcher (`src/watcher`, `main.py`)
-
-Alt-Weg (Live-Überwachung der Inbox). Der zuverlässige Pfad ist der
-Stapel-Import über die Import-Seite.
 
 ## Workflow
 
@@ -156,4 +165,4 @@ GUI: Prüfen/Korrigieren → Analyse (Steuer / Einkommen)
 
 ## Relevante Entscheidungen
 
-- [[09_Decisions]]
+- [Entscheidungen](08_Decisions.md)

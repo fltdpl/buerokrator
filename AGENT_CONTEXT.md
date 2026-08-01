@@ -1,102 +1,118 @@
-# Projektkontext
+# Projektkontext — Buerokrator
 
-Projektname: Buerokrator
+Verbindliche Regeln und Konventionen für Agenten. Fachliches steht in `docs/`
+und wird hier nur verlinkt, nicht wiederholt.
 
-Grundkontext für Agenten. **Aktueller Projektstand, letzter Arbeitsblock und
-nächste Schritte stehen in `HANDOVER.md`** (lokal, gitignored), die
-Aufgabenliste in `todo.md`, die Langfrist-Sicht in `roadmap.md`.
+**Neue Session? Zuerst den Skill `/onboarding`** — er nimmt die Lage per
+Befehl auf, führt durch die Dokumente und endet mit Bericht und Vorschlag.
 
-Neue Session? **Zuerst den Skill `/onboarding` aufrufen** — er nimmt die Lage
-per Befehl auf (Doku veraltet zwischen Sessions), führt durch die Dokumente
-und endet mit Statusbericht und Vorschlag.
+Zweck der App: lokale, datenschutzfreundliche Ablage privater Dokumente und
+Vorbereitung der Steuererklärung. Alles offline (Tesseract, pypdfium2, SQLite,
+NiceGUI, Ollama optional) — keine Cloud, keine Web-Fonts, kein Update-Check.
 
-## Ziel
+## Wo was steht
 
-Automatische Verarbeitung und Archivierung privater Dokumente mit Fokus auf steuerrelevante Unterlagen.
+`README.md` Nutzersicht · **`docs/01_Architektur.md` Pipeline und
+Komponenten** · `02` Datenmodell · `03` Dokumenttypen · **`04` Steuerlogik
+(maßgeblich, sobald es um Steuer geht)** · `05` Archiv- und
+Dateinamenskonvention · `06` nie gebaute Konzepte · `07` Betrieb und
+Release-Ablauf · `08` alle ADRs · `CHANGELOG.md` je Release · `roadmap.md`
+Langfrist · `HANDOVER.md` Sessionstand und lokale Messwerte (gitignored) ·
+`todo.md` Aufgaben (gitignored).
 
-## Datenschutz
+`docs/` ist WIP — **im Zweifel ist der Code maßgeblich.**
 
-- Alle Daten verbleiben lokal.
-- Keine Cloud-Speicherung.
-- Keine Übertragung sensibler Dokumente an externe Dienste.
+## Eiserne Regeln
 
-## Technologie-Stack
+**Der Nutzer committet und taggt selbst.** Am Ende nur eine Commit-Message
+vorschlagen, und zwar **als Datei** `.git/COMMIT_MSG_vorschlag.txt` — beim
+Kopieren aus dem Chat ging schon einmal die Betreffzeile verloren. Trotzdem den Text auch noch anzeigen. Der Nutzer
+sieht dann nur `git commit -F .git/COMMIT_MSG_vorschlag.txt`.
 
-- Python
-- SQLite
-- Ollama (Modell konfigurierbar in `config/settings.yaml`, Standard gemma3:4b) —
-  **optional**: ohne Ollama läuft der Import im eingeschränkten Modus
-  (Regel-Klassifikation, keine Feld-Extraktion); „Erneut prüfen" und
-  `evaluate.py` verweigern dann mit klarer Meldung
-- Tesseract OCR (+ pypdfium2 für PDF→Bild, reines Python-Wheel)
-- NiceGUI (`src/frontend`, Start: `python -m src.frontend.main`, Port 8081).
-  Läuft dort bereits eine Instanz, öffnet ein zweiter Start nur den Browser
-  dorthin (Browser-Modus: ein geschlossener Tab beendet die App nicht).
-- Packaging: PyInstaller-onedir + Linux-Tarball (`bash packaging/build_linux.sh`).
-  Version steht NUR in `src/__init__.py`; Änderungen je Release in `CHANGELOG.md`.
-  Ein Windows-Paket ist erklärtes Ziel, aber noch nicht gebaut.
+**Das Repo ist öffentlich, es gab mehrere Vorfälle.**
 
-## Architektur / Pipeline
+- In Code, Tests, Doku, Kommentaren und Commit-Messages **nie** echte
+  Beträge, Nummern oder Namen — auch keine Anbieter- oder Arbeitgebernamen,
+  die der Nutzer im Chat nennt. Immer erfinden („Musterfirma GmbH"),
+  arithmetisch konsistent. Anbieternamen gehören in die gitignorierte
+  Alias-Datei, nicht in den Code.
+- **Keine Bestandszahlen in getrackte Dateien** — keine Bestandsgröße, keine
+  Trefferzahlen einer Messung, keine `evaluate.py`-Prozente, keine
+  Dokument-IDs. Daraus ließen sich Umfang und Zusammensetzung der privaten
+  Sammlung ableiten. Befunde **qualitativ** formulieren; Zahlen gehören nach
+  `HANDOVER.md`/`todo.md`.
+- **Auch der Chatverlauf ist eine Veröffentlichung.** Bei Diagnose-Abfragen
+  nie `filename`, `archive_path`, `issuer`/`employer`, Beträge oder
+  Vertragsnummern roh ausgeben — stattdessen Formen und Kennzahlen
+  (`re.sub(r"\d", "N", wert)`, Längen, Ja/Nein, Anzahlen). Dokument-IDs sind
+  unbedenklich und die nützlichste Währung für Rückfragen.
+- Vor jedem Commit-Vorschlag nach Arbeit mit Echtdokumenten
+  `/datenschutz-check`, vor Releases zusätzlich `/privacy-scan`.
 
-`inbox` → Dubletten-Prüfung (Inhalts-Hash) → Textextraktion (`src/ocr`: digitale
-PDFs LAYOUTTREU über pypdfium2-Zeichenpositionen, Scans über Tesseract) →
-Klassifikation (`src/classifier`: Regel-Vorprüfung vor LLM) → Extraktion
-(typspezifische Prompts) → regelbasierte Nachbearbeitung (`src/extraction`) →
-Organizer (Umbenennen/Archivieren, `src/organizer`) → Datenbank (`src/database`,
-inkl. FTS5-Volltextindex mit Sync-Triggern). Steuer-Auswertung in `src/tax`
-(ELSTER-Anlagen-Mapping mit Ampel/Herleitung, Golden-Master-Abgleich
-`tax_check.py` gegen gitignorierte Erwartungsdatei).
+**Geprüfte Dokumente (`verified = 1`) sind Ground Truth** der
+Qualitätsmessung. Änderungen daran nur über die App, nie per SQL;
+Diagnose-Zugriffe read-only (`file:…?mode=ro`).
 
-Regelparser in `src/extraction` (Bauspar-Auszug, Lohnsteuerbescheinigung,
-SV-Meldung, Entgeltnachweis) dürfen nur rechnen und beschriftete Werte lesen —
-niemals Aussteller, Produktname oder Datum konstant setzen; bei unbekanntem
-Layout `{}`. Die App soll Dokumente beliebiger Anbieter und (später) mehrerer
-Nutzer verarbeiten.
+**Gemeldete Einzel-IDs sind ein Hinweis, kein Befund** — erst das Symptom im
+ganzen Bestand suchen. Und eigenen Nullmessungen misstrauen: ein Scan mit
+„0 Treffern" kann für den gesuchten Fall blind sein; gegen einen bekannten
+Positivfall gegenprüfen, bevor man Entwarnung gibt.
 
-GUI klar getrennt: NiceGUI-Frontend (`src/frontend`, nur Darstellung/Events) über framework-freie Services (`src/services`: Formular-Schemata, Listen-Filter, Papierkorb, Kennzahlen, Log, Ollama-Modelle, Backup, Systemstatus). Löschen verschiebt Originale nach `trash/` (nie `unlink` auf Archivdateien). Farben und Layout zentral in `src/frontend/theme.py` und `layout.py`; keine Web-Fonts.
+**Offline bleiben:** keine Requests an Dritte, keine neuen Abhängigkeiten ohne
+Rückfrage. **Sprache Deutsch**, Erklärungen knapp.
 
-DB-Zugriff über `with open_connection() as conn:` (`src/database/database.py`; WAL, timeout, garantiertes close). DB-Zeilen sind dicts mit Zugriff per Spaltenname (`sqlite3.Row`; Queries liefern `dict(row)`) — nie per Position indexieren.
+## Konventionen beim Programmieren
 
-Dokumenttypen: `invoice, tax, insurance, pension, bank, housing, employment, legal, unknown` — **Typ = Lebensbereich** (Gehaltsabrechnung → employment, nicht tax). Feld-Schemata je Typ/Subtyp zentral in `src/core/document_fields.py` (Whitelist als Sicherheitsnetz). Pro Dokument gibt es ein Steuerrelevanz-Flag (`tax_relevant`, Default aus Typ/Subtyp in `src/tax/tax_relevance.py`) und eine Zweck-Kennzeichnung (`tax_purpose`: werbungskosten/krankheitskosten, nur steuerrelevante Rechnungen, vom Nutzer gesetzt); der Steuer-Tab der Analyse-Seite (`/analyse`; `/steuer` leitet um) zählt in die Anlagen-Summen nur geprüfte + steuerrelevante Dokumente. Zweiter Tab „Einkommen": Jahreseinkommen (Brutto/Steuern/rechnerisches Netto) aus geprüften Lohnsteuerbescheinigungen (`src/services/income_service.py`, SVG-Liniendiagramm ohne Chart-Bibliothek in `src/frontend/chart.py`).
+- **Pfade** über `src/core/app_home.get_app_home()`, nie relativ zur cwd
+  (Config-Pfade sind nach `load_config()` bereits absolut).
+- **DB** über `with open_connection() as conn:`; Zeilen per Spaltenname
+  lesen, nie per Position. Migration läuft automatisch und versioniert — bei
+  Schemaänderung `SCHEMA_VERSION` erhöhen.
+- **Typ = Lebensbereich** (Gehaltsabrechnung → employment, nicht tax); der
+  Zahlungsaspekt ist das Feld `amount`.
+- **Neue Felder** nur über `/neues-feld` — die Whitelist in
+  `src/core/document_fields.py` verwirft sie sonst still.
+- **Beträge als Magnitude** (nur `settlement_amount` behält sein Vorzeichen),
+  Datumsformat `DD.MM.YYYY` in Prompts.
+- **Regelparser** (`src/extraction`) lesen nur beschriftete Werte und rechnen;
+  sie setzen NIE Aussteller, Produkt oder Datum konstant; unbekanntes Layout
+  → `{}`. Vollständige Regeln: `docs/01_Architektur.md`.
+- **GUI-Trennung:** Frontend (`src/frontend`) nur Darstellung und
+  Event-Verdrahtung, Fachlogik framework-frei in `src/services`; einfache
+  Lesezugriffe dürfen direkt an `src/database`. Farben und Layout nur in
+  `theme.py` / `layout.py`.
+- **Dateinamen:** die Pfadsicherheit sitzt zentral in
+  `filename_builder._safe_filename`, NICHT feldweise. Konvention:
+  `docs/05_Ordnerstruktur.md`.
+- **Löschen** verschiebt nach `trash/`, nie `unlink` auf Archivdateien.
+  Dateirechte 0600 für DB, Backups und Logs.
+- Deutschsprachige Labels und Prompts (`{{ }}` = literale Braces).
 
-Alle Pfade hängen am App-Home (`src/core/app_home.get_app_home()`: Env `BUEROKRATOR_HOME` → cwd-Devmodus mit vorhandener Config → Benutzer-Datenverzeichnis). Neue Pfade nie relativ zur cwd anlegen; Config-Pfade sind nach `load_config()` bereits absolut.
+## Tests
 
-## Dateinamenskonvention
+`python -m pytest -q` grün halten, Tests neben jedem Feature, **Zahlen und
+Namen erfinden**. Zwei Fallstricke, die schon Zeit gekostet haben:
 
-Datum am Anfang, möglichst vollständig; Aufbau ist **typabhängig** (`src/organizer/filename_builder.py`).
+- `tests/conftest.py` leitet die Aussteller-Alias-Datei auf `tmp_path` um —
+  ohne diese Fixture hängen Dateinamen-Tests an der echten Nutzerdatei.
+- **`src.frontend.main` nie auf Modulebene eines Testmoduls importieren.** Der
+  Import legt das Modul in `sys.modules` ab, sodass die `@ui.page`-Dekoratoren
+  beim App-Neuaufbau für jeden NACHFOLGENDEN Test nicht mehr laufen — alle
+  weiteren Seiten antworten dann mit 404.
 
-Beispiele:
-- Rechnung: `2026-03-11_Musterversand_RE-123_42EUR.pdf`
-- Lohnsteuerbescheinigung: `2021-01-01_bis_2021-06-30_Arbeitgeber_Lohnsteuerbescheinigung.pdf` (mit Bescheinigungszeitraum; ohne: `2024-12_…`)
-- Gehaltsabrechnung: `2021-01-01_bis_2021-01-31_Arbeitgeber_Gehaltsabrechnung.pdf` (Abrechnungszeitraum; Altbestand: `2024-03_…`)
+## Befehle
 
-Alle LLM-Werte laufen durch str-Coercion (`filename_builder._text_value`).
-Die Pfadsicherheit sitzt zentral in `filename_builder._safe_filename` (per
-`@_sanitized` auf jedem `build_*_filename`): der fertige Name ist garantiert
-EINE Pfadkomponente — keine Separatoren, keine unter Windows verbotenen
-Zeichen, kein führender Punkt, kein Gerätename, nie leer, max. 255 Bytes.
-Feldweise Bereinigung reichte nicht: `document_date`, `tax_year` und `month`
-liefen daran vorbei, und `normalize_date` gibt unparsbare Werte roh zurück.
+```bash
+source ~/venvs/buerokrator/bin/activate
+python -m pytest -q                 # Testsuite
+python -m src.frontend.main         # App auf http://localhost:8081
+python -m tools.tax_check <jahr>          # Steuerwerte gegen die eigene Erklärung
+python -m tools.evaluate --limit 40       # Qualitätsmessung (braucht Ollama)
+bash packaging/build_linux.sh       # Release-Tarball nach dist/
+```
 
-Aussteller-Aliase: nutzerpflegbare Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer Name → Schreibweisen, `*` am Ende = Präfix; gitignored — Anbieternamen sind Nutzerdaten und gehören NIE hartkodiert in den Code). `src/organizer/issuer_normalizer.py` lädt sie mtime-gecacht; angewendet beim Dateinamen-Bau und zentral in `extract_document` auf issuer/employer/insurer. Pflege im Einstellungs-Tab „Aliase" (Text-Editor mit Validierung über `parse_aliases_text`) oder extern. Tests werden per conftest-Fixture von der echten Datei isoliert.
+Die Version steht **nur** in `src/__init__.py`; der Build liest sie von dort.
 
-Archivstruktur: `archive/<Jahr>/<Kategorie>/<Dateiname>`.
-
-## Konventionen
-
-- Deutschsprachige Labels und Prompts (`src/classifier/prompts/*.txt`).
-- Neue Felder immer in `document_fields.py` **und** im Prompt-Schema ergänzen, sonst werden sie verworfen.
-- Geldbeträge werden als Betrag (Magnitude) gespeichert; nur `settlement_amount` behält sein Vorzeichen (Erstattung negativ).
-- DB-Migration läuft automatisch beim ersten Zugriff (`database.get_connection`).
-- Tests neben jedem Feature; `python -m pytest -q` grün halten (venv: `~/venvs/buerokrator`).
-  **Zahlen und Namen in Tests immer erfinden** (Repo ist öffentlich, es gab
-  Vorfälle — Lehren in `HANDOVER.md`). `tests/conftest.py` isoliert die
-  Aussteller-Alias-Datei; `src.frontend.main` nie auf Modulebene eines
-  Testmoduls importieren (verstellt die App-Registrierung der Smoke-Tests).
-
-## Entwicklungsprinzipien
-
-- Datenschutz vor Komfort
-- Nachvollziehbare Entscheidungen
-- Erweiterbare Architektur
-- Einfache Bedienung
+**Projekt-Skills** (`.claude/skills/`, lokal): `/onboarding` · `/handover` ·
+`/extraktion-debug` · `/neues-feld` · `/datenschutz-check` · `/privacy-scan` —
+benutzen statt improvisieren.

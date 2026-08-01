@@ -32,6 +32,10 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
 - Automatische Umbenennung und Archivierung nach `archive/<Jahr>/<Kategorie>/`
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
+- Hinweis auf inhaltliche Dubletten: derselbe Beleg ein zweites Mal
+  eingescannt hat andere Bytes, aber dieselben Werte — der Prüf-Workflow
+  verlinkt dann das mögliche Gegenstück (Wertung bleibt beim Nutzer,
+  nichts wird automatisch gelöscht)
 - Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe)
 - Analyse-Seite mit zwei Tabs: „Steuer" mit ELSTER-Anlagen-Ansicht
   (Anlage N, Vorsorgeaufwand, KAP, außergewöhnliche Belastungen, § 35a) —
@@ -109,6 +113,7 @@ pip install -r requirements.txt
 
 ```bash
 python -m src.frontend.main      # App unter http://localhost:8081
+python main.py                   # dasselbe, kürzer
 ```
 
 Datenbank und Datenordner werden automatisch angelegt; bei einer frischen
@@ -118,10 +123,10 @@ Eine Kurzanleitung findest du in der App unter *Anleitung*.
 ## Entwicklung
 
 ```bash
-python -m pytest -q              # Testsuite
-python evaluate.py --limit 40    # Qualitätsmessung gegen geprüfte Dokumente
-python tax_check.py 2025         # Steuerwerte gegen die eigene Erklärung prüfen
-bash packaging/build_linux.sh    # Linux-Release-Tarball bauen (dist/)
+python -m pytest -q                  # Testsuite
+python -m tools.evaluate --limit 40  # Qualitätsmessung gegen geprüfte Dokumente
+python -m tools.tax_check 2025       # Steuerwerte gegen die eigene Erklärung
+bash packaging/build_linux.sh        # Linux-Release-Tarball bauen (dist/)
 ```
 
 Die Versionsnummer steht ausschließlich in `src/__init__.py`; der

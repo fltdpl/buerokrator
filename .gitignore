@@ -23,11 +23,9 @@ inbox_processed/
 archive/
 exports/
 examples/
+
+# Wegwerf-Ordner für kurze manuelle Tests
 temp/
-
-# Ausgelieferte PDF-Vorschauen (Kopien privater Dokumente)
-static/
-
 
 # Betriebssystem
 .DS_Store
@@ -70,3 +68,8 @@ dist/
 
 # Claude-Code-Arbeitsverzeichnis (lokale Skills/Einstellungen)
 .claude/
+
+# Editor-Swap-Dateien
+*.swp
+*.swo
+*~

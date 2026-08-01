@@ -3,7 +3,7 @@
 Vergleicht das Ergebnis von build_elster_summary mit einer lokalen
 Erwartungsdatei (Werte aus der tatsächlich abgegebenen Steuererklärung).
 Der Abgleich ist ein Hilfsmittel, um kritische Stellen zu finden — kein
-hartes Abnahme-Kriterium (Vertrauens-Workflow in docs/05_Steuerlogik.md):
+hartes Abnahme-Kriterium (Vertrauens-Workflow in docs/04_Steuerlogik.md):
 jede Differenz wird mit Beleg-Herleitung gelistet und will erklärt sein
 (App-Fehler, fehlender Beleg oder Lücke in der damaligen Erklärung).
 Erklärte Positionen lassen sich mit `position: ignoriert` in der

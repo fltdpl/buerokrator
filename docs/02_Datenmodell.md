@@ -51,28 +51,9 @@ Konventionen:
 - Subtypen werden auf ein kanonisches Vokabular normalisiert
   (`KNOWN_SUBTYPES`, `SUBTYPE_ALIASES`, Fuzzy-Match für LLM-Tippfehler).
 
-## Geplante Tabellen (nicht umgesetzt)
-
-Ideen aus der Konzeptphase — es existiert bisher nur `documents`:
-
-### financial_products
-
-- id, product_type (Rentenversicherung, Bausparvertrag, etc.), provider,
-  contract_start, contract_number, monthly_contribution, status
-
-### tax_entries
-
-- id, document_id, category, tax_year, deductible_amount
-
-(Die Steuer-Übersicht wird derzeit zur Laufzeit aus `documents` aggregiert,
-siehe `src/tax/tax_summary.py`.)
-
-### learning_rules
-
-- id, pattern, category, confidence
-
-(Siehe [[04_Lernsystem]] — Konzept, nicht umgesetzt.)
+Es existiert nur die Tabelle `documents` (plus der FTS-Index). Entworfene,
+aber nie gebaute Tabellen stehen im [Ideenspeicher](06_Ideen.md).
 
 ## Relevante Entscheidungen
 
-- [[001_sqlite]]
+- [001 SQLite](decisions/001_sqlite.md)

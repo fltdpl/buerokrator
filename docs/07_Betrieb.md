@@ -14,8 +14,8 @@ python -m src.frontend.main     # GUI: http://localhost:8081
 ```
 
 Neue Dokumente in `inbox/` legen (die Upload-Funktion tut nur das) und über
-die Import-Seite als Stapel verarbeiten — das ist der einzige zuverlässige
-Verarbeitungsweg. `main.py` (Live-Watcher) ist Alt-Weg.
+die Import-Seite als Stapel verarbeiten — das ist der Verarbeitungsweg.
+`python main.py` im Repo-Root startet dieselbe App.
 
 Das Schließen des Browser-Tabs beendet die App nicht (dafür der
 Beenden-Knopf in den Einstellungen); ein erneuter Start öffnet dann wieder
@@ -36,9 +36,9 @@ unter Linux `~/.local/share/buerokrator`):
 ## Qualität
 
 - Tests: `python -m pytest -q` (grün halten)
-- Nach jeder Prompt-/Regel-Änderung: `python evaluate.py --limit 40`
+- Nach jeder Prompt-/Regel-Änderung: `python -m tools.evaluate --limit 40`
   als Vergleichslauf (braucht Ollama)
-- Steuerwerte gegen die eigene Erklärung: `python tax_check.py <jahr>`
+- Steuerwerte gegen die eigene Erklärung: `python -m tools.tax_check <jahr>`
   (Erwartungsdatei `tax_expected_<jahr>.yaml`, gitignored)
 
 ## Release
@@ -49,9 +49,10 @@ unter Linux `~/.local/share/buerokrator`):
 3. `bash packaging/build_linux.sh` → `dist/buerokrator-<v>-linux-<arch>.tar.gz`.
 4. E2E-Smoke: Tarball in ein frisches `HOME` entpacken, `install.sh`,
    starten, HTTP-Antwort prüfen, aufräumen.
-5. GitHub-Release anlegen (CHANGELOG-Abschnitt als Notes, Tarball als
-   Asset) — `gh`-CLI ist auf dem Entwicklungsrechner nicht installiert,
-   der Schritt läuft im Browser.
+5. Tarball vor dem Upload auf Echtdaten prüfen — Release-Pakete bündeln
+   `src/classifier/prompts/*` mit: `tar xzOf <t>.tar.gz | grep -a <marker>`.
+6. GitHub-Release anlegen, CHANGELOG-Abschnitt als Notes:
+   `gh release create vX.Y.Z --verify-tag --notes "…" <tarball>`.
 
 ## Backup
 
@@ -72,7 +73,7 @@ mitsichern, gelegentlich manuell leeren.
 
 ## Relevante Entscheidungen
 
-- [[002_ollama]]
-- [[007_gemma3]]
-- [[010_nicegui]]
-- [[012_kein_update_check]]
+- [002 Ollama](decisions/002_ollama.md)
+- [007 Modellwahl](decisions/007_gemma3.md)
+- [010 NiceGUI](decisions/010_nicegui.md)
+- [012 Kein Update-Check](decisions/012_kein_update_check.md)

@@ -7,7 +7,7 @@ Belastungen). NULL = kein steuerlicher Zweck.
 
 Bewusst NICHT abgedeckt: angabenbasierte Posten der Erklärung
 (Entfernungspauschale, Homeoffice-Tage, anteilige Telefonkosten …) — die
-entstehen aus Nutzerangaben, nicht aus Dokumenten (docs/05_Steuerlogik.md).
+entstehen aus Nutzerangaben, nicht aus Dokumenten (docs/04_Steuerlogik.md).
 """
 
 WERBUNGSKOSTEN = "werbungskosten"

@@ -9,13 +9,15 @@ Kategorienamen aus `config/settings.yaml` (`archive.category_mapping`):
 archive/
 
 - Jahr
-	- Rechnungen
-	- Steuern
-	- Versicherungen
-	- Vorsorge
-	- Bank
-	- Wohnen
-	- Sonstiges
+	- Rechnungen (invoice)
+	- Steuern (tax)
+	- Versicherungen (insurance)
+	- Vorsorge (pension)
+	- Bank (bank)
+	- Wohnen (housing)
+	- Arbeit (employment)
+	- Recht (legal)
+	- Sonstiges (unknown)
 
 ## Begründung
 

@@ -1,18 +1,18 @@
 """Golden-Master-Abgleich: ELSTER-Zuordnung gegen die abgegebene Erklärung.
 
-Vertrauens-Workflow (docs/05_Steuerlogik.md): die Erwartungswerte stammen
+Vertrauens-Workflow (docs/04_Steuerlogik.md): die Erwartungswerte stammen
 aus der tatsächlich abgegebenen Steuererklärung (Ausdruck des
 Steuerprogramms oder Bescheid) und
-liegen lokal in tax_expected_<jahr>.yaml (gitignored — echte Steuerdaten).
+liegen als tax_expected_<jahr>.yaml neben diesem Skript (gitignored — echte
+Steuerdaten).
 
-  python tax_check.py 2025             # Abgleich gegen tax_expected_2025.yaml
-  python tax_check.py 2025 --vorlage   # leere Erwartungs-Vorlage anlegen
+  python -m tools.tax_check 2025             # Abgleich
+  python -m tools.tax_check 2025 --vorlage   # leere Erwartungs-Vorlage
 
 Der Abgleich ist ein Hilfsmittel, um kritische Stellen zu finden — kein
 hartes Abnahme-Kriterium; erklärte Differenzen lassen sich in der
 Erwartungsdatei mit `position: ignoriert` ausklammern.
 Exit-Code 0 = alle geprüften Positionen stimmen, sonst 1.
-Wie evaluate.py bewusst cwd-relativ (CLI-Werkzeug im Entwickler-Modus).
 """
 
 import argparse
@@ -25,7 +25,9 @@ from src.tax.elster_check import build_template, compare_year, format_report
 
 
 def expectation_path(year):
-    return Path(f"tax_expected_{year}.yaml")
+    """Neben dem Skript, nicht cwd-relativ — sonst hinge die Datei daran,
+    aus welchem Verzeichnis der Abgleich gestartet wurde."""
+    return Path(__file__).resolve().parent / f"tax_expected_{year}.yaml"
 
 
 def write_template(year):
@@ -38,7 +40,7 @@ def write_template(year):
     path.write_text(build_template(year), encoding="utf-8")
     print(f"Vorlage angelegt: {path}")
     print("Werte aus der abgegebenen Erklärung eintragen, dann:")
-    print(f"  python tax_check.py {year}")
+    print(f"  python -m tools.tax_check {year}")
     return 0
 
 
@@ -47,7 +49,7 @@ def run_check(year):
 
     if not path.exists():
         print(f"Erwartungsdatei {path} fehlt.")
-        print(f"Vorlage anlegen mit: python tax_check.py {year} --vorlage")
+        print(f"Vorlage anlegen mit: python -m tools.tax_check {year} --vorlage")
         return 1
 
     expected = yaml.safe_load(path.read_text(encoding="utf-8")) or {}

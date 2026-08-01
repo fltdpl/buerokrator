@@ -23,7 +23,7 @@ from src.tax.tax_summary import (
     export_tax_summary_csv,
 )
 
-# Ampel je Anlagen-Position (siehe docs/05_Steuerlogik.md, Zielbild).
+# Ampel je Anlagen-Position (siehe docs/04_Steuerlogik.md, Zielbild).
 POSITION_STATUS = {
     READY: ("🟢", "übernahmefertig"),
     INCOMPLETE: ("🟡", "unvollständig — ungeprüfte Belege zählen nicht"),

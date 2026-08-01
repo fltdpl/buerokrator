@@ -1,18 +1,15 @@
-"""DEPRECATED: Alt-Entrypoint (Live-Ordner-Watcher).
+"""Bequemer Start aus der Repo-Wurzel: ``python main.py``.
 
-Der unterstützte Weg ist die App mit Stapel-Import:
+Gleichwertig zum dokumentierten ``python -m src.frontend.main`` — diese
+Datei leitet nur dorthin um.
 
-    python -m src.frontend.main
-
-Dieser Watcher bleibt vorerst lauffähig, wird aber nicht weiterentwickelt
-und kennt z. B. keine Dubletten-Erkennung. (pytest lädt ihn wegen
-`main_file = src/frontend/main.py` in pytest.ini bewusst nicht.)
+Der Import steht bewusst INNERHALB von ``__main__``: ``src.frontend.main``
+registriert beim Import die NiceGUI-Seiten, und das darf nicht passieren,
+wenn ein Werkzeug diese Datei bloß einliest. (Aus demselben Grund zeigt
+``main_file`` in pytest.ini auf die echte App-Datei.)
 """
 
-from src.watcher.folder_watcher import start_watcher
-
 if __name__ == "__main__":
-    print("HINWEIS: Dieser Watcher ist veraltet — empfohlen ist:")
-    print("  python -m src.frontend.main")
-    print("Buerokrator-Watcher startet trotzdem...")
-    start_watcher("inbox")
+    from src.frontend.main import run
+
+    run()

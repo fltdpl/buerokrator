@@ -76,7 +76,7 @@ EMPLOYMENT_SUBTYPE_FIELDS = {
         "soli",
         "church_tax",
         # Sozialversicherungsbeiträge (LStB Zeilen 22–27) — Grundlage der
-        # Anlage Vorsorgeaufwand (siehe docs/05_Steuerlogik.md, Zielbild).
+        # Anlage Vorsorgeaufwand (siehe docs/04_Steuerlogik.md, Zielbild).
         "pension_insurance_employer",
         "pension_insurance_employee",
         "health_insurance",

@@ -1,94 +1,18 @@
 # Projekt-Roadmap
 
-## Phase 1 - Dokumenteingang
+## Abgeschlossene Grundphasen (Juni/Juli 2026)
 
-- [x] Projektstruktur erstellen ✅ 2026-06-02
-    
-- [x] Git Repository anlegen ✅ 2026-06-02
-    
-- [x] Folder Watcher implementieren ✅ 2026-06-02
-    
-- [x] Logging einführen ✅ 2026-06-02
-    
+Logging, Verarbeitungs-Pipeline mit Fehlerbehandlung,
+OCR (vorhandener PDF-Text bevorzugt, Tesseract für Scans), Ollama-Anbindung
+mit Klassifikations-Prompt und JSON-Ausgabe, Dateinamensschema und
+Archivierung, SQLite mit Jahresübersicht und CSV-Export.
 
-## Phase 2 – Dokumentverarbeitung
+Offen aus diesen Phasen: Excel-Export, chancenorientierte
+Rentenversicherung erfassen.
 
-- [x] Document Processor erstellen ✅ 2026-06-02
-    
-- [x] Pipeline integrieren ✅ 2026-06-02
-    
-- [x] Fehlerbehandlung einführen ✅ 2026-06-02
-    
-- [x] Testdokument verarbeiten ✅ 2026-06-02
-    
-- [x] Verarbeitung protokollieren ✅ 2026-06-02
-    
-
-## Phase 3 – OCR
-
-- [x] Tesseract installieren ✅ 2026-06-04
-    
-- [x] OCR-Service erstellen ✅ 2026-06-04
-    
-- [x] Text aus PDFs extrahieren ✅ 2026-06-03
-    
-- [x] Bild-PDFs erkennen ✅ 2026-06-03
-    
-- [x] OCR auf Bild-PDFs anwenden ✅ 2026-06-04
-     
-- [x] Bereits vorhandenen PDF-Text bevorzugen ✅ 2026-06-03
-     
-- [x] OCR-Ergebnisse protokollieren ✅ 2026-06-04
-    
-- [x] Testdokumente auswerten ✅ 2026-06-04
-
-## Phase 4 – Dokumentanalyse  
-  
-- [x] Ollama anbinden
-    
-- [x] Model integrieren
-    
-- [x] Klassifikations-Prompt erstellen
-    
-- [x] JSON-Ausgabe definieren
-    
-- [x] Erste Dokumentklassifikation testen
-
-## Phase 5 – Ablage
-
-- [x] Dateinamensschema finalisieren
-    
-- [x] Dateinamen automatisch erzeugen
-    
-- [x] Zielordner bestimmen
-    
-- [x] Dokumente verschieben
-    
-- [x] Archivierung protokollieren
-
-## Phase 6 – Datenbank & Steuerexport
-
-- [x] SQLite integrieren
-    
-- [x] Dokumentdaten speichern
-    
-- [x] Archivpfade speichern
-    
-- [x] Rentenversicherung erfassen (pension-Subtypen contract/pension_information/annual_statement) ✅ 2026-07-15
-    
-- [ ] Chancenorientierte Rentenversicherung erfassen
-    
-- [x] Bausparvertrag erfassen (pension-Subtyp bauspar_jahresauszug) ✅ 2026-07-15
-    
-- [x] Jahresübersicht erzeugen ✅ 2026-07-01
-    
-- [x] CSV-Export
-    
-- [ ] Excel-Export
-
-
-
-
+Der ursprüngliche Live-Ordner-Watcher wurde am 01.08.2026 entfernt — der
+Stapel-Import über die Import-Seite hatte ihn längst abgelöst, und mit ihm
+fielen ein ungetestetes Modul und die Abhängigkeit `watchdog` weg.
 
 ## Dokumentenerkennung
 
@@ -224,11 +148,14 @@
     
 - [x] Dublettenerkennung (Inhalts-Hash vor OCR/LLM, Dublette → Papierkorb) ✅ 2026-07-15
     
-- [ ] **Inhaltliche Dubletten-Warnung** — der Inhalts-Hash erkennt nur
-  byte-gleiche Dateien; bei der Steuer-Abnahme lagen drei Scans derselben
-  Rechnung im Bestand (gleicher OCR-Text, andere Bytes). Idee: nach der
-  Extraktion auf gleichen Aussteller + Betrag + Datum/Rechnungsnummer prüfen
-  und im Prüf-Workflow als Hinweis zeigen (kein Auto-Löschen)
+- [x] **Inhaltliche Dubletten-Warnung** ✅ 2026-07-31 — der Inhalts-Hash
+  erkennt nur byte-gleiche Dateien; derselbe Beleg ein zweites Mal
+  eingescannt lag bisher unbemerkt doppelt im Bestand.
+  `src/services/duplicate_service.py` vergleicht stattdessen die erkannten
+  Werte (gleicher Aussteller + gleiche Rechnungsnummer ODER gleicher Betrag
+  und gleiches Datum; leere Werte matchen nie). Hinweis mit Link im
+  Prüf-Workflow, kein Auto-Löschen. Nächster Schritt: der Hinweis soll auch
+  die ABWEICHENDEN Felder nennen (siehe Datenqualität → Später)
     
 - [ ] Ähnliche Dokumente finden
     
@@ -351,7 +278,7 @@ Laptop (getrennte Linux-Konten trennen die Daten bereits; später ggf.
 Profil-Umschalter).
 
 Stand: Linux-Paket released (v0.1.0, v0.2.0, v0.2.1 als Tarball + rootloses
-`install.sh`). Release-Ablauf und Version-Quelle siehe `docs/08_Betrieb.md`.
+`install.sh`). Release-Ablauf und Version-Quelle siehe `docs/07_Betrieb.md`.
 
 - [x] cwd-Entkopplung: App-Home-Konzept (`BUEROKRATOR_HOME` / Dev-Modus / Benutzer-Datenverzeichnis) ✅ 2026-07-15
     
@@ -371,6 +298,6 @@ Stand: Linux-Paket released (v0.1.0, v0.2.0, v0.2.1 als Tarball + rootloses
     
 - [ ] Ollama-Entscheidung: geführte Installation vs. eingebettetes llama.cpp — wird mit dem Windows-Paket drängender (manuelle Installation ist dort eine höhere Hürde)
     
-- [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [[012_kein_update_check]]) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16
+- [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [012 Kein Update-Check](docs/decisions/012_kein_update_check.md)) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16
     
 - [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen
