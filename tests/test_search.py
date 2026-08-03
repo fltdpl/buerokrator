@@ -166,3 +166,81 @@ def test_search_after_reset_database(tmp_path, monkeypatch):
     insert_document(database, filename="b.pdf", document_text="Inhalt nach Reset")
 
     assert len(search.search_documents("Inhalt")) == 1
+
+
+def test_treffer_im_volltext_liefert_die_fundstelle(tmp_path, monkeypatch):
+    # Der eigentliche Nutzen: in der Liste steht, WARUM das Dokument
+    # gefunden wurde — die Passage aus dem OCR-Text. Werte erfunden.
+    database, search = setup(tmp_path, monkeypatch)
+
+    insert_document(
+        database,
+        filename="a.pdf",
+        document_text=(
+            "Musterversand GmbH, Beispielstadt. Position: Wartung "
+            "Heizungsanlage, Arbeitslohn 210,00 EUR. Zahlbar in 14 Tagen."
+        ),
+    )
+
+    treffer = search.search_documents("Heizungsanlage")[0]
+    fundstelle = treffer["text_snippet"]
+
+    assert search.SNIPPET_OPEN + "Heizungsanlage" + search.SNIPPET_CLOSE in fundstelle
+    assert "Wartung" in fundstelle
+
+
+def test_treffer_nur_im_dateinamen_liefert_keine_fundstelle(tmp_path, monkeypatch):
+    # snippet() gibt auch ohne Treffer im Volltext eine Passage zurück —
+    # dann den Textanfang, ohne Markierung. Die wäre irreführend: sie
+    # enthält den gesuchten Begriff gar nicht.
+    database, search = setup(tmp_path, monkeypatch)
+
+    insert_document(
+        database,
+        filename="Heizungsanlage.pdf",
+        document_text="Ein Volltext ganz ohne den gesuchten Begriff.",
+    )
+
+    treffer = search.search_documents("Heizungsanlage")[0]
+
+    assert treffer["text_snippet"] is None
+
+
+def test_kurze_suche_ueber_like_hat_das_gleiche_ergebnisformat(tmp_path, monkeypatch):
+    # Unter drei Zeichen läuft die Suche über LIKE, nicht über FTS — die
+    # Zeilen müssen trotzdem dieselben Schlüssel haben.
+    database, search = setup(tmp_path, monkeypatch)
+
+    insert_document(database, filename="ab.pdf", document_text="ab cd")
+
+    treffer = search.search_documents("ab")[0]
+
+    assert treffer["text_snippet"] is None
+
+
+def test_fundstelle_wird_als_html_escaped(tmp_path, monkeypatch):
+    # Der Volltext stammt aus fremden PDFs. Enthält er Markup, darf es in
+    # der Liste niemals als Markup ankommen — nur die Hervorhebung, die
+    # die Suche selbst gesetzt hat, wird zu echtem HTML.
+    from src.frontend.pages.documents import _snippet_html
+
+    database, search = setup(tmp_path, monkeypatch)
+
+    insert_document(
+        database,
+        filename="a.pdf",
+        document_text="Hinweis <script>alert(1)</script> zur Heizungsanlage",
+    )
+
+    fundstelle = search.search_documents("Heizungsanlage")[0]["text_snippet"]
+    ausgabe = _snippet_html(fundstelle)
+
+    assert "<script>" not in ausgabe
+    assert "&lt;script&gt;" in ausgabe
+    assert "<mark>Heizungsanlage</mark>" in ausgabe
+
+
+def test_ohne_fundstelle_bleibt_die_zelle_leer(tmp_path, monkeypatch):
+    from src.frontend.pages.documents import _snippet_html
+
+    assert _snippet_html(None) == ""

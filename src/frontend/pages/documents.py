@@ -1,9 +1,11 @@
+import html
+
 from nicegui import ui
 
 from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
 from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
-from src.database.search import search_documents
+from src.database.search import SNIPPET_CLOSE, SNIPPET_OPEN, search_documents
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, format_euro, page_layout
 from src.frontend.listing_order import set_listing_order
@@ -29,6 +31,42 @@ COLUMNS = [
     {"name": "amount", "label": "Betrag", "field": "amount", "sortable": True, "align": "right", ":sort": "(a, b, rowA, rowB) => (rowA.amount_raw ?? -1) - (rowB.amount_raw ?? -1)"},
     {"name": "created_at", "label": "Importiert", "field": "created_at", "sortable": True, "align": "left"},
 ]
+
+# Nur während einer Volltextsuche eingeblendet: ohne Suchbegriff gäbe es
+# nichts zu zeigen, und die Liste ist schon breit genug.
+SNIPPET_COLUMN = {
+    "name": "text_snippet",
+    "label": "Fundstelle",
+    "field": "text_snippet",
+    "sortable": False,
+    "align": "left",
+}
+
+# Zelle mit v-html, weil die Fundstelle die Hervorhebung als Markup trägt.
+# Sicher, weil _snippet_html den Text vorher escaped — siehe dort.
+_SNIPPET_CELL = """
+<q-td :props="props" style="white-space: normal; max-width: 28rem;">
+    <span v-html="props.row.text_snippet"></span>
+</q-td>
+"""
+
+
+def _snippet_html(snippet):
+    """Fundstelle als sicheres HTML mit hervorgehobenem Suchbegriff.
+
+    Der Text stammt aus fremden PDFs und darf nie als Markup gelesen werden.
+    Deshalb erst alles escapen, dann die Hervorhebung an den Steuerzeichen
+    setzen, die die Suche gesetzt hat — sie überstehen das Escaping
+    unverändert und können im Originaltext nicht vorkommen.
+    """
+    if not snippet:
+        return ""
+
+    return (
+        html.escape(snippet)
+        .replace(SNIPPET_OPEN, "<mark>")
+        .replace(SNIPPET_CLOSE, "</mark>")
+    )
 
 
 def _truncate(text, max_length):
@@ -62,6 +100,7 @@ def _table_rows(documents):
                 "amount": format_euro(row["amount"]) if row["amount"] is not None else "",
                 "amount_raw": row["amount"],
                 "created_at": row["created_at"],
+                "text_snippet": _snippet_html(row["text_snippet"]),
             }
         )
 
@@ -308,13 +347,21 @@ def documents_page():
             ui.label("Keine Dokumente gefunden.")
             return
 
+        # Die Fundstelle nur zeigen, wenn wenigstens eine Zeile eine hat:
+        # bei kurzen Suchbegriffen (LIKE statt FTS) und bei Treffern rein
+        # im Dateinamen bliebe die Spalte sonst durchgehend leer.
+        show_snippets = any(row["text_snippet"] for row in rows)
+
         table = ui.table(
-            columns=COLUMNS,
+            columns=(COLUMNS + [SNIPPET_COLUMN]) if show_snippets else COLUMNS,
             rows=rows,
             row_key="id",
             pagination=25,
             selection="multiple",
         ).classes("w-full")
+
+        if show_snippets:
+            table.add_slot("body-cell-text_snippet", _SNIPPET_CELL)
 
         # Zeilenklick öffnet das Detail; die Auswahl läuft über die Checkbox,
         # damit ein Klick nicht beides bedeutet.

@@ -4,6 +4,12 @@
 
 ## Unveröffentlicht
 
+- **Neu: die Suche zeigt die Fundstelle.** Bisher stand in der Trefferliste
+  nur, WELCHE Dokumente passen — nicht, an welcher Stelle. Steht der
+  Suchbegriff im Dokumenttext, zeigt eine Spalte „Fundstelle" jetzt die
+  Passage mit hervorgehobenem Begriff. Sie erscheint nur, wenn es wirklich
+  einen Treffer im Text gibt: Treffer in Dateiname, Feldern oder Notiz sind
+  in der Zeile ohnehin schon zu sehen.
 - **Neu: Hinweis auf inhaltliche Dubletten.** Derselbe Beleg ein zweites Mal
   eingescannt hat andere Bytes und rutschte an der Dubletten-Prüfung des
   Imports vorbei. Der Prüf-Workflow vergleicht jetzt zusätzlich die

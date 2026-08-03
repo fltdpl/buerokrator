@@ -24,6 +24,16 @@ FTS5 (external content über `documents`, Trigram-Tokenizer für
 Substring-Suche, bm25-Ranking); Trigger halten den Index bei
 INSERT/UPDATE/DELETE synchron.
 
+Die Trefferliste zeigt zusätzlich die **Fundstelle** aus `document_text`
+(`snippet()`, Spaltenindex 3). Zwei Feinheiten: `snippet()` liefert auch
+ohne Treffer in dieser Spalte eine Passage — dann den Textanfang **ohne
+Markierung**, weil der Treffer aus Dateiname, Feldern oder Notiz kam; nur
+die Markierung belegt einen echten Volltext-Treffer, alles andere wird
+verworfen. Und markiert wird mit Steuerzeichen statt mit Markup: der Text
+stammt aus fremden PDFs und wird in der Oberfläche zuerst escaped
+(`_snippet_html` in `pages/documents.py`), danach wäre echtes Markup im
+Rohtext nicht mehr vom unseren zu unterscheiden.
+
 ## Migration
 
 Automatisch beim ersten Zugriff (`database.get_connection` →

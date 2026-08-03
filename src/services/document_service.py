@@ -395,6 +395,9 @@ def build_table_rows(documents):
                 "amount": data.get("amount"),
                 "created_at": _format_created_at(document["created_at"]),
                 "file_size": _format_file_size(document["archive_path"]),
+                # Nur bei einer Volltextsuche gefüllt (search_documents);
+                # die gefilterte Liste kennt keine Fundstelle.
+                "text_snippet": row.get("text_snippet"),
             }
         )
 

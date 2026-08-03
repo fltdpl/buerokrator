@@ -37,7 +37,9 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
   verlinkt dann das mögliche Gegenstück, samt der Felder, die dem
   widersprechen (Wertung bleibt beim Nutzer, nichts wird automatisch
   gelöscht)
-- Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe)
+- Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe) —
+  bei einem Treffer im Dokumenttext zeigt die Liste die Fundstelle mit
+  hervorgehobenem Suchbegriff
 - Analyse-Seite mit zwei Tabs: „Steuer" mit ELSTER-Anlagen-Ansicht
   (Anlage N, Vorsorgeaufwand, KAP, außergewöhnliche Belastungen, § 35a) —
   pro Position Ampel und Beleg-Herleitung, in Summen fließen nur geprüfte

@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from nicegui import ui
 from nicegui.testing import User
 
 pytest_plugins = ["nicegui.testing.user_plugin"]
@@ -423,3 +424,40 @@ async def test_detail_ohne_dublette_zeigt_keinen_hinweis(user: User):
     await user.open(f"/dokumente/{document_id}")
     await user.should_see("Speichern & Freigeben")
     await user.should_not_see("Mögliche Dublette")
+
+
+@pytest.mark.asyncio
+async def test_suche_zeigt_die_fundstelle_im_volltext(user: User, monkeypatch):
+    """Die Liste sagt, WARUM ein Dokument gefunden wurde.
+
+    Ohne die Passage bleibt bei einem Volltext-Treffer offen, an welcher
+    Stelle der Begriff steht — die Zeile selbst zeigt ihn nicht.
+
+    Der Suchbegriff geht direkt in den Filterzustand: das Eingabefeld hat
+    ein debounce von 400 ms, das im Test nicht auslöst.
+    """
+    from src.database.document_repository import insert_document
+    from src.frontend.pages import documents
+
+    insert_document(
+        "2024-01-01_Musterversand.pdf",
+        "archive/2024/Rechnungen/2024-01-01_Musterversand.pdf",
+        "invoice",
+        {"issuer": "Musterversand", "amount": 42.0, "document_date": "01.01.2024"},
+        document_text=(
+            "Musterversand GmbH, Beispielstadt. Position: Wartung "
+            "Heizungsanlage, Arbeitslohn 210,00 EUR."
+        ),
+    )
+
+    monkeypatch.setitem(documents._FILTER_STATE, "search", "Heizungsanlage")
+
+    await user.open("/dokumente")
+    await user.should_see("1 Dokumente gefunden")
+
+    # Der Spaltenkopf ist Teil der Tabellenkonfiguration und für den
+    # Simulator kein eigenes Element — geprüft wird deshalb die Tabelle.
+    table = list(user.find(ui.table).elements)[0]
+
+    assert any(spalte["name"] == "text_snippet" for spalte in table.columns)
+    assert "<mark>Heizungsanlage</mark>" in table.rows[0]["text_snippet"]
