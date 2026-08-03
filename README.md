@@ -34,8 +34,9 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
   Strg+Enter = Speichern & Freigeben & weiter)
 - Hinweis auf inhaltliche Dubletten: derselbe Beleg ein zweites Mal
   eingescannt hat andere Bytes, aber dieselben Werte — der Prüf-Workflow
-  verlinkt dann das mögliche Gegenstück (Wertung bleibt beim Nutzer,
-  nichts wird automatisch gelöscht)
+  verlinkt dann das mögliche Gegenstück, samt der Felder, die dem
+  widersprechen (Wertung bleibt beim Nutzer, nichts wird automatisch
+  gelöscht)
 - Volltextsuche mit Relevanz-Ranking (SQLite FTS5, auch Teilbegriffe)
 - Analyse-Seite mit zwei Tabs: „Steuer" mit ELSTER-Anlagen-Ansicht
   (Anlage N, Vorsorgeaufwand, KAP, außergewöhnliche Belastungen, § 35a) —

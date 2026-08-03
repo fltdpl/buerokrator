@@ -43,6 +43,13 @@ Datum am Anfang, möglichst vollständig; der Aufbau ist **typabhängig**
 - Gehaltsabrechnung:
   `2021-01-01_bis_2021-01-31_Arbeitgeber_Gehaltsabrechnung.pdf`
   (Abrechnungszeitraum; Altbestand: `2024-03_…`)
+- Typen ohne eigenen Bauer (`unknown`, künftige Typen):
+  `2026-03-11_Musterversand_unknown.pdf` über
+  `build_fallback_filename` — Datum, Aussteller, Betreff, wobei der
+  Typname als Betreff eintritt, wenn keiner erkannt wurde. Vorher hieß
+  jedes dieser Dokumente nur nach seinem Typ, also durchweg `unknown.pdf`;
+  unterscheidbar waren sie erst über den Kollisionszähler von
+  `get_unique_target_path`.
 
 Alle vom Modell gelieferten Werte laufen durch str-Coercion
 (`_text_value`), Aussteller zusätzlich durch `normalize_issuer` (die

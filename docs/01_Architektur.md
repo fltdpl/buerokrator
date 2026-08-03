@@ -70,7 +70,13 @@ Policennummer ist bewusst kein Merkmal (sie steht über Jahre auf jedem
 Dokument eines Vertrags). Live berechnet statt beim Import gespeichert —
 die Werte ändern sich im Prüf-Workflow, eine gespeicherte Warnung stünde
 nach der ersten Korrektur falsch da. Angezeigt wird ein Hinweis mit Link;
-kein Auto-Löschen, die Wertung bleibt beim Nutzer. Bekannte Grenze: Typen
+kein Auto-Löschen, die Wertung bleibt beim Nutzer. Neben dem Treffergrund
+steht, welche der verglichenen Felder **widersprechen** (beidseitig gefüllt
+und ungleich) — genau daran entscheidet sich am Original, ob es derselbe
+Beleg ist. Ein leerer Wert zählt dabei nicht als Widerspruch (Lücke, kein
+Gegenbeweis), und der Widerspruch filtert NICHT: eine abweichende
+Rechnungsnummer kann auch ein Lesefehler in einem der Scans sein. Bekannte
+Grenze: Typen
 ohne `amount`/`document_date` (employment arbeitet mit Zeitraum und
 `gross_amount`) lösen die Warnung nie aus.
 

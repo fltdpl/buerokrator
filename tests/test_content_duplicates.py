@@ -223,6 +223,105 @@ def test_aussteller_alias_vereint_schreibweisen(tmp_path, monkeypatch):
     assert [eintrag["id"] for eintrag in find_content_duplicates(zweiter)] == [erster]
 
 
+def test_abweichende_rechnungsnummer_wird_gemeldet_aber_nicht_gefiltert(
+    tmp_path, monkeypatch
+):
+    # Der Fall, der die Entscheidung trägt: Aussteller, Betrag und Datum
+    # stimmen, die Rechnungsnummern nicht. Das kann ein Fehlalarm sein (zwei
+    # echte Belege) oder ein OCR-Fehler in einer echten Dublette — deshalb
+    # anzeigen, nicht ausfiltern.
+    _setup_project(tmp_path, monkeypatch)
+
+    erster = _insert(
+        "a.pdf",
+        {
+            "issuer": "Musterversand",
+            "invoice_number": "RE-1001",
+            "amount": 42.5,
+            "document_date": "11.03.2024",
+        },
+    )
+    zweiter = _insert(
+        "b.pdf",
+        {
+            "issuer": "Musterversand",
+            "invoice_number": "RE-1002",
+            "amount": 42.5,
+            "document_date": "11.03.2024",
+        },
+    )
+
+    treffer = find_content_duplicates(zweiter)
+
+    assert [eintrag["id"] for eintrag in treffer] == [erster]
+    assert treffer[0]["differences"] == ["Rechnungsnummer"]
+
+
+def test_abweichender_betrag_bei_gleicher_rechnungsnummer(tmp_path, monkeypatch):
+    _setup_project(tmp_path, monkeypatch)
+
+    _insert(
+        "a.pdf",
+        {
+            "issuer": "Musterversand",
+            "invoice_number": "RE-1001",
+            "amount": 42.5,
+            "document_date": "11.03.2024",
+        },
+    )
+    zweiter = _insert(
+        "b.pdf",
+        {
+            "issuer": "Musterversand",
+            "invoice_number": "RE-1001",
+            "amount": 43.9,
+            "document_date": "11.03.2024",
+        },
+    )
+
+    treffer = find_content_duplicates(zweiter)
+
+    assert treffer[0]["differences"] == ["Betrag"]
+
+
+def test_ohne_widerspruch_bleibt_die_liste_leer(tmp_path, monkeypatch):
+    _setup_project(tmp_path, monkeypatch)
+
+    _insert(
+        "a.pdf",
+        {"issuer": "Musterversand", "amount": 42.5, "document_date": "11.03.2024"},
+    )
+    zweiter = _insert(
+        "b.pdf",
+        {"issuer": "Musterversand", "amount": 42.5, "document_date": "11.03.2024"},
+    )
+
+    assert find_content_duplicates(zweiter)[0]["differences"] == []
+
+
+def test_fehlender_wert_ist_kein_widerspruch(tmp_path, monkeypatch):
+    # Nur ein Scan hat eine lesbare Rechnungsnummer. Das ist eine Lücke,
+    # kein Gegenbeweis — sonst stünde bei jedem zweiten Treffer eine
+    # "Abweichung", die gar keine ist.
+    _setup_project(tmp_path, monkeypatch)
+
+    _insert(
+        "a.pdf",
+        {
+            "issuer": "Musterversand",
+            "invoice_number": "RE-1001",
+            "amount": 42.5,
+            "document_date": "11.03.2024",
+        },
+    )
+    zweiter = _insert(
+        "b.pdf",
+        {"issuer": "Musterversand", "amount": 42.5, "document_date": "11.03.2024"},
+    )
+
+    assert find_content_duplicates(zweiter)[0]["differences"] == []
+
+
 def test_arbeitgeber_zaehlt_als_aussteller(tmp_path, monkeypatch):
     # employment-Dokumente tragen den Namen in "employer" — die gleiche
     # Auflösung wie in Liste und Filter.

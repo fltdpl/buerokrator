@@ -90,8 +90,8 @@ def _sanitized(builder):
     """Garantiert die Zusage von _safe_filename für jeden Dateinamen-Bauer."""
 
     @functools.wraps(builder)
-    def wrapper(extracted_data, suffix):
-        return _safe_filename(builder(extracted_data, suffix))
+    def wrapper(*args, **kwargs):
+        return _safe_filename(builder(*args, **kwargs))
 
     return wrapper
 
@@ -129,7 +129,7 @@ def build_filename(classification, extracted_data, original_file_path):
     if builder:
         return builder(extracted_data, suffix)
 
-    return _safe_filename(f"{document_type}{suffix}")
+    return build_fallback_filename(extracted_data, suffix, document_type)
 
 
 def rename_document(
@@ -207,6 +207,31 @@ def _clean_name(value, default):
 def _issuer_name(value, default):
     """Aussteller normalisieren und pfadsicher machen (str-Coercion zuerst)."""
     return _clean_name(normalize_issuer(_text_value(value, default)), default)
+
+
+@_sanitized
+def build_fallback_filename(extracted_data, suffix, document_type):
+    """Name für Typen ohne eigenen Bauer — vor allem `unknown`.
+
+    Vorher hieß jedes solche Dokument nach seinem Typ, also durchweg
+    `unknown.pdf`: in der Dateiliste nicht auseinanderzuhalten, und der
+    Kollisionszähler von `get_unique_target_path` machte daraus `unknown_1`,
+    `unknown_2` — Nummern statt Inhalt.
+
+    Dieselbe Form wie bei `legal`, dem allgemeinsten der gebauten Typen:
+    Datum, Aussteller, Betreff. Der Typname tritt als Betreff ein, wenn keiner
+    erkannt wurde — er ist dann die einzige Aussage, die die Klassifikation
+    überhaupt getroffen hat.
+    """
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
+    )
+
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
+
+    subject = _clean_name(extracted_data.get("subject"), document_type)
+
+    return f"{document_date}_{issuer}_{subject}{suffix}"
 
 
 @_sanitized

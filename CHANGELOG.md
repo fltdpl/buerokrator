@@ -9,7 +9,16 @@
   Imports vorbei. Der Prüf-Workflow vergleicht jetzt zusätzlich die
   erkannten Werte (gleicher Aussteller plus gleiche Rechnungsnummer oder
   gleicher Betrag und gleiches Datum) und verlinkt das mögliche Gegenstück
-  — ohne automatisch zu löschen.
+  — ohne automatisch zu löschen. Der Hinweis nennt dabei nicht nur, was
+  übereinstimmt, sondern auch, welche Felder **widersprechen** (etwa eine
+  abweichende Rechnungsnummer) — daran entscheidet sich am Original, ob es
+  wirklich derselbe Beleg ist. Angezeigt wird der Widerspruch, gefiltert
+  wird nicht: er kann auch ein Lesefehler in einem der beiden Scans sein.
+- **Behoben: nicht klassifizierte Dokumente hießen alle `unknown.pdf`** —
+  ohne Datum und ohne Aussteller, sodass mehrere davon nur noch über einen
+  angehängten Zähler zu unterscheiden waren. Sie bekommen jetzt denselben
+  Namensaufbau wie die übrigen Typen (Datum, Aussteller, Betreff).
+  Bestehende Dateien werden beim nächsten Speichern umbenannt.
 - **Behoben: Datumsangaben mit zweistelligem Jahr oder ausgeschriebenem
   Monat** („05.03.19", „7. Juni 2016") landeten roh im Dateinamen; sie
   werden jetzt normalisiert. Bestehende Dateien werden beim nächsten

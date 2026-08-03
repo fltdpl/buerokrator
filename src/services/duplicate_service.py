@@ -107,6 +107,44 @@ def _invoice_key(data):
     return re.sub(r"[^a-z0-9]", "", value.casefold())
 
 
+# Beschriftung + Schlüsselfunktion je vergleichbarem Feld. Dieselben Felder,
+# aus denen `_match_reason` die Übereinstimmung ableitet — was den Treffer
+# begründet, kann ihn auch in Frage stellen.
+_COMPARABLE_FIELDS = (
+    ("Rechnungsnummer", _invoice_key),
+    ("Betrag", _amount_key),
+    ("Datum", _date_key),
+)
+
+
+def _differing_fields(data, other):
+    """Felder, die auf BEIDEN Seiten gefüllt sind und sich unterscheiden.
+
+    Genau sie tragen die Entscheidung am Original: beim bisher einzigen
+    Fehlalarm wichen die Rechnungsnummern ab, und das war die Information,
+    die das Paar auseinanderhielt. Der Treffergrund allein sagt nur, was
+    ÜBEREINSTIMMT.
+
+    Ein leerer Wert zählt nie als Abweichung — er ist eine Lücke in der
+    Erkennung, kein Gegenbeweis. Und die Liste FILTERT nicht: bei einer echten
+    Dublette wich die Rechnungsnummer ebenfalls ab (OCR-Fehler in einem der
+    beiden Scans). Sie gehört angezeigt, die Wertung bleibt beim Nutzer.
+    """
+    differences = []
+
+    for label, key_of in _COMPARABLE_FIELDS:
+        value = key_of(data)
+        other_value = key_of(other)
+
+        if value is None or other_value is None or value == "" or other_value == "":
+            continue
+
+        if value != other_value:
+            differences.append(label)
+
+    return differences
+
+
 def _match_reason(data, other):
     """Begründung, warum die beiden denselben Beleg meinen — oder None.
 
@@ -143,8 +181,12 @@ def find_content_duplicates(document_id):
     """Dokumente, die inhaltlich denselben Beleg zeigen wie `document_id`.
 
     Liefert Plain Data, aufsteigend nach ID:
-    [{"id", "filename", "document_type", "reason"}]. Leer, wenn es das
-    Dokument nicht gibt oder seine Werte für einen Vergleich nicht reichen.
+    [{"id", "filename", "document_type", "reason", "differences"}]. Leer, wenn
+    es das Dokument nicht gibt oder seine Werte für einen Vergleich nicht
+    reichen.
+
+    `reason` sagt, was übereinstimmt, `differences`, was dem widerspricht —
+    beides zusammen macht den Hinweis entscheidungsreif.
     """
     row = get_document(document_id)
 
@@ -155,7 +197,8 @@ def find_content_duplicates(document_id):
     matches = []
 
     for candidate in list_duplicate_candidates(document_id):
-        reason = _match_reason(data, _data_of(candidate))
+        candidate_data = _data_of(candidate)
+        reason = _match_reason(data, candidate_data)
 
         if reason is None:
             continue
@@ -166,6 +209,7 @@ def find_content_duplicates(document_id):
                 "filename": candidate["filename"],
                 "document_type": candidate["document_type"],
                 "reason": reason,
+                "differences": _differing_fields(data, candidate_data),
             }
         )
 

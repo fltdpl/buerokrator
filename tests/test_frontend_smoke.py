@@ -378,6 +378,38 @@ async def test_detail_warnt_vor_inhaltlicher_dublette(user: User):
 
 
 @pytest.mark.asyncio
+async def test_dublettenhinweis_nennt_das_abweichende_feld(user: User):
+    """Was widerspricht, steht neben dem Treffergrund.
+
+    Aussteller, Betrag und Datum stimmen, die Rechnungsnummern nicht — genau
+    daran entscheidet sich am Original, ob es derselbe Beleg ist.
+    """
+    from src.database.document_repository import insert_document
+
+    beleg = {
+        "issuer": "Musterversand",
+        "amount": 42.0,
+        "document_date": "01.01.2024",
+    }
+    insert_document(
+        "a.pdf",
+        "archive/2024/Rechnungen/a.pdf",
+        "invoice",
+        dict(beleg, invoice_number="RE-1001"),
+    )
+    zweiter = insert_document(
+        "b.pdf",
+        "archive/2024/Rechnungen/b.pdf",
+        "invoice",
+        dict(beleg, invoice_number="RE-1002"),
+    )
+
+    await user.open(f"/dokumente/{zweiter}")
+    await user.should_see("Mögliche Dublette")
+    await user.should_see("abweichend: Rechnungsnummer")
+
+
+@pytest.mark.asyncio
 async def test_detail_ohne_dublette_zeigt_keinen_hinweis(user: User):
     from src.database.document_repository import insert_document
 

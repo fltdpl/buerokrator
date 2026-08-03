@@ -144,6 +144,9 @@ def _duplicate_hint(document_id):
     Bewusst nur ein Hinweis mit Link: die Entscheidung, welcher Scan bleibt,
     trifft der Nutzer im Prüf-Workflow. Nichts wird automatisch gelöscht oder
     zusammengeführt.
+
+    Deshalb steht neben dem Treffergrund auch, welche Felder WIDERSPRECHEN —
+    an ihnen entscheidet sich am Original, ob es wirklich derselbe Beleg ist.
     """
     duplicates = find_content_duplicates(document_id)
 
@@ -166,6 +169,11 @@ def _duplicate_hint(document_id):
                     f"/dokumente/{duplicate['id']}",
                 )
                 ui.label(f"({duplicate['reason']})").classes("text-xs muted")
+
+                if duplicate["differences"]:
+                    ui.label(
+                        "— abweichend: " + ", ".join(duplicate["differences"])
+                    ).classes("text-xs text-orange-700")
 
 
 def _render_field(field, data, missing, empty, on_tax_relevant_amount):
