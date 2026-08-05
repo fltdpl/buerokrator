@@ -411,6 +411,57 @@ async def test_dublettenhinweis_nennt_das_abweichende_feld(user: User):
 
 
 @pytest.mark.asyncio
+async def test_aussteller_gedaechtnis_meldet_abweichenden_typ(user: User):
+    """Der Aussteller lieferte bisher ausnahmslos Vorsorge — jetzt Versicherung.
+
+    Der Hinweis meldet das, ändert aber nichts: der erkannte Typ bleibt stehen.
+    """
+    from src.database.document_repository import insert_document
+    from src.database.set_document_verified import set_document_verified
+
+    for name in ("a.pdf", "b.pdf"):
+        vorher = insert_document(
+            name,
+            f"archive/2024/Vorsorge/{name}",
+            "pension",
+            {"issuer": "Musterkasse"},
+        )
+        set_document_verified(vorher, 1)
+
+    abweichend = insert_document(
+        "c.pdf",
+        "archive/2024/Versicherungen/c.pdf",
+        "insurance",
+        {"issuer": "Musterkasse"},
+    )
+
+    await user.open(f"/dokumente/{abweichend}")
+    await user.should_see("ausnahmslos als Vorsorge")
+    await user.should_see("erkannt als Versicherung")
+
+
+@pytest.mark.asyncio
+async def test_gemischter_aussteller_zeigt_keinen_gedaechtnis_hinweis(user: User):
+    """Anbieter mit mehreren Sparten dürfen den Prüf-Workflow nicht zumüllen."""
+    from src.database.document_repository import insert_document
+    from src.database.set_document_verified import set_document_verified
+
+    for name, typ in (("a.pdf", "pension"), ("b.pdf", "insurance")):
+        vorher = insert_document(
+            name, f"archive/2024/x/{name}", typ, {"issuer": "Musterkasse"}
+        )
+        set_document_verified(vorher, 1)
+
+    weiteres = insert_document(
+        "c.pdf", "archive/2024/x/c.pdf", "insurance", {"issuer": "Musterkasse"}
+    )
+
+    await user.open(f"/dokumente/{weiteres}")
+    await user.should_see("Speichern & Freigeben")
+    await user.should_not_see("ausnahmslos als")
+
+
+@pytest.mark.asyncio
 async def test_detail_ohne_dublette_zeigt_keinen_hinweis(user: User):
     from src.database.document_repository import insert_document
 

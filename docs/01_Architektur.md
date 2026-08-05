@@ -27,6 +27,13 @@ Prompts; das Ergebnis wird gegen die Feld-Whitelist in
 `src/core/document_fields.py` gefiltert und zum Schluss durch die
 Aussteller-Aliase geschickt (siehe Organizer).
 
+**Kein Few-Shot im Prompt.** Der naheliegende Ausbau — dem Extraktor ein
+früheres, geprüftes Dokument desselben Ausstellers als gelöstes Beispiel
+mitgeben — wurde gebaut, gemessen und wieder entfernt: er verschlechterte die
+Feldquote, weil das Modell Werte aus dem Beispiel abschrieb statt sie zu
+lesen. Begründung und Messaufbau in
+[013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md).
+
 ### Organizer (`src/organizer`)
 
 Benennt Dateien typabhängig um und archiviert sie nach
@@ -59,6 +66,26 @@ Bulk-Aktionen und Neuanalyse (`document_service.py`), Jahreseinkommen aus
 geprüften Lohnsteuerbescheinigungen (`income_service.py`), Stapel-Import
 (`import_job.py`), Kennzahlen, Backup, Systemstatus, Log-Zugriff.
 Nur Plain Data rein/raus — ohne GUI testbar.
+
+**Aussteller-Gedächtnis** (`issuer_memory.py`): wertet aus, was der geprüfte
+Bestand über einen Anbieter weiß — ohne Training, nur Abfragen über die
+geprüften Dokumente. Eine Verwendung im Prüf-Workflow: `type_mismatch` meldet,
+wenn der erkannte Dokumenttyp von dem abweicht, den dieser Aussteller bisher
+lieferte. Grundlage ist der bereits extrahierte Aussteller, nicht der Rohtext.
+
+Es ist ein HINWEIS, nie Automatik: der Mehrheitstyp eines Ausstellers liegt
+am Bestand gemessen seltener richtig als die Klassifikation selbst und darf
+sie deshalb nicht überstimmen. Gemeldet wird nur, wenn der Aussteller bisher
+**ausnahmslos** einen Typ lieferte — mit dem Mehrheitstyp als Auslöser wäre
+der Hinweis am geprüften Bestand ein Vielfaches an Fehlalarmen, und dort ist
+jeder davon einer, weil geprüfte Dokumente den richtigen Typ tragen. So
+eingestellt deckt er rund drei Viertel des Bestands ab (dort würde eine
+Fehlklassifikation auffallen) und kostet dabei fast keine Fehlalarme.
+
+Bewusst NICHT dabei: Vorschläge für leere Felder aus konstanten Werten des
+Ausstellers, und Few-Shot-Beispiele im Extraktions-Prompt. Beides war gebaut
+und wurde nach Messung am Bestand wieder entfernt —
+[013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md).
 
 **Inhaltliche Dubletten** (`duplicate_service.py`): der Inhalts-Hash beim
 Import erkennt nur byte-gleiche Dateien — derselbe Beleg ein zweites Mal

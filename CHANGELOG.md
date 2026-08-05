@@ -4,6 +4,17 @@
 
 ## Unveröffentlicht
 
+- **Neu: Hinweis, wenn ein Dokument nicht zum Aussteller passt.** Die meisten
+  Dokumente kommen von einem Anbieter, der längst im Archiv liegt. Hat dieser
+  bisher **ausnahmslos** einen anderen Dokumenttyp geschickt, sagt der
+  Prüf-Workflow das jetzt — genau die Konstellation, in der eine
+  Fehlklassifikation sonst unbemerkt durchginge.
+
+  Ein **Hinweis, keine Automatik**: der erkannte Typ wird nicht überschrieben,
+  die Wertung bleibt beim Nutzer. Bewusst eng gefasst, damit er nicht zum
+  Rauschen wird — Anbieter, die legitim mehrere Sparten liefern (Vorsorge und
+  Versicherung aus einem Haus), lösen ihn nie aus. Wer keine Vorgeschichte
+  hat, merkt nichts davon.
 - **Neu: die Suche zeigt die Fundstelle.** Bisher stand in der Trefferliste
   nur, WELCHE Dokumente passen — nicht, an welcher Stelle. Steht der
   Suchbegriff im Dokumenttext, zeigt eine Spalte „Fundstelle" jetzt die

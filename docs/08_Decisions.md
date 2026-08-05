@@ -14,3 +14,4 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 - [010 NiceGUI](decisions/010_nicegui.md)
 - [011 Theme](decisions/011_theme.md)
 - [012 Kein Update-Check](decisions/012_kein_update_check.md)
+- [013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md)

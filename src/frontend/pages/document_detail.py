@@ -25,6 +25,7 @@ from src.services.document_service import (
     reanalyze_document,
 )
 from src.services.duplicate_service import find_content_duplicates
+from src.services.issuer_memory import type_mismatch
 from src.tax.tax_purpose import TAX_PURPOSE_LABELS
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
@@ -174,6 +175,29 @@ def _duplicate_hint(document_id):
                     ui.label(
                         "— abweichend: " + ", ".join(duplicate["differences"])
                     ).classes("text-xs text-orange-700")
+
+
+def _memory_hint(document_id):
+    """Hinweis, wenn der Aussteller bisher ausnahmslos einen anderen Typ hatte.
+
+    Wie der Dubletten-Hinweis: anzeigen, nicht ändern. Der erkannte Typ bleibt
+    stehen — das Aussteller-Gedächtnis liegt am Bestand gemessen seltener
+    richtig als die Klassifikation und darf sie deshalb nicht überstimmen.
+    """
+    hint = type_mismatch(document_id)
+
+    if hint is None:
+        return
+
+    expected = DOCUMENT_TYPE_LABELS.get(hint["expected_type"], hint["expected_type"])
+    plural = "Dokumente" if hint["total"] > 1 else "Dokument"
+
+    ui.label(
+        f"ℹ️ Von diesem Aussteller liegen bisher {hint['total']} geprüfte"
+        f" {plural} vor, ausnahmslos als "
+        f"{expected} — hier erkannt als "
+        f"{DOCUMENT_TYPE_LABELS.get(hint['document_type'], hint['document_type'])}."
+    ).classes("text-sm text-blue-700")
 
 
 def _render_field(field, data, missing, empty, on_tax_relevant_amount):
@@ -553,8 +577,10 @@ def document_detail_page(document_id: int):
             # Links: Formular + Aktionen + Notizen
             with card("w-1/2 gap-3"):
                 # Vor dem Formular: wer gleich freigeben will, soll vorher
-                # wissen, dass derselbe Beleg schon im Bestand liegt.
+                # wissen, dass derselbe Beleg schon im Bestand liegt — und
+                # dass der Aussteller bisher etwas anderes geschickt hat.
                 _duplicate_hint(document_id)
+                _memory_hint(document_id)
 
                 form_area()
 
