@@ -163,21 +163,31 @@ SAP-HR-Summenzeilen). Alle arbeiten auf dem layouttreuen Text und
 
 ## Workflow
 
-Scan
-↓
-inbox
-↓
-OCR
-↓
-Klassifikation (Regeln → LLM)
-↓
-Extraktion (+ Feld-Whitelist, + Aussteller-Aliase)
-↓
-Organizer (Umbenennen, Archiv)
-↓
-Datenbank
-↓
-GUI: [Prüfen/Korrigieren](09_Pruefworkflow.md) → Analyse (Steuer / Einkommen)
+```mermaid
+flowchart LR
+    A["inbox"] -->|"Textebene vorhanden"| B["Text"]
+    A -->|"gescannt oder Bild: OCR"| B
+    A -.->|"Hash schon im Archiv"| Z["Papierkorb"]
+    B -->|"Regel greift"| C["Dokumenttyp"]
+    B -->|"sonst: LLM"| C
+    C -->|"LLM je Typ, dann Regelparser"| D["Felder"]
+    D -->|"Aliase, Whitelist, Datum, Beträge"| E["Archiv"]
+    E --> F["Datenbank, ungeprüft"]
+    F --> G["Prüfworkflow"]
+    G --> H["Analyse"]
+```
+
+Zwei Stufen laufen bewusst gegenläufig: die **Klassifikation** fragt zuerst
+die Regeln und nur bei Nichttreffer das LLM, die **Extraktion** umgekehrt —
+das LLM liest jeden Typ, die Regelparser überschreiben danach nur, was sie
+sicher erkennen. Die deterministische Methode läuft dort zuerst, wo sie
+vollständig ist.
+
+Der Dubletten-Abbruch sitzt vor OCR und LLM: eine bereits archivierte Datei
+soll den Rechner nicht beschäftigen. Ist Ollama nicht erreichbar, wird als
+`unknown` archiviert statt abgebrochen. Fehlerpfade zeigt das Bild nicht —
+jede Stufe kann scheitern, die Ursache landet im Ergebnis und auf der
+Import-Seite. Weiter geht es im [Prüfworkflow](09_Pruefworkflow.md).
 
 ## Relevante Entscheidungen
 
