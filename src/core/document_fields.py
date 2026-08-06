@@ -317,6 +317,51 @@ def normalize_subtype(document_type: str, value: object) -> object:
     return aliased
 
 
+# Auffangkategorie je Typ: der kanonische Subtyp für „passt in keine Art" und
+# das Freitextfeld, in das der Wortlaut eines erfundenen Subtyps gerettet wird.
+# pension fehlt bewusst — dort gibt es weder Auffangkategorie noch Freitextfeld.
+SUBTYPE_FALLBACK = {
+    TAX: ("bescheinigung", "description"),
+    HOUSING: ("sonstiges", "subject"),
+    BANK: ("sonstiges", "subject"),
+    EMPLOYMENT: ("sonstiges", "subject"),
+}
+
+
+def constrain_subtype(document_type: str, data: dict | None) -> dict:
+    """Bindet einen vom Modell erfundenen Subtyp an das Vokabular des Typs.
+
+    Nur für Modellausgaben gedacht, nicht für den Speicherpfad: bestehende
+    Werte aus früheren Versionen sollen beim Bearbeiten erhalten bleiben (siehe
+    normalize_subtype). Beim Import dagegen wird aus jedem freien Text sofort
+    eine Unterart, die es gar nicht gibt — meist ist er in Wahrheit der Betreff
+    ("Allgemeine Geschäftsbedingungen" unter bank). Der Wortlaut wandert
+    deshalb in das Freitextfeld des Typs, sofern das noch leer ist, und der
+    Subtyp auf die Auffangkategorie. Typen ohne Auffangkategorie bekommen
+    lieber gar keine Unterart als eine erfundene.
+    """
+    if not isinstance(data, dict):
+        return {}
+
+    raw = data.get("document_subtype")
+    normalized = normalize_subtype(document_type, raw)
+    known = KNOWN_SUBTYPES.get(document_type)
+
+    if not known or not isinstance(normalized, str) or not normalized:
+        return data
+
+    if normalized in known:
+        return data
+
+    fallback, text_field = SUBTYPE_FALLBACK.get(document_type, ("", ""))
+    constrained = {**data, "document_subtype": fallback}
+
+    if text_field and not str(data.get(text_field) or "").strip():
+        constrained[text_field] = raw.strip()
+
+    return constrained
+
+
 def whitelist_fields(document_type: str, data: dict | None) -> dict:
     """Reduziert ein Datendict auf die für den Dokumenttyp erlaubten Felder.
 

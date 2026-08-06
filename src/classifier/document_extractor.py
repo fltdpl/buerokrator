@@ -3,7 +3,7 @@ from ollama import chat
 from src.classifier.prompt_loader import load_prompt
 from src.core.amount_utils import enforce_amount_signs, normalize_amount
 from src.core.config import load_config
-from src.core.document_fields import whitelist_fields
+from src.core.document_fields import constrain_subtype, whitelist_fields
 from src.core.document_types import (
     BANK,
     EMPLOYMENT,
@@ -153,6 +153,10 @@ def _extract(document_type, text, max_input_chars=None):
     for field in AMOUNT_FIELDS.get(document_type, ()):
         if field in data:
             data[field] = normalize_amount(data.get(field))
+
+    # Erfundene Subtypen ans Vokabular binden, BEVOR die Whitelist nach dem
+    # Subtyp filtert (er entscheidet bei manchen Typen das Feldset).
+    data = constrain_subtype(document_type, data)
 
     return enforce_amount_signs(whitelist_fields(document_type, data))
 

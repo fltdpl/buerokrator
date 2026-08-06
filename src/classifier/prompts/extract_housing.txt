@@ -31,6 +31,10 @@ heizkostenabrechnung
 mietvertrag
 mieterhoehung
 hausgeldabrechnung
+sonstiges
+  (alles andere, z. B. Mitteilungen der Verwaltung)
+
+Erfinde keinen eigenen Wert.
 
 amount:
 Nur bei Mietverträgen und Mieterhöhungen: die monatliche Miete.

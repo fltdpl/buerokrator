@@ -44,6 +44,25 @@ def test_extract_bank_strips_unknown_fields(monkeypatch):
     assert set(data.keys()) == {"issuer", "document_date", "document_subtype"}
 
 
+def test_extract_bank_does_not_invent_a_subtype(monkeypatch):
+    # Betreff statt Unterart: ohne Bindung ans Vokabular entstünde beim Import
+    # eine Unterart „allgemeine geschäftsbedingungen".
+    def fake_run_extractor(prompt_file, text, max_input_chars=None):
+        return {
+            "issuer": "Musterbank AG",
+            "document_date": "01.03.2026",
+            "document_subtype": "Allgemeine Geschäftsbedingungen",
+            "subject": "",
+        }
+
+    monkeypatch.setattr(de, "run_extractor", fake_run_extractor)
+
+    data = de.extract_bank("text")
+
+    assert data["document_subtype"] == "sonstiges"
+    assert data["subject"] == "Allgemeine Geschäftsbedingungen"
+
+
 def test_extract_tax_keeps_schema_and_normalizes(monkeypatch):
     def fake_run_extractor(prompt_file, text, max_input_chars=None):
         return {

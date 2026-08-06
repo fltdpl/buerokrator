@@ -19,14 +19,19 @@ document_date:
 Dokumentdatum im Format YYYY-MM-DD falls erkennbar
 
 document_subtype:
-z.B.
-Kontoauszug
-Kreditkartenabrechnung
-Depotübersicht
+Wähle exakt einen dieser Werte:
+
+kontoauszug
+kreditkartenabrechnung
+depotuebersicht
+sonstiges
+  (alles andere, z. B. Mitteilungen, Anträge, geänderte Bedingungen)
+
+Erfinde keinen eigenen Wert.
 
 subject:
-Nur ausfüllen, wenn document_subtype nicht passt: kurze Angabe,
-worum es sich handelt. Sonst leer lassen.
+Nur bei sonstiges: kurze Angabe, worum es sich handelt
+(z. B. die Betreffzeile). Sonst leer lassen.
 
 Dokument:
 
