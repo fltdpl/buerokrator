@@ -31,6 +31,24 @@
   abweichende Rechnungsnummer) — daran entscheidet sich am Original, ob es
   wirklich derselbe Beleg ist. Angezeigt wird der Widerspruch, gefiltert
   wird nicht: er kann auch ein Lesefehler in einem der beiden Scans sein.
+- **Behoben: der Import erfand Unterarten.** Passte ein Bank-Dokument in
+  keine der bekannten Unterarten, schrieb die Erkennung stattdessen die
+  Betreffzeile in das Feld „Unterart" — im Filter standen dadurch Unterarten,
+  die es gar nicht gibt. Erkannte Unterarten sind jetzt auf das Vokabular des
+  jeweiligen Dokumenttyps festgelegt; passt keine, steht „Sonstiges", und der
+  Wortlaut wandert in den Betreff, wo er hingehört. Bestehende Dokumente
+  bekommen das über „Erneut prüfen" oder eine einmalige Auswahl im
+  Prüf-Workflow.
+- **Behoben: Bank-Dokumente trugen das Datum im falschen Format** —
+  „2019-05-23" statt „23.05.2019", also anders als alle übrigen Dokumente.
+  Datumsfelder werden jetzt einheitlich deutsch geführt, unabhängig davon,
+  was die Erkennung liefert; bestehende Dokumente ziehen beim nächsten
+  Speichern nach. An der Sortierung im Archiv ändert sich nichts — Dateinamen
+  beginnen weiterhin mit Jahr-Monat-Tag.
+- **Behoben: das Anwendungs-Log war nach einer Rotation für andere Benutzer
+  des Rechners lesbar.** Es enthält Dateinamen und ist deshalb auf den
+  Besitzer beschränkt; die bei der Rotation neu angelegte Datei erbte diese
+  Beschränkung bisher nicht.
 - **Behoben: nicht klassifizierte Dokumente hießen alle `unknown.pdf`** —
   ohne Datum und ohne Aussteller, sodass mehrere davon nur noch über einen
   angehängten Zähler zu unterscheiden waren. Sie bekommen jetzt denselben
@@ -51,6 +69,8 @@
 - **Behoben: Import meldet jetzt die Ursache** eines fehlgeschlagenen
   Dokuments statt nur den Dateinamen.
 - Datenbank-Migration ist gegen gleichzeitige Zugriffe abgesichert.
+- Testläufe schreiben nicht mehr in das Log einer vorhandenen Installation;
+  ihre Fehlerzeilen waren dort von echten nicht zu unterscheiden.
 - **Entfernt: der alte Live-Ordner-Watcher.** Er überwachte den
   `inbox`-Ordner und verarbeitete Dateien sofort, kannte aber keine
   Dubletten-Erkennung und war seit dem Stapel-Import über die Import-Seite
