@@ -46,7 +46,8 @@ Bewusste Vereinfachung: Lebensversicherungs-Altverträge (vor 2005) wären
 anteilig absetzbar; das bleibt außen vor.
 
 Ungeprüfte Beträge werden getrennt von geprüften summiert, damit
-unkontrollierte LLM-Zahlen die Summen nicht verfälschen.
+unkontrollierte LLM-Zahlen die Summen nicht verfälschen. Wie ein Dokument
+freigegeben wird: [Prüfworkflow](09_Pruefworkflow.md).
 
 ## Weitere Summen
 
@@ -213,25 +214,16 @@ negativ — das generische `amount` ist Magnitude und konnte das nicht).
 
 Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
 
-1. **Unit-Tests im Repo** (erfundene Zahlen!): pro Anlagen-Position ein
-   synthetischer Bestand mit handgerechneter Erwartung. Pflicht-Fälle:
-   Doppelzählungs-Fallen (12 Gehaltsabrechnungen + LStB; Bauspar-Auszug +
-   Steuerbescheinigung), ungeprüfte Belege (zählen nicht), zwei
-   Teilzeit-LStB desselben Jahres (addieren sich).
-2. **Golden-Master lokal (gitignored, echte Daten):** Nutzer pflegt
-   `tax_expected_<jahr>.yaml` mit den Werten aus einer tatsächlich
-   abgegebenen Erklärung (Ausdruck des Steuerprogramms oder Bescheid).
-   `python -m tools.tax_check <jahr>` vergleicht App-Ergebnis je Position und
-   listet jede Differenz mit Beleg-Herleitung.
-3. **Differenzen klassifizieren**, nicht wegoptimieren: (a) App-Fehler →
-   fixen; (b) App fehlt ein Beleg → importieren; (c) **die damalige
-   Erklärung war unvollständig** → Befund dokumentieren, App hat recht
-   (→ `ignoriert`-Vermerk in der Erwartungsdatei). Der Abgleich ist ein
-   Hilfsmittel, um kritische Stellen zu finden — kein hartes Kriterium.
-   Das Jahr gilt als abgenommen, wenn jede Differenz erklärt ist
-   (Nutzer-Entscheidung, kein Exit-Code).
-4. Das „im Aufbau"-Banner der Steuer-Seite fällt erst, wenn mindestens ein
-   echtes Jahr abgenommen ist.
+1. **Unit-Tests im Repo** (erfundene Zahlen!): je Anlagen-Position ein
+   synthetischer Bestand mit handgerechneter Erwartung, samt der
+   Doppelzählungs-Fallen und der Regel, dass ungeprüfte Belege nicht zählen.
+2. **Golden-Master lokal** (gitignored): `python -m tools.tax_check <jahr>`
+   vergleicht die App-Werte gegen die tatsächlich abgegebene Erklärung.
+3. **Differenzen klassifizieren**, nicht wegoptimieren: App-Fehler → fixen;
+   fehlender Beleg → importieren; die damalige Erklärung war unvollständig →
+   `ignoriert`-Vermerk. Kein hartes Kriterium, kein Exit-Code: das Jahr gilt
+   als abgenommen, wenn jede Differenz erklärt ist. Erst dann fällt das
+   „im Aufbau"-Banner der Steuer-Seite.
 
 **Offen ist nur noch Schritt 3 für ein reales Jahr.**
 
@@ -239,5 +231,5 @@ Ziel: der Nutzer kann sagen „diese Werte könnten so in die Erklärung".
 
 Spenden (fehlt als Dokumenttyp/Subtyp); § 35a aus
 Handwerker-EINZELrechnungen (bisher nur aus Wohnen-Abrechnungen —
-Einzelrechnungen bräuchten einen eigenen tax_purpose-Wert); siehe
-Ideenspeicher in [Dokumenttypen](03_Dokumenttypen.md).
+Einzelrechnungen bräuchten einen eigenen tax_purpose-Wert); weitere im
+[Ideenspeicher](06_Ideen.md).

@@ -14,7 +14,15 @@ def update_document(
     tax_relevant=None,
     tax_purpose=None,
 ):
+    """Speichert den bearbeiteten Stand — ohne den Prüfstatus anzufassen.
 
+    `verified` gehört ausschließlich `set_document_verified`. Früher stand
+    `verified = 1` fest in dieser Anweisung; damit gab auch der Knopf
+    „Speichern" das Dokument still frei, obwohl daneben „Speichern &
+    Freigeben" steht. Freigabe ist eine bewusste Entscheidung: an ihr hängen
+    die Steuersummen, das Aussteller-Gedächtnis und die Ground Truth der
+    Qualitätsmessung.
+    """
     with open_connection() as conn:
         cursor = conn.cursor()
 
@@ -27,7 +35,6 @@ def update_document(
                 document_type = ?,
                 extracted_data = ?,
                 notes = ?,
-                verified = 1,
                 tax_year = ?,
                 tax_relevant = ?,
                 tax_purpose = ?
@@ -55,10 +62,10 @@ def update_document(
 def update_document_data(document_id, extracted_data):
     """Ersetzt NUR extracted_data (z. B. Aussteller-Vereinheitlichung).
 
-    Lässt im Gegensatz zu update_document (setzt verified = 1, benennt um)
-    und replace_document_analysis (widerruft die Freigabe) den Prüfstatus,
-    die Datei und die Notizen unangetastet — für reine Metadaten-Korrekturen
-    ohne inhaltliche Neubewertung.
+    Lässt im Gegensatz zu update_document (verlangt den vollen Feldsatz und
+    benennt um) und replace_document_analysis (widerruft die Freigabe) die
+    Datei, die Notizen und den Prüfstatus unangetastet — für reine
+    Metadaten-Korrekturen ohne inhaltliche Neubewertung.
     """
     with open_connection() as conn:
         cursor = conn.cursor()

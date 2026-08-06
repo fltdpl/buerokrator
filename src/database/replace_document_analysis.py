@@ -12,8 +12,8 @@ def replace_document_analysis(document_id, document_type, extracted_data):
     Prüf-Workflow (verified = 0). Der tax_relevant-Override wird auf NULL
     zurückgesetzt, damit der Default des (ggf. neuen) Typs/Subtyps greift.
 
-    Bewusst nicht über update_document: die setzt verified = 1 und behielte
-    den Override. Datei/Pfad bleiben unangetastet.
+    Bewusst nicht über update_document: die behielte den Override und benennt
+    die Datei um. Datei/Pfad bleiben hier unangetastet.
     """
     with open_connection() as conn:
         cursor = conn.cursor()

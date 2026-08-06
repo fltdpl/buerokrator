@@ -31,6 +31,14 @@
   abweichende Rechnungsnummer) — daran entscheidet sich am Original, ob es
   wirklich derselbe Beleg ist. Angezeigt wird der Widerspruch, gefiltert
   wird nicht: er kann auch ein Lesefehler in einem der beiden Scans sein.
+- **Behoben: „Speichern" gab das Dokument still frei.** Beide Knöpfe führten
+  zum Status „geprüft" — der Unterschied war nur, ob danach zum nächsten
+  Dokument gesprungen wird. Ein zwischendurch gespeichertes Dokument zählte
+  damit sofort in die geprüften Steuersummen und in die Qualitätsmessung, ohne
+  dass jemand es freigegeben hatte. „💾 Speichern" lässt den Status jetzt, wie
+  er ist; freigegeben wird nur über „✅ Speichern & Freigeben". Bestehende
+  Freigaben bleiben unverändert — wer sie zurücknehmen möchte, nutzt in der
+  Dokumentenliste „Freigabe widerrufen".
 - **Behoben: der Import erfand Unterarten.** Passte ein Bank-Dokument in
   keine der bekannten Unterarten, schrieb die Erkennung stattdessen die
   Betreffzeile in das Feld „Unterart" — im Filter standen dadurch Unterarten,
@@ -71,6 +79,8 @@
 - Datenbank-Migration ist gegen gleichzeitige Zugriffe abgesichert.
 - Testläufe schreiben nicht mehr in das Log einer vorhandenen Installation;
   ihre Fehlerzeilen waren dort von echten nicht zu unterscheiden.
+- Neue Doku-Seite `docs/09_Pruefworkflow.md`: Zustände eines Dokuments,
+  Ablauf der Prüfseite und was beim Speichern passiert — als Diagramme.
 - **Entfernt: der alte Live-Ordner-Watcher.** Er überwachte den
   `inbox`-Ordner und verarbeitete Dateien sofort, kannte aber keine
   Dubletten-Erkennung und war seit dem Stapel-Import über die Import-Seite

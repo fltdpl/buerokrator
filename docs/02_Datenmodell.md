@@ -8,7 +8,8 @@
 - document_type
 - extracted_data — JSON, Felder je Typ/Subtyp (siehe unten)
 - created_at
-- verified — 1 = in der App geprüft (Ground Truth der Qualitätsmessung)
+- verified — 1 = in der App freigegeben (Ground Truth der Qualitätsmessung;
+  Zustände und Übergänge: [Prüfworkflow](09_Pruefworkflow.md))
 - document_text — OCR-Text (Eingabe für die Qualitätsmessung)
 - notes
 - tax_year — eigene Spalte, steuert die Archivstruktur `archive/<Jahr>/…`

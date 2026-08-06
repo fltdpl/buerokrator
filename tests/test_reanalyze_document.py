@@ -9,6 +9,7 @@ from src.database.database import open_connection
 from src.database.document_repository import insert_document
 from src.database.init_database import init_database
 from src.database.list_documents import get_document
+from src.database.set_document_verified import mark_document_verified
 from src.database.update_document import update_document
 
 
@@ -39,7 +40,8 @@ def insert_verified_document(document_text="Rechnungstext"):
         document_text=document_text,
     )
 
-    # Prüf-Workflow nachstellen: korrigierte Werte, verified = 1, Override.
+    # Prüf-Workflow nachstellen: korrigierte Werte, Override — und die
+    # Freigabe als eigener Schritt (Speichern gibt nicht frei).
     update_document(
         document_id=document_id,
         filename="2020-01-01_alt.pdf",
@@ -48,6 +50,7 @@ def insert_verified_document(document_text="Rechnungstext"):
         extracted_data={"issuer": "Alt AG (korrigiert)", "tax_year": "2020"},
         tax_relevant=1,
     )
+    mark_document_verified(document_id)
 
     return document_id
 

@@ -16,8 +16,8 @@ NiceGUI, Ollama optional) — keine Cloud, keine Web-Fonts, kein Update-Check.
 Komponenten** · `02` Datenmodell · `03` Dokumenttypen · **`04` Steuerlogik
 (maßgeblich, sobald es um Steuer geht)** · `05` Archiv- und
 Dateinamenskonvention · `06` nie gebaute Konzepte · `07` Betrieb und
-Release-Ablauf · `08` alle ADRs · **`CHANGELOG.md` laufend gepflegt** ·
-`roadmap.md`
+Release-Ablauf · `08` alle ADRs · **`09` Prüfworkflow (Zustände, Freigabe)** ·
+**`CHANGELOG.md` laufend gepflegt** · `roadmap.md`
 Langfrist · `HANDOVER.md` Sessionstand und lokale Messwerte (gitignored) ·
 `todo.md` Aufgaben (gitignored).
 

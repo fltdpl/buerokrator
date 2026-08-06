@@ -67,45 +67,27 @@ geprüften Lohnsteuerbescheinigungen (`income_service.py`), Stapel-Import
 (`import_job.py`), Kennzahlen, Backup, Systemstatus, Log-Zugriff.
 Nur Plain Data rein/raus — ohne GUI testbar.
 
-**Aussteller-Gedächtnis** (`issuer_memory.py`): wertet aus, was der geprüfte
-Bestand über einen Anbieter weiß — ohne Training, nur Abfragen über die
-geprüften Dokumente. Eine Verwendung im Prüf-Workflow: `type_mismatch` meldet,
-wenn der erkannte Dokumenttyp von dem abweicht, den dieser Aussteller bisher
-lieferte. Grundlage ist der bereits extrahierte Aussteller, nicht der Rohtext.
-
-Es ist ein HINWEIS, nie Automatik: der Mehrheitstyp eines Ausstellers liegt
-am Bestand gemessen seltener richtig als die Klassifikation selbst und darf
-sie deshalb nicht überstimmen. Gemeldet wird nur, wenn der Aussteller bisher
-**ausnahmslos** einen Typ lieferte — mit dem Mehrheitstyp als Auslöser wäre
-der Hinweis am geprüften Bestand ein Vielfaches an Fehlalarmen, und dort ist
-jeder davon einer, weil geprüfte Dokumente den richtigen Typ tragen. So
-eingestellt deckt er rund drei Viertel des Bestands ab (dort würde eine
-Fehlklassifikation auffallen) und kostet dabei fast keine Fehlalarme.
-
-Bewusst NICHT dabei: Vorschläge für leere Felder aus konstanten Werten des
-Ausstellers, und Few-Shot-Beispiele im Extraktions-Prompt. Beides war gebaut
-und wurde nach Messung am Bestand wieder entfernt —
+**Aussteller-Gedächtnis** (`issuer_memory.py`): fragt den geprüften Bestand
+ab, ohne Training. `type_mismatch` meldet im
+[Prüfworkflow](09_Pruefworkflow.md), wenn der erkannte Typ von dem abweicht,
+den dieser Aussteller bisher lieferte — und nur, wenn er bisher
+**ausnahmslos** einen anderen lieferte. Ein Hinweis, nie Automatik: der
+Mehrheitstyp eines Ausstellers liegt gemessen seltener richtig als die
+Klassifikation selbst. Warum daraus kein Lernsystem wurde und was dafür
+wieder ausgebaut wurde:
 [013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md).
 
 **Inhaltliche Dubletten** (`duplicate_service.py`): der Inhalts-Hash beim
 Import erkennt nur byte-gleiche Dateien — derselbe Beleg ein zweites Mal
 eingescannt rutscht durch. Der Service vergleicht deshalb die erkannten
-Werte: Treffer nur bei übereinstimmendem Aussteller plus entweder gleicher
-Rechnungsnummer oder gleichem Betrag UND Datum. Leere Werte matchen NIE,
-sonst wirft ein unerkanntes Feld den halben Bestand zusammen; die
-Policennummer ist bewusst kein Merkmal (sie steht über Jahre auf jedem
-Dokument eines Vertrags). Live berechnet statt beim Import gespeichert —
-die Werte ändern sich im Prüf-Workflow, eine gespeicherte Warnung stünde
-nach der ersten Korrektur falsch da. Angezeigt wird ein Hinweis mit Link;
-kein Auto-Löschen, die Wertung bleibt beim Nutzer. Neben dem Treffergrund
-steht, welche der verglichenen Felder **widersprechen** (beidseitig gefüllt
-und ungleich) — genau daran entscheidet sich am Original, ob es derselbe
-Beleg ist. Ein leerer Wert zählt dabei nicht als Widerspruch (Lücke, kein
-Gegenbeweis), und der Widerspruch filtert NICHT: eine abweichende
-Rechnungsnummer kann auch ein Lesefehler in einem der Scans sein. Bekannte
-Grenze: Typen
-ohne `amount`/`document_date` (employment arbeitet mit Zeitraum und
-`gross_amount`) lösen die Warnung nie aus.
+Werte: Treffer nur bei gleichem Aussteller plus gleicher Rechnungsnummer oder
+gleichem Betrag UND Datum. Leere Werte matchen NIE (sonst wirft ein
+unerkanntes Feld den halben Bestand zusammen), die Policennummer ist bewusst
+kein Merkmal (sie steht über Jahre auf jedem Dokument eines Vertrags). Live
+berechnet statt gespeichert, weil sich die Werte im Prüfworkflow ändern.
+Angezeigt werden Treffergrund und widersprechende Felder; der Widerspruch
+filtert NICHT — er kann ein Lesefehler in einem der Scans sein. Bekannte
+Grenze: Typen ohne `amount`/`document_date` lösen die Warnung nie aus.
 
 ### Frontend (`src/frontend`, NiceGUI)
 
@@ -114,8 +96,9 @@ schon eine Instanz, öffnet der Start nur den Browser dorthin, statt am
 belegten Port zu scheitern (im Browser-Modus beendet ein geschlossener Tab
 die App nicht — dafür gibt es den Beenden-Knopf).
 
-Seiten: Dashboard, Dokumentenliste (Filter + Bulk-Aktionen), Detail-/Prüfseite
-(Formular + PDF⇄OCR-Panel, Shortcuts), Import (mit Dubletten-Erkennung),
+Seiten: Dashboard, Dokumentenliste (Filter + Bulk-Aktionen),
+[Detail-/Prüfseite](09_Pruefworkflow.md) (Formular + PDF⇄OCR-Panel,
+Shortcuts), Import (mit Dubletten-Erkennung),
 **Analyse** (`/analyse` mit den Tabs „Steuer" und „Einkommen"; `/steuer`
 leitet um), Papierkorb, Einrichtung, Einstellungen (Tabs Konfiguration,
 Aliase, Papierkorb, Backup, Datenbank, Log).
@@ -144,11 +127,11 @@ geprüften Dokumente (Ground Truth).
 ### Regelparser (`src/extraction`)
 
 Nachbearbeitung der LLM-Extraktion für Formulare, die ein 4B-Modell
-nachweislich nicht zuverlässig liest: Es kann die zwölf Sparbeiträge eines
-Jahreskontoauszugs nicht summieren und ordnet Betragsspalten um eine Zeile
-versetzt zu. Beides ist aus dem Text exakt herleitbar — die Beitragssumme
-etwa aus der Bilanz (`Endsaldo - Saldovortrag - Zinsen + Steuern`) statt aus
-einer Summe, die schon an einer fehlenden OCR-Zeile scheitert.
+nachweislich nicht zuverlässig liest: es summiert Spalten nicht und ordnet
+Beträge zeilenversetzt zu. Beides ist aus dem Text exakt herleitbar — eine
+Jahressumme etwa aus der Bilanz (`Endsaldo - Saldovortrag - Zinsen +
+Steuern`) statt aus einer Summe, die schon an einer fehlenden OCR-Zeile
+scheitert.
 
 **Verbindliche Regeln für jeden Regelparser** (die App soll die Dokumente
 beliebiger Nutzer und Anbieter verarbeiten):
@@ -194,7 +177,7 @@ Organizer (Umbenennen, Archiv)
 ↓
 Datenbank
 ↓
-GUI: Prüfen/Korrigieren → Analyse (Steuer / Einkommen)
+GUI: [Prüfen/Korrigieren](09_Pruefworkflow.md) → Analyse (Steuer / Einkommen)
 
 ## Relevante Entscheidungen
 
