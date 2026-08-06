@@ -10,6 +10,28 @@ LOG_DIR = get_app_home() / "logs"
 LOG_FILE = LOG_DIR / "buerokrator.log"
 
 
+class OwnerOnlyRotatingFileHandler(RotatingFileHandler):
+    """Rotierender Handler, der 0600 auch nach der Rotation hält.
+
+    Das Log enthält Dateinamen (Aussteller, Beträge). Die Rechte einmal beim
+    Prozessstart zu setzen genügt nicht: bei der Rotation entsteht eine NEUE
+    Datei, die die umask erbt — bei verbreiteten Einstellungen 0664, also für
+    alle lesbar. _open() läuft beim Anlegen und nach jeder Rotation, deshalb
+    sitzt der chmod hier.
+    """
+
+    def _open(self):
+        stream = super()._open()
+
+        try:
+            os.chmod(self.baseFilename, 0o600)
+
+        except OSError:
+            pass
+
+        return stream
+
+
 def _configured_level():
     """Log-Level aus config/settings.yaml (logging.level), Fallback INFO.
 
@@ -41,7 +63,8 @@ def _build_logger():
     log.setLevel(_configured_level())
 
     # Rotation statt endlosem Wachstum: 2 MB pro Datei, 3 Altbestände.
-    handler = RotatingFileHandler(
+    # Der Handler setzt die Rechte selbst (0600, auch nach der Rotation).
+    handler = OwnerOnlyRotatingFileHandler(
         LOG_FILE,
         maxBytes=2_000_000,
         backupCount=3,
@@ -51,14 +74,6 @@ def _build_logger():
         logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     )
     log.addHandler(handler)
-
-    # Das Log enthält Dateinamen (Aussteller, Beträge) — nur für den
-    # Besitzer lesbar. Rotierte Dateien erben die Rechte der Erzeugung.
-    try:
-        os.chmod(LOG_FILE, 0o600)
-
-    except OSError:
-        pass
 
     return log
 

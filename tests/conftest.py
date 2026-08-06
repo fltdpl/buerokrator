@@ -1,6 +1,30 @@
 """Globale Test-Fixtures."""
 
+import logging
+
 import pytest
+
+
+@pytest.fixture(autouse=True, scope="session")
+def kein_schreiben_ins_nutzer_log():
+    """Kein Test schreibt ins echte Log des Nutzers.
+
+    Im Entwickler-Modus zeigt das App-Home auf das Repo; der Logger hängt also
+    an logs/buerokrator.log. Jeder Testlauf hat dort angehängt — auch die
+    ERROR-Zeilen der Fehlerpfad-Tests, samt tmp-Pfaden. Beim Diagnostizieren
+    waren sie von echten Fehlern nicht zu unterscheiden, und sie füllten die
+    2-MB-Rotation mit Rauschen.
+
+    Nur der Datei-Handler wird abgehängt: über die Weitergabe an den
+    Root-Logger bleibt caplog unverändert nutzbar.
+    """
+    from src.core.logger import logger as app_logger
+
+    for handler in list(app_logger.handlers):
+        app_logger.removeHandler(handler)
+        handler.close()
+
+    app_logger.addHandler(logging.NullHandler())
 
 
 @pytest.fixture(autouse=True)
