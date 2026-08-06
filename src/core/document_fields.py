@@ -1,5 +1,8 @@
 from difflib import get_close_matches
 
+# Einzige Abhängigkeit dieses Pakets nach außen: date_utils hängt selbst nur an
+# der Standardbibliothek, ein Zyklus ist damit ausgeschlossen. Die Alternative
+# wäre gewesen, die Datumshygiene auf vier Aufrufer zu verteilen.
 from src.core.document_types import (
     BANK,
     EMPLOYMENT,
@@ -10,6 +13,7 @@ from src.core.document_types import (
     PENSION,
     TAX,
 )
+from src.organizer.date_utils import to_german_date
 
 # Steuer-Subtypen und ihre jeweils gültigen Felder. Jeder Subtyp hat ein
 # eigenes Feldset, damit nur passende Felder erfasst/gespeichert werden.
@@ -380,6 +384,11 @@ def whitelist_fields(document_type: str, data: dict | None) -> dict:
         key: value.strip() if isinstance(value, str) else value
         for key, value in data.items()
     }
+
+    # Datum im Anzeigeformat führen. Das Modell liefert gelegentlich ISO —
+    # beim Bank-Prompt kam es lange sogar aus der Anweisung selbst.
+    if "document_date" in data:
+        data = {**data, "document_date": to_german_date(data["document_date"])}
 
     if "document_subtype" in data:
         data = {

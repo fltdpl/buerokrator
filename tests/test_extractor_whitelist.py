@@ -63,6 +63,21 @@ def test_extract_bank_does_not_invent_a_subtype(monkeypatch):
     assert data["subject"] == "Allgemeine Geschäftsbedingungen"
 
 
+def test_extract_bank_liefert_das_datum_deutsch(monkeypatch):
+    # Der Bank-Prompt verlangte als einziger ISO — im Formular stand das Datum
+    # dann anders als bei allen übrigen Dokumenten.
+    def fake_run_extractor(prompt_file, text, max_input_chars=None):
+        return {
+            "issuer": "Musterbank AG",
+            "document_date": "2019-05-23",
+            "document_subtype": "kontoauszug",
+        }
+
+    monkeypatch.setattr(de, "run_extractor", fake_run_extractor)
+
+    assert de.extract_bank("text")["document_date"] == "23.05.2019"
+
+
 def test_extract_tax_keeps_schema_and_normalizes(monkeypatch):
     def fake_run_extractor(prompt_file, text, max_input_chars=None):
         return {

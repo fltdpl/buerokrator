@@ -9,7 +9,7 @@ Dokumentjahres archiviert wurde.
 Alle Werte erfunden.
 """
 
-from src.organizer.date_utils import extract_year, normalize_date
+from src.organizer.date_utils import extract_year, normalize_date, to_german_date
 
 
 def test_deutsches_vollformat_bleibt_wie_bisher():
@@ -60,6 +60,30 @@ def test_kein_monatsname_wird_zufaellig_getroffen():
     # "Mai" steckt in "Mailand" — die Erkennung darf nicht auf Teilwörtern
     # anschlagen.
     assert normalize_date("20. Mailand 2017") == "20. Mailand 2017"
+
+
+def test_to_german_date_wandelt_iso_ins_anzeigeformat():
+    # Datumsfelder werden in der App deutsch geführt; ISO ist die interne
+    # Form für Dateinamen (normalize_date).
+    assert to_german_date("2019-05-23") == "23.05.2019"
+    assert to_german_date("2024-03-11") == "11.03.2024"
+
+
+def test_to_german_date_laesst_deutsches_format_stehen():
+    assert to_german_date("23.05.2019") == "23.05.2019"
+
+
+def test_to_german_date_versteht_dieselben_schreibweisen_wie_normalize():
+    assert to_german_date("20. April 2017") == "20.04.2017"
+    assert to_german_date("20.06.18") == "20.06.2018"
+    assert to_german_date(" 2019-05-23 ") == "23.05.2019"
+
+
+def test_to_german_date_laesst_unparsbares_und_nicht_strings_unveraendert():
+    assert to_german_date("Kontoauszug Nr. 4") == "Kontoauszug Nr. 4"
+    assert to_german_date("01/03/2024") == "01/03/2024"
+    assert to_german_date("") == ""
+    assert to_german_date(None) is None
 
 
 def test_extract_year_findet_zweistelliges_jahr():

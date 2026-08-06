@@ -53,6 +53,39 @@ def _parse_textdatum(text):
         return None
 
 
+def _parse_datum(text):
+    """Versteht deutsches Voll-/Kurzformat, ISO und ausgeschriebene Monate."""
+    for date_format in _NUMERISCHE_FORMATE:
+        try:
+            return datetime.strptime(text, date_format)
+
+        except ValueError:
+            continue
+
+    return _parse_textdatum(text)
+
+
+def to_german_date(date_string):
+    """Datum als DD.MM.YYYY — das Format, in dem die App Datumsfelder führt.
+
+    Gegenstück zu normalize_date: ISO ist die interne Form für Dateinamen und
+    Vergleiche, DD.MM.YYYY die Form im Datensatz und im Formular. Beide
+    verstehen dieselben Schreibweisen; unparsbare Werte kommen unverändert
+    zurück, damit ein unverstandenes Datum nichts abbricht.
+    """
+    if not isinstance(date_string, str):
+        return date_string
+
+    text = date_string.strip()
+
+    if not text:
+        return date_string
+
+    parsed = _parse_datum(text)
+
+    return parsed.strftime("%d.%m.%Y") if parsed else date_string
+
+
 def normalize_date(date_string):
     """Datum als YYYY-MM-DD; unparsbare Werte kommen unverändert zurück.
 
@@ -73,14 +106,7 @@ def normalize_date(date_string):
     if not text:
         return date_string
 
-    for date_format in _NUMERISCHE_FORMATE:
-        try:
-            return datetime.strptime(text, date_format).strftime("%Y-%m-%d")
-
-        except ValueError:
-            continue
-
-    parsed = _parse_textdatum(text)
+    parsed = _parse_datum(text)
 
     return parsed.strftime("%Y-%m-%d") if parsed else date_string
 

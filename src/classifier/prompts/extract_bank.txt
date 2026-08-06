@@ -16,7 +16,7 @@ issuer:
 Name der Bank oder des Herausgebers
 
 document_date:
-Dokumentdatum im Format YYYY-MM-DD falls erkennbar
+Dokumentdatum im Format DD.MM.YYYY falls erkennbar
 
 document_subtype:
 Wähle exakt einen dieser Werte:

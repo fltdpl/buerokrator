@@ -25,6 +25,20 @@ def write_config(tmp_path):
     )
 
 
+def test_whitelist_fields_fuehrt_das_datum_im_anzeigeformat():
+    # Datumsfelder werden deutsch geführt. Das Modell liefert gelegentlich ISO
+    # (bei bank kam es aus dem Prompt selbst) — im Formular stand dann
+    # "2019-05-23" zwischen lauter deutschen Datumsangaben.
+    kept = whitelist_fields("bank", {"issuer": "Musterbank AG", "document_date": "2019-05-23"})
+
+    assert kept["document_date"] == "23.05.2019"
+
+    # Unverständliches bleibt stehen, statt den Speichervorgang zu verlieren.
+    roh = whitelist_fields("bank", {"document_date": "ohne erkennbares Datum"})
+
+    assert roh["document_date"] == "ohne erkennbares Datum"
+
+
 def test_whitelist_fields_filters_and_passes_unknown_type():
     data = {"issuer": "X", "amount": 10, "currency": "EUR", "foo": "bar"}
 
