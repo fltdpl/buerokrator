@@ -16,7 +16,8 @@ NiceGUI, Ollama optional) — keine Cloud, keine Web-Fonts, kein Update-Check.
 Komponenten** · `02` Datenmodell · `03` Dokumenttypen · **`04` Steuerlogik
 (maßgeblich, sobald es um Steuer geht)** · `05` Archiv- und
 Dateinamenskonvention · `06` nie gebaute Konzepte · `07` Betrieb und
-Release-Ablauf · `08` alle ADRs · `CHANGELOG.md` je Release · `roadmap.md`
+Release-Ablauf · `08` alle ADRs · **`CHANGELOG.md` laufend gepflegt** ·
+`roadmap.md`
 Langfrist · `HANDOVER.md` Sessionstand und lokale Messwerte (gitignored) ·
 `todo.md` Aufgaben (gitignored).
 
@@ -28,6 +29,14 @@ Langfrist · `HANDOVER.md` Sessionstand und lokale Messwerte (gitignored) ·
 vorschlagen, und zwar **als Datei** `.git/COMMIT_MSG_vorschlag.txt` — beim
 Kopieren aus dem Chat ging schon einmal die Betreffzeile verloren. Trotzdem den Text auch noch anzeigen. Der Nutzer
 sieht dann nur `git commit -F .git/COMMIT_MSG_vorschlag.txt`.
+
+**Den `CHANGELOG.md` mitpflegen, nicht erst beim Release.** Jede
+nutzersichtbare Änderung kommt vor dem Commit-Vorschlag in den Abschnitt
+„Unveröffentlicht", neueste zuerst: fettes **Neu:** oder **Behoben:**, dann
+Problem und Folge aus Nutzersicht — und, falls Bestandsdokumente nachziehen
+müssen, wodurch („beim nächsten Speichern", „über Erneut prüfen"). Rein
+interne Änderungen höchstens als schlichter Stichpunkt. Es gelten dieselben
+Datenschutzregeln wie für jede getrackte Datei.
 
 **Das Repo ist öffentlich, es gab mehrere Vorfälle.**
 
