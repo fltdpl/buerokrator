@@ -6,6 +6,7 @@ BANK = "bank"
 HOUSING = "housing"
 EMPLOYMENT = "employment"
 LEGAL = "legal"
+EDUCATION = "education"
 UNKNOWN = "unknown"
 
 DOCUMENT_TYPES = (
@@ -17,6 +18,7 @@ DOCUMENT_TYPES = (
     HOUSING,
     EMPLOYMENT,
     LEGAL,
+    EDUCATION,
     UNKNOWN,
 )
 
@@ -31,6 +33,7 @@ DOCUMENT_TYPE_LABELS = {
     HOUSING: "Wohnen",
     EMPLOYMENT: "Arbeit",
     LEGAL: "Recht",
+    EDUCATION: "Ausbildung",
     UNKNOWN: "Sonstiges",
 }
 
@@ -43,6 +46,7 @@ ARCHIVE_CATEGORY_LABELS = {
     HOUSING: "Wohnen",
     EMPLOYMENT: "Arbeit",
     LEGAL: "Recht",
+    EDUCATION: "Ausbildung",
     UNKNOWN: "Sonstiges",
 }
 

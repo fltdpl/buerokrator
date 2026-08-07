@@ -5,6 +5,7 @@ from pathlib import Path
 from src.core.amount_utils import normalize_amount
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -123,6 +124,7 @@ def build_filename(classification, extracted_data, original_file_path):
         HOUSING: build_housing_filename,
         EMPLOYMENT: build_employment_filename,
         LEGAL: build_legal_filename,
+        EDUCATION: build_education_filename,
     }
 
     builder = builders.get(document_type)
@@ -431,6 +433,29 @@ def build_housing_filename(
     )
 
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
+
+
+@_sanitized
+def build_education_filename(
+    extracted_data,
+    suffix,
+):
+    """Datum + Aussteller + Betreff, wie bei legal.
+
+    Ohne Betreff tritt die Unterart ein ("Zeugnis", "Fortbildung"): sie ist
+    dann die einzige Aussage, die überhaupt vorliegt — und im Ordner einer
+    Schule immer noch nützlicher als der Typname.
+    """
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
+    )
+
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
+
+    subtype = _text_value(extracted_data.get("document_subtype"), "").capitalize()
+    subject = _clean_name(extracted_data.get("subject"), subtype or "Ausbildung")
+
+    return f"{document_date}_{issuer}_{subject}{suffix}"
 
 
 @_sanitized

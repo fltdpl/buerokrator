@@ -16,6 +16,7 @@ bank
 housing
 employment
 legal
+education
 unknown
 
 Verwende ausschließlich einen dieser Werte.
@@ -82,6 +83,16 @@ legal:
 - Mahnbescheide, Klagen, Vergleiche
 - Schriftverkehr mit Ämtern und Behörden zu Rechtsangelegenheiten
 
+education:
+- Schulzeugnisse (Jahres-, Halbjahres-, Abschlusszeugnisse, Abitur)
+- Hochschulzeugnisse, Bachelor-/Master-/Diplomurkunden, Notenübersichten
+- Immatrikulations- und Exmatrikulationsbescheinigungen
+- Berufsausbildung: Ausbildungsvertrag, Berufsschulzeugnis, Prüfungszeugnis
+  der Kammer, Gesellen- und Meisterbrief
+- Fortbildungen: Teilnahmebescheinigungen, Zertifikate, Lehrgangs- und
+  Seminarnachweise
+- Bescheide zur Ausbildungsförderung (BAföG, Stipendien)
+
 unknown:
 - Dokumente, die keiner der Kategorien eindeutig zugeordnet werden können
 
@@ -100,6 +111,16 @@ Entscheidungsregeln bei Überschneidungen:
 - Eine Rechnung VON einer Versicherung über Versicherungsbeiträge
   ist insurance.
 - Schreiben vom Finanzamt sind tax, NICHT legal.
+- Arbeitszeugnisse und Zwischenzeugnisse sind employment, NICHT education.
+  Entscheidend ist, WAS bescheinigt wird: eine Arbeitsleistung im
+  Arbeitsverhältnis -> employment, eine Qualifikation oder Prüfungsleistung
+  -> education.
+- Eine Schule oder Hochschule kann auch ARBEITGEBER sein. Eine
+  Gehaltsabrechnung, Lohnsteuerbescheinigung oder SV-Meldung einer
+  Universität ist employment, NICHT education — auch wenn der Name der
+  Einrichtung im Briefkopf steht.
+- Die RECHNUNG für einen Lehrgang oder ein Seminar ist invoice; die
+  Teilnahmebescheinigung oder das Zertifikat dazu ist education.
 
 Dokument:
 

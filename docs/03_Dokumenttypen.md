@@ -15,14 +15,29 @@ Feldsätze).
 - employment (Arbeit: Verträge, Kündigungen, Zeugnisse, Lohnsteuer/Gehalt,
   SV-Meldungen)
 - legal (Recht: Anwalt/Gericht/Behörde; Korrespondenzpartner + Betreff)
+- education (Ausbildung: Schul- und Hochschulzeugnisse, Urkunden,
+  Fortbildungsnachweise; ohne Steuerrelevanz)
 - unknown (mit Freitext-Betreff)
 
 **Konvention: Typ = Lebensbereich.** Eine Nebenkostenabrechnung ist
 `housing`, nicht `invoice`; der Zahlungsaspekt ist das Feld `amount`.
 
+### Abgrenzung employment ↔ education ↔ invoice
+
+Entscheidend ist, **was bescheinigt wird**, nicht wer im Briefkopf steht
+([ADR 014](decisions/014_kategorie_ausbildung.md)):
+
+- Eine Arbeitsleistung im Arbeitsverhältnis → `employment`. Arbeits- und
+  Zwischenzeugnisse bleiben dort.
+- Eine Qualifikation oder Prüfungsleistung → `education`.
+- Eine Schule oder Hochschule kann **Arbeitgeber** sein: Gehaltsabrechnung,
+  Lohnsteuerbescheinigung und SV-Meldung einer Universität sind `employment`.
+- Die Rechnung für einen Lehrgang ist `invoice`, die Teilnahmebescheinigung
+  dazu `education` — wie bei Arztrechnungen, die `invoice` bleiben.
+
 ## Kanonische Subtypen (`document_subtype`)
 
-Nur diese fünf Typen kennen Subtypen (`KNOWN_SUBTYPES`); bei den übrigen
+Nur diese sechs Typen kennen Subtypen (`KNOWN_SUBTYPES`); bei den übrigen
 gilt der Feldsatz des Typs.
 
 - **employment**: arbeitsvertrag, kuendigung, arbeitszeugnis,
@@ -34,10 +49,17 @@ gilt der Feldsatz des Typs.
 - **housing**: nebenkostenabrechnung, heizkostenabrechnung, mietvertrag,
   mieterhoehung, hausgeldabrechnung, sonstiges
 - **bank**: kontoauszug, kreditkartenabrechnung, depotuebersicht, sonstiges
+- **education**: zeugnis, fortbildung, sonstiges
 
 Frei eingegebene oder vom Modell erfundene Subtypen werden über
 `SUBTYPE_ALIASES` und einen Fuzzy-Match auf dieses Vokabular normalisiert
 (`normalize_subtype`).
+
+Bei `education` trägt die **Alias-Tabelle die ganze Last**: der Fuzzy-Match
+(Schwelle 0,85) erkennt keinen einzigen realen Wortlaut — „abschlusszeugnis"
+liegt zu weit von „zeugnis" entfernt. Ohne Alias landet jedes echte Dokument
+über `constrain_subtype` in `sonstiges`. Neue Wortlaute gehören deshalb dort
+ergänzt, nicht dem Fuzzy-Match überlassen.
 
 **Altlast bei tax:** `lohnsteuerbescheinigung` und `gehaltsabrechnung` sind
 nach employment umgezogen (Aussteller = Arbeitgeber, also Arbeits- und nicht

@@ -19,6 +19,7 @@ from src.core.amount_utils import normalize_amount
 from src.core.document_fields import HOUSING_ABRECHNUNG_SUBTYPES
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -44,6 +45,15 @@ EMPLOYMENT_SUBTYPE_LABELS = {
     "lohnsteuerbescheinigung": "Lohnsteuerbescheinigung (jährlich)",
     "gehaltsabrechnung": "Gehaltsabrechnung (monatlich)",
     "sv_meldung": "SV-Meldung (§ 25 DEÜV)",
+    "sonstiges": "Sonstiges",
+}
+
+# Ausbildung: der Subtyp kategorisiert nur, der Feldsatz ist für alle gleich.
+# Zeugnis und Urkunde teilen sich eine Art — was genau bescheinigt wird
+# (Abitur, Master, Gesellenbrief), steht im Betreff.
+EDUCATION_SUBTYPE_LABELS = {
+    "zeugnis": "Zeugnis / Urkunde",
+    "fortbildung": "Fortbildung / Zertifikat",
     "sonstiges": "Sonstiges",
 }
 
@@ -246,6 +256,12 @@ def subtype_config(document_type):
             "labels": EMPLOYMENT_SUBTYPE_LABELS,
         }
 
+    if document_type == EDUCATION:
+        return {
+            "options": list(EDUCATION_SUBTYPE_LABELS),
+            "labels": EDUCATION_SUBTYPE_LABELS,
+        }
+
     return None
 
 
@@ -274,6 +290,15 @@ def form_fields(document_type, subtype=None):
             _text("issuer", "Korrespondenzpartner", required=True),
             _text("document_date", "Datum", required=True),
             _text("subject", "Betreff"),
+        ]
+
+    if document_type == EDUCATION:
+        # Für alle Unterarten derselbe Satz — der Betreff trägt die
+        # eigentliche Aussage ("Abschlusszeugnis", "Master of Science").
+        return [
+            _text("issuer", "Schule / Hochschule / Anbieter", required=True),
+            _text("document_date", "Datum", required=True),
+            _text("subject", "Betreff", required=True),
         ]
 
     if document_type == EMPLOYMENT:

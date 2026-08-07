@@ -1,0 +1,47 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "document_subtype": "",
+  "issuer": "",
+  "document_date": "",
+  "subject": ""
+}}
+
+document_subtype:
+Wähle exakt einen dieser Werte:
+
+"zeugnis"
+  = Schulzeugnis, Abschlusszeugnis, Abiturzeugnis, Berufsschulzeugnis,
+    Hochschulzeugnis, Bachelor-/Master-/Diplomurkunde, Notenübersicht,
+    Prüfungszeugnis der Kammer, Gesellen- oder Meisterbrief,
+    Immatrikulations- und Exmatrikulationsbescheinigung
+"fortbildung"
+  = Teilnahmebescheinigung, Zertifikat, Lehrgangs-, Seminar- oder
+    Schulungsnachweis
+"sonstiges"
+  = alles andere aus dem Bereich Ausbildung (z. B. Ausbildungsvertrag,
+    BAföG-Bescheid, Stipendienzusage)
+
+Verwende ausschließlich einen dieser drei Werte.
+Erfinde keine neuen Werte.
+
+issuer:
+Die ausstellende Einrichtung (Schule, Hochschule, Kammer, Bildungsanbieter).
+Der Briefkopf entscheidet, nicht eine beiläufig genannte Einrichtung.
+
+document_date:
+Ausstellungsdatum im Format DD.MM.YYYY falls erkennbar
+
+subject:
+Kurze Angabe, WAS bescheinigt wird — die eigentliche Aussage des Dokuments
+(z. B. "Abschlusszeugnis Realschule", "Master of Science Informatik",
+"Lehrgang Projektmanagement"). Keine Note, kein Name der Person.
+
+Dokument:
+
+{document_text}

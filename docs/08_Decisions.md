@@ -15,3 +15,4 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 - [011 Theme](decisions/011_theme.md)
 - [012 Kein Update-Check](decisions/012_kein_update_check.md)
 - [013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md)
+- [014 Kategorie Ausbildung](decisions/014_kategorie_ausbildung.md)

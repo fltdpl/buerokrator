@@ -4,6 +4,20 @@
 
 ## Unveröffentlicht
 
+- **Neu: Kategorie „Ausbildung".** Schul- und Hochschulzeugnisse, Urkunden
+  und Fortbildungsnachweise haben jetzt einen eigenen Lebensbereich mit den
+  Unterarten **Zeugnis / Urkunde**, **Fortbildung / Zertifikat** und
+  **Sonstiges**. Sie bekommen einen eigenen Archivordner und lassen sich
+  filtern, statt unter „Sonstiges" oder fälschlich unter „Arbeit" zu landen.
+
+  **Arbeitszeugnisse bleiben bei „Arbeit"** — dort wird eine Arbeitsleistung
+  bescheinigt, hier eine Qualifikation. Und die Rechnung für einen Lehrgang
+  bleibt eine Rechnung; nur der Nachweis dazu ist Ausbildung.
+
+  **Bestandsdokumente ziehen nicht von selbst nach.** Wer Zeugnisse schon
+  importiert hat, findet sie womöglich unter „Arbeit" — sie wandern über
+  „Erneut prüfen" oder durch Umstellen des Typs im Prüf-Workflow. Die
+  Ausbildungskategorie ist bewusst **nicht steuerrelevant**.
 - **Neu: Hinweis, wenn ein Dokument nicht zum Aussteller passt.** Die meisten
   Dokumente kommen von einem Anbieter, der längst im Archiv liegt. Hat dieser
   bisher **ausnahmslos** einen anderen Dokumenttyp geschickt, sagt der

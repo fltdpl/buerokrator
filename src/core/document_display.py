@@ -2,6 +2,7 @@ import json
 
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -55,6 +56,12 @@ EMPLOYMENT_SUBTYPE_SHORT_LABELS = {
     "lohnsteuerbescheinigung": "Lohnsteuer",
     "gehaltsabrechnung": "Gehaltsabrechnung",
     "sv_meldung": "SV-Meldung",
+    "sonstiges": "Sonstiges",
+}
+
+EDUCATION_SUBTYPE_SHORT_LABELS = {
+    "zeugnis": "Zeugnis / Urkunde",
+    "fortbildung": "Fortbildung",
     "sonstiges": "Sonstiges",
 }
 
@@ -126,6 +133,13 @@ def get_document_art_label(document_type, extracted_data):
             return f"SV-Meldung · {subject}" if subject else "SV-Meldung"
 
         return EMPLOYMENT_SUBTYPE_SHORT_LABELS.get(subtype) or "Arbeit"
+
+    if document_type == EDUCATION:
+        subtype = data.get("document_subtype")
+        if subtype == "sonstiges":
+            return data.get("subject") or "Sonstiges"
+
+        return EDUCATION_SUBTYPE_SHORT_LABELS.get(subtype) or "Ausbildung"
 
     if document_type == LEGAL:
         return data.get("subject") or "Recht"

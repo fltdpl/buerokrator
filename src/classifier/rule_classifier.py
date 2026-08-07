@@ -2,6 +2,7 @@ import re
 
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -104,6 +105,41 @@ KEYWORD_WEIGHTS = {
         ("betriebskostenabrechnung", 3),
         ("heizkostenabrechnung", 3),
         ("mietvertrag", 3),
+    ),
+    EDUCATION: (
+        # Ausschließlich Dokumenttitel. Namen von Einrichtungen ("Hochschule",
+        # "Universität") stehen bewusst NICHT hier: Bildungseinrichtungen sind
+        # auch Arbeitgeber und stehen dann im Briefkopf von Gehaltsabrechnungen
+        # und SV-Meldungen. Sie würden employment-Dokumente hierher ziehen.
+        ("abiturzeugnis", 3),
+        ("jahreszeugnis", 3),
+        ("halbjahreszeugnis", 3),
+        ("berufsschulzeugnis", 3),
+        ("prüfungszeugnis", 3),
+        ("pruefungszeugnis", 3),
+        ("teilnahmebescheinigung", 3),
+        ("immatrikulationsbescheinigung", 3),
+        ("exmatrikulationsbescheinigung", 3),
+        ("gesellenbrief", 3),
+        ("meisterbrief", 3),
+        ("bachelorurkunde", 3),
+        ("masterurkunde", 3),
+        ("diplomurkunde", 3),
+        ("urkunde über die verleihung", 3),
+        # bewusst schwach: "Abschlusszeugnis" ist im Arbeitsrecht ebenfalls
+        # ein stehender Begriff — Kündigungen und Aufhebungsverträge sagen das
+        # qualifizierte Abschlusszeugnis zu. Am Bestand gemessen zog das Wort
+        # mit Gewicht 3 Aufhebungsverträge fälschlich hierher. Mit Gewicht 1
+        # entscheidet es nie allein (MIN_SCORE 3 und max_weight >= 2 greifen
+        # nicht mehr), trägt aber weiter bei, wenn ein zweites Indiz da ist.
+        ("abschlusszeugnis", 1),
+        # ebenfalls schwächer: kommen auch außerhalb eines Nachweises vor
+        # ("Zertifikat" etwa in Versicherungs- und Bankunterlagen).
+        ("lehrgang", 2),
+        ("bafög", 2),
+        ("bafoeg", 2),
+        ("zertifikat", 1),
+        ("seminar", 1),
     ),
 }
 

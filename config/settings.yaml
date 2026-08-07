@@ -31,6 +31,7 @@ supported_document_types:
 - housing
 - employment
 - legal
+- education
 - unknown
 archive:
   category_mapping:
@@ -42,4 +43,5 @@ archive:
     housing: Wohnen
     employment: Arbeit
     legal: Recht
+    education: Ausbildung
     unknown: Sonstiges

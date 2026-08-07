@@ -6,6 +6,7 @@ from src.core.config import load_config
 from src.core.document_fields import constrain_subtype, whitelist_fields
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -125,6 +126,7 @@ PROMPT_FILES = {
     HOUSING: "extract_housing.txt",
     EMPLOYMENT: "extract_employment.txt",
     LEGAL: "extract_legal.txt",
+    EDUCATION: "extract_education.txt",
 }
 
 
@@ -198,6 +200,10 @@ def extract_legal(text):
     return _extract(LEGAL, text)
 
 
+def extract_education(text):
+    return _extract(EDUCATION, text)
+
+
 def extract_employment(text):
     data = _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
 
@@ -236,6 +242,7 @@ def extract_document(
         HOUSING: extract_housing,
         EMPLOYMENT: extract_employment,
         LEGAL: extract_legal,
+        EDUCATION: extract_education,
     }
 
     extractor = extractors.get(document_type)

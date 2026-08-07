@@ -16,6 +16,7 @@ archive/
     - Wohnen (housing)
     - Arbeit (employment)
     - Recht (legal)
+    - Ausbildung (education)
     - Sonstiges (unknown)
 
 Beispiel:

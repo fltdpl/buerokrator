@@ -5,6 +5,7 @@ from difflib import get_close_matches
 # wäre gewesen, die Datumshygiene auf vier Aufrufer zu verteilen.
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -157,6 +158,10 @@ ALLOWED_FIELDS = {
     },
     EMPLOYMENT: set().union(*EMPLOYMENT_SUBTYPE_FIELDS.values()),
     LEGAL: {"issuer", "document_date", "subject"},
+    # Ausbildung: alle Unterarten teilen denselben Feldsatz — was das Dokument
+    # bescheinigt, steht im Betreff. Bewusst ohne amount: die Kosten einer
+    # Fortbildung stehen auf der Rechnung (invoice), nicht auf dem Nachweis.
+    EDUCATION: {"document_subtype", "issuer", "document_date", "subject"},
 }
 
 # Pension-Subtypen: der Bauspar-Jahresauszug nutzt Kapitalertragsfelder statt
@@ -256,6 +261,11 @@ KNOWN_SUBTYPES = {
         "sonstiges",
     },
     EMPLOYMENT: set(EMPLOYMENT_SUBTYPE_FIELDS),
+    EDUCATION: {
+        "zeugnis",
+        "fortbildung",
+        "sonstiges",
+    },
 }
 
 # Aliasse für frei eingegebene oder vom LLM erfundene Subtypen.
@@ -295,6 +305,49 @@ SUBTYPE_ALIASES = {
         "deuev": "sv_meldung",
         "deüv": "sv_meldung",
     },
+    # Ausbildung lebt von dieser Tabelle: der Fuzzy-Match in
+    # normalize_subtype (cutoff 0.85) erkennt KEINEN der realen Wortlaute —
+    # "abschlusszeugnis" ist von "zeugnis" zu weit entfernt. Ohne Alias liefe
+    # jedes echte Dokument über constrain_subtype in "sonstiges".
+    EDUCATION: {
+        # Zeugnisse und Urkunden: Schule, Hochschule, Kammer.
+        "abschlusszeugnis": "zeugnis",
+        "schulzeugnis": "zeugnis",
+        "jahreszeugnis": "zeugnis",
+        "halbjahreszeugnis": "zeugnis",
+        "abiturzeugnis": "zeugnis",
+        "abitur": "zeugnis",
+        "berufsschulzeugnis": "zeugnis",
+        "hochschulzeugnis": "zeugnis",
+        "bachelorzeugnis": "zeugnis",
+        "masterzeugnis": "zeugnis",
+        "bachelorurkunde": "zeugnis",
+        "masterurkunde": "zeugnis",
+        "diplomurkunde": "zeugnis",
+        "urkunde": "zeugnis",
+        "diplom": "zeugnis",
+        "prüfungszeugnis": "zeugnis",
+        "pruefungszeugnis": "zeugnis",
+        "gesellenbrief": "zeugnis",
+        "meisterbrief": "zeugnis",
+        "notenübersicht": "zeugnis",
+        "notenuebersicht": "zeugnis",
+        "immatrikulationsbescheinigung": "zeugnis",
+        "exmatrikulationsbescheinigung": "zeugnis",
+        "studienbescheinigung": "zeugnis",
+        # Fortbildungen: Nachweis über eine besuchte Maßnahme.
+        "teilnahmebescheinigung": "fortbildung",
+        "teilnahmenachweis": "fortbildung",
+        "zertifikat": "fortbildung",
+        "weiterbildung": "fortbildung",
+        "fortbildungsnachweis": "fortbildung",
+        "weiterbildungsnachweis": "fortbildung",
+        "lehrgang": "fortbildung",
+        "lehrgangsbescheinigung": "fortbildung",
+        "seminar": "fortbildung",
+        "seminarbescheinigung": "fortbildung",
+        "schulung": "fortbildung",
+    },
 }
 
 
@@ -329,6 +382,7 @@ SUBTYPE_FALLBACK = {
     HOUSING: ("sonstiges", "subject"),
     BANK: ("sonstiges", "subject"),
     EMPLOYMENT: ("sonstiges", "subject"),
+    EDUCATION: ("sonstiges", "subject"),
 }
 
 

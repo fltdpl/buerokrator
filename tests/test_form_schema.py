@@ -1,6 +1,7 @@
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import (
     BANK,
+    EDUCATION,
     EMPLOYMENT,
     HOUSING,
     INSURANCE,
@@ -12,6 +13,7 @@ from src.core.document_types import (
 )
 from src.services.form_schema import (
     BANK_SUBTYPE_LABELS,
+    EDUCATION_SUBTYPE_LABELS,
     EMPLOYMENT_SUBTYPE_LABELS,
     HOUSING_SUBTYPE_LABELS,
     PENSION_SUBTYPE_LABELS,
@@ -34,6 +36,7 @@ ALL_TYPE_SUBTYPE_COMBINATIONS = [
     *[(HOUSING, subtype) for subtype in HOUSING_SUBTYPE_LABELS],
     *[(BANK, subtype) for subtype in BANK_SUBTYPE_LABELS],
     *[(EMPLOYMENT, subtype) for subtype in EMPLOYMENT_SUBTYPE_LABELS],
+    *[(EDUCATION, subtype) for subtype in EDUCATION_SUBTYPE_LABELS],
 ]
 
 
@@ -71,6 +74,9 @@ def test_subtype_config_matches_labels():
 
     employment = subtype_config(EMPLOYMENT)
     assert employment["options"] == list(EMPLOYMENT_SUBTYPE_LABELS)
+
+    education = subtype_config(EDUCATION)
+    assert education["options"] == list(EDUCATION_SUBTYPE_LABELS)
 
     assert subtype_config(INVOICE) is None
 
