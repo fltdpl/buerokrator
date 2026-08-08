@@ -11,7 +11,7 @@ kopiert — ein Flag in der Vorlage würde frische Installationen als
 
 from pathlib import Path
 
-from src.core.app_home import get_app_home
+from src.core.app_home import get_base_home
 from src.core.config import load_config
 from src.services.dependency_service import collect_dependency_status
 
@@ -31,7 +31,9 @@ _LINUX_HINTS = (
 
 
 def setup_marker_path() -> Path:
-    return get_app_home() / _MARKER_NAME
+    # Basis, nicht Profil (ADR 015): der Assistent prüft Ollama und Tesseract,
+    # also die Installation. Ein zweites Profil soll ihn nicht erneut sehen.
+    return get_base_home() / _MARKER_NAME
 
 
 def needs_setup(config=None) -> bool:

@@ -4,6 +4,10 @@
 
 ## Unveröffentlicht
 
+- Intern: Grundlage für mehrere Personen an einer Installation — die App
+  unterscheidet jetzt zwischen dem Verzeichnis der Installation
+  (Einstellungen, Log) und dem des Datenbestands. Ohne angelegte Profile
+  ändert sich nichts ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
 - **Neu: Kategorie „Ausbildung".** Schul- und Hochschulzeugnisse, Urkunden
   und Fortbildungsnachweise haben jetzt einen eigenen Lebensbereich mit den
   Unterarten **Zeugnis / Urkunde**, **Fortbildung / Zertifikat** und

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-from src.core.app_home import get_app_home, resolve_path
+from src.core.app_home import get_app_home, get_base_home, resolve_path
 
 # Config-Schlüssel mit Pfadwerten: werden beim Laden gegen das App-Home
 # absolutiert (eine zentrale Stelle statt vieler Konsumenten) und beim
@@ -27,7 +27,11 @@ _TEMPLATE = Path(__file__).resolve().parents[2] / "config" / "settings.yaml"
 
 
 def config_path() -> Path:
-    return get_app_home() / "config" / "settings.yaml"
+    # Basis, nicht Profil: die Einstellungen sind für alle Personen dieselben
+    # (ADR 015). Die Pfadwerte darin sind relativ und werden weiter unten
+    # gegen das PROFIL absolutiert — dadurch bekommt jedes Profil aus einer
+    # gemeinsamen Config sein eigenes Archiv, ohne Sonderlogik.
+    return get_base_home() / "config" / "settings.yaml"
 
 
 def _ensure_config_exists(path: Path) -> None:

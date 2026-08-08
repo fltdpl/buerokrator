@@ -13,12 +13,15 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from src.core.app_home import get_app_home
+from src.core.app_home import get_base_home
 
 # NiceGUI legt sein Storage-Verzeichnis standardmäßig relativ zur cwd an.
-# Vor dem ersten nicegui-Import ins App-Home umleiten (Packaging: keine
-# cwd-relativen Pfade). setdefault, damit ein extern gesetzter Pfad gewinnt.
-os.environ.setdefault("NICEGUI_STORAGE_PATH", str(get_app_home() / ".nicegui"))
+# Vor dem ersten nicegui-Import ins Basisverzeichnis umleiten (Packaging:
+# keine cwd-relativen Pfade). setdefault, damit ein extern gesetzter Pfad
+# gewinnt. Basis statt Profil (ADR 015): der Wert wird einmal beim Import
+# gesetzt und könnte einem Profilwechsel nicht folgen — es ist UI-Zustand
+# des Prozesses, kein Bestandteil eines Dokumentenbestands.
+os.environ.setdefault("NICEGUI_STORAGE_PATH", str(get_base_home() / ".nicegui"))
 
 from fastapi import HTTPException  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402

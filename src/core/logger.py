@@ -2,11 +2,15 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from src.core.app_home import get_app_home
+from src.core.app_home import get_base_home
 
 # Einmal beim Prozessstart aufgelöst (der Handler hält die Datei offen);
 # im Entwickler-Modus ist das wie bisher <repo>/logs.
-LOG_DIR = get_app_home() / "logs"
+# Basis, nicht Profil (ADR 015): LOG_DIR wird beim Import ausgewertet und
+# könnte einem Profilwechsel im laufenden Prozess ohnehin nicht folgen —
+# ein gemeinsames Log ist ehrlicher als eines, das nach dem Umschalten in
+# den falschen Bestand schreibt. Das Log gehört zur Installation.
+LOG_DIR = get_base_home() / "logs"
 LOG_FILE = LOG_DIR / "buerokrator.log"
 
 
