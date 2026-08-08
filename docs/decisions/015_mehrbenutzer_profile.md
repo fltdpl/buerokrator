@@ -205,6 +205,16 @@ Reihenfolge, bewusst abbruchsicher:
 
 Vier Festlegungen, die beim Bauen dazukamen:
 
+- ⚠️ **Relative `archive_path`-Werte müssen mitgenommen werden.** Ältere
+  Importe haben sie hinterlassen. Sie sind gegen das App-Home gemeint, lösen
+  aber gegen das **Arbeitsverzeichnis** auf — und damit hatte die Gegenprobe
+  ein Loch: `Path(pfad).exists()` meldete „vorhanden", solange der Prozess
+  zufällig im alten Basisverzeichnis lief. Am echten Bestand blieb dadurch
+  ein Teil der Zeilen unverändert stehen und zeigte nach dem Umzug ins
+  Leere, ohne dass die Prüfung anschlug. Jetzt werden relative Pfade zuerst
+  gegen die alte Basis absolut gemacht, und die Gegenprobe verlangt
+  **ausdrücklich, dass danach kein Pfad mehr relativ ist** — vor der
+  Existenzprüfung, weil die sonst wieder vom Zufall abhängt.
 - ⚠️ **Die Datenbank wird über `sqlite3.Connection.backup()` kopiert**, nie
   als Datei. Im WAL-Modus stehen committete Transaktionen in der `-wal`, bis
   ein Checkpoint läuft — und der läuft nicht, solange eine zweite Verbindung

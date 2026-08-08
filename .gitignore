@@ -58,6 +58,14 @@ tax_expected_*.yaml
 # im Entwickler-Modus liegt das App-Home im Repo)
 config/aussteller_aliase.yaml
 
+# Profil-Datenverzeichnisse (ADR 015). Vollständig ignoriert: darin liegen
+# Datenbank, Archiv und die persönliche Alias-Datei JE PERSON. Die Muster
+# oben greifen dort nicht alle — `/database/` und
+# `config/aussteller_aliase.yaml` sind an die Wurzel gebunden.
+profiles/
+profiles.yaml
+vor-profilen/
+
 # First-Run-Marker (lokaler Zustand, nie committen)
 .setup_done
 .nicegui/

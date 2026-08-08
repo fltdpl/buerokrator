@@ -6,6 +6,7 @@ schlimmer als gar keiner.
 """
 
 import sqlite3
+from pathlib import Path
 
 import pytest
 import yaml
@@ -67,6 +68,15 @@ def installation(tmp_path, monkeypatch):
         datei.write_bytes(b"%PDF-1.4 Testinhalt")
         pfade.append(str(datei))
 
+    # Ein RELATIVER Pfad, wie ihn ältere Importe hinterlassen haben. Der
+    # Umzug muss ihn genauso mitnehmen — und er ist die Falle, die den
+    # ersten Port am echten Bestand halb kaputt gemacht hat: `Path(...)
+    # .exists()` löst relativ gegen das Arbeitsverzeichnis auf und meldete
+    # deshalb „vorhanden", solange das alte Archiv noch dort lag.
+    relativ = archiv / "2019-03-15_Musterverwaltung_sonstiges.pdf"
+    relativ.write_bytes(b"%PDF-1.4 Testinhalt")
+    pfade.append(str(relativ.relative_to(tmp_path)))
+
     db = tmp_path / "database" / "buerokrator.db"
     db.parent.mkdir()
     conn = sqlite3.connect(db)
@@ -105,13 +115,14 @@ def test_umzug_verschiebt_bestand_und_zieht_die_pfade_nach(installation):
     assert active_profile() == "1"
     assert get_app_home() == profil
 
-    # Dokumente liegen im Profil und die Datenbank zeigt dorthin.
-    assert bericht["umgeschrieben"] == 2
-    assert bericht["geprueft"] == 2
+    # Dokumente liegen im Profil und die Datenbank zeigt dorthin — auch das
+    # mit dem relativen Pfad.
+    assert bericht["umgeschrieben"] == 3
+    assert bericht["geprueft"] == 3
 
     for pfad in _pfade_in_db(profil / "database" / "buerokrator.db"):
         assert pfad.startswith(str(profil / "archive"))
-        assert (profil / "archive").exists()
+        assert Path(pfad).exists()
 
     assert (profil / "config" / "aussteller_aliase.yaml").exists()
     assert (profil / "trash").exists()
@@ -161,7 +172,7 @@ def test_wal_inhalt_geht_nicht_verloren(installation):
 
         # 1. Die Kopie kennt die Zeile, die nur im WAL stand.
         profil_db = installation / "profiles" / "1" / "database" / "buerokrator.db"
-        assert len(_pfade_in_db(profil_db)) == 3
+        assert len(_pfade_in_db(profil_db)) == 4
 
         # 2. Die Seitendatei ist mit beiseitegeräumt, nicht liegengeblieben.
         beiseite = installation / LEGACY_DIR / "database"
@@ -170,6 +181,45 @@ def test_wal_inhalt_geht_nicht_verloren(installation):
 
     finally:
         offen.close()
+
+
+def test_kein_pfad_bleibt_relativ(installation):
+    """Relative Pfade sind arbeitsverzeichnis-abhängig und damit kaputt.
+
+    Genau hier hatte die Gegenprobe eine Lücke: sie prüfte nur, ob die Datei
+    existiert — und ein relativer Pfad „existiert" solange, wie der Prozess
+    zufällig im alten Basisverzeichnis läuft.
+    """
+    from pathlib import Path as P
+
+    enable_profiles()
+
+    pfade = _pfade_in_db(
+        installation / "profiles" / "1" / "database" / "buerokrator.db"
+    )
+
+    assert pfade, "Aufbau: keine Dokumente"
+    assert all(P(p).is_absolute() for p in pfade)
+
+
+def test_gegenprobe_faellt_auf_relative_pfade_nicht_herein(installation, monkeypatch):
+    # Ein Pfad, der nach dem Umzug nirgends hinzeigt, muss auffallen —
+    # auch wenn das Arbeitsverzeichnis ihn zufällig auflösbar macht.
+    import sqlite3 as s
+
+    conn = s.connect(installation / "database" / "buerokrator.db")
+    conn.execute(
+        "INSERT INTO documents (archive_path) VALUES ('archive/gibt/es/nicht.pdf')"
+    )
+    conn.commit()
+    conn.close()
+
+    monkeypatch.chdir(installation)
+
+    with pytest.raises(RuntimeError, match="nicht am neuen Ort"):
+        enable_profiles()
+
+    assert not (installation / "profiles").exists()
 
 
 def test_kopierte_datenbank_bleibt_nur_fuer_den_besitzer_lesbar(installation):

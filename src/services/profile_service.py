@@ -356,12 +356,18 @@ def _copy_database(source: Path, target: Path) -> None:
         pass
 
 
-def _rewrite_archive_paths(db_path: Path, alt: Path, neu: Path) -> dict:
+def _rewrite_archive_paths(
+    db_path: Path, alt: Path, neu: Path, alt_basis: Path
+) -> dict:
     """Setzt `archive_path` vom alten auf das neue Archiv um.
 
-    Gibt Anzahl umgeschriebener und unberührter Zeilen zurück. Unberührte
-    sind kein Fehler an sich (ein Pfad ausserhalb des Archivs bleibt gültig)
-    — die Gegenprobe entscheidet, ob die Datei wirklich noch da ist.
+    ⚠️ **Relative Pfade müssen mit.** Ältere Importe haben sie hinterlassen;
+    sie sind gegen das App-Home gemeint, lösen aber gegen das
+    Arbeitsverzeichnis auf. Beim ersten Port am echten Bestand blieben sie
+    stehen und zeigten danach ins Leere — die Gegenprobe merkte es nicht,
+    weil der Prozess zufällig im alten Basisverzeichnis lief. Hier werden sie
+    erst gegen die alte Basis absolut gemacht und dann wie alle anderen
+    umgesetzt; danach ist **kein** Pfad mehr relativ.
     """
     altes_praefix = f"{alt}/"
     neues_praefix = f"{neu}/"
@@ -376,15 +382,29 @@ def _rewrite_archive_paths(db_path: Path, alt: Path, neu: Path) -> dict:
         for document_id, pfad in cursor.execute(
             "SELECT id, archive_path FROM documents"
         ).fetchall():
-            if pfad and pfad.startswith(altes_praefix):
-                cursor.execute(
-                    "UPDATE documents SET archive_path = ? WHERE id = ?",
-                    (pfad.replace(altes_praefix, neues_praefix, 1), document_id),
-                )
-                umgeschrieben += 1
+            if not pfad:
+                unberuehrt += 1
+                continue
+
+            absolut = str(pfad if Path(pfad).is_absolute() else alt_basis / pfad)
+
+            if absolut.startswith(altes_praefix):
+                neuer = absolut.replace(altes_praefix, neues_praefix, 1)
+
+            elif absolut != pfad:
+                # Lag außerhalb des Archivs, war aber relativ: wenigstens
+                # eindeutig machen. Die Gegenprobe entscheidet dann.
+                neuer = absolut
 
             else:
                 unberuehrt += 1
+                continue
+
+            cursor.execute(
+                "UPDATE documents SET archive_path = ? WHERE id = ?",
+                (neuer, document_id),
+            )
+            umgeschrieben += 1
 
         conn.commit()
 
@@ -411,6 +431,18 @@ def _pruefe_bestand(db_path: Path, erwartete_zeilen: int) -> int:
         raise RuntimeError(
             f"Umzug abgebrochen: die Kopie hat {len(pfade)} Zeilen, "
             f"das Original {erwartete_zeilen}."
+        )
+
+    # Zuerst: kein Pfad darf relativ geblieben sein. Ein relativer Pfad löst
+    # gegen das Arbeitsverzeichnis auf — die Existenzprüfung darunter wäre
+    # dann zufällig grün, je nachdem, wo der Prozess gerade steht. Genau so
+    # ging der erste Port am echten Bestand halb daneben.
+    relativ = [pfad for pfad in pfade if pfad and not Path(pfad).is_absolute()]
+
+    if relativ:
+        raise RuntimeError(
+            f"Umzug abgebrochen: {len(relativ)} Dokument(e) haben nach dem "
+            "Umschreiben noch einen relativen Pfad."
         )
 
     fehlend = [pfad for pfad in pfade if pfad and not Path(pfad).exists()]
@@ -513,6 +545,7 @@ def enable_profiles(erster_name=None, zweiter_name=None) -> dict:
                     db_ziel,
                     basis / archiv_relativ,
                     erstes / archiv_relativ,
+                    basis,
                 )
             )
             bericht["geprueft"] = _pruefe_bestand(db_ziel, erwartet)
