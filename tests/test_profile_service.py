@@ -97,7 +97,7 @@ def test_vorher_gibt_es_keine_profile(installation):
 
 
 def test_umzug_verschiebt_bestand_und_zieht_die_pfade_nach(installation):
-    bericht = enable_profiles("Tom", "Alex")
+    bericht = enable_profiles("Person A", "Person B")
 
     profil = installation / "profiles" / "1"
 
@@ -183,13 +183,13 @@ def test_kopierte_datenbank_bleibt_nur_fuer_den_besitzer_lesbar(installation):
 
 
 def test_zweites_profil_entsteht_leer_und_benannt(installation):
-    enable_profiles("Tom", "Alex")
+    enable_profiles("Person A", "Person B")
 
     zweites = installation / "profiles" / "2"
 
     assert zweites.exists()
     assert not (zweites / "archive").exists()
-    assert [p["name"] for p in list_profiles()] == ["Tom", "Alex"]
+    assert [p["name"] for p in list_profiles()] == ["Person A", "Person B"]
     assert [p["active"] for p in list_profiles()] == [True, False]
 
 

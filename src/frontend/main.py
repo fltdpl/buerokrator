@@ -38,6 +38,7 @@ import src.frontend.pages.settings  # noqa: F401
 import src.frontend.pages.setup_page  # noqa: F401
 import src.frontend.pages.trash  # noqa: F401
 from src.database.list_documents import get_document
+from src.services.profile_service import ensure_active_profile
 
 HOST = "127.0.0.1"
 PORT = 8081
@@ -129,6 +130,15 @@ def run(*, show: bool = False) -> None:
             "anderes Programm belegt."
         )
         raise SystemExit(1)
+
+    # Zeigt das zuletzt aktive Profil ins Leere (verschoben, gelöscht,
+    # externer Datenträger nicht eingehängt), würde die App es stillschweigend
+    # neu anlegen und wie eine leere Installation aussehen. Lieber auf ein
+    # vorhandenes zurückfallen und es sagen.
+    hinweis = ensure_active_profile()
+
+    if hinweis:
+        print(hinweis)
 
     ui.run(
         host=HOST,

@@ -52,7 +52,7 @@ def zwei_profile(tmp_path, monkeypatch):
     conn.commit()
     conn.close()
 
-    enable_profiles("Tom", "Alex")
+    enable_profiles("Person A", "Person B")
 
     return tmp_path
 

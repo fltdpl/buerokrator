@@ -7,6 +7,7 @@ from nicegui import app, ui
 
 from src import __version__
 from src.frontend.theme import apply_theme
+from src.services.profile_service import activate_profile, list_profiles
 
 # (Label, Route, Material-Icon)
 NAV_ITEMS = [
@@ -67,6 +68,55 @@ def _is_active(route, path):
     return path.startswith(route)
 
 
+def _switch_profile(profile_id):
+    """Profil wechseln und die Seite neu aufbauen lassen.
+
+    Der Neuaufbau ist nötig, nicht kosmetisch: Seiten halten modulglobalen
+    Zustand (z. B. den Suchfilter der Dokumentenliste), der zum vorherigen
+    Bestand gehört.
+    """
+    try:
+        activate_profile(profile_id)
+
+    except RuntimeError as error:
+        ui.notify(str(error), type="warning")
+        return
+
+    ui.navigate.to("/")
+
+
+def render_profile_switcher():
+    """Aktives Profil samt Umschalter — nur wenn es mehr als eines gibt.
+
+    Sichtbarkeit ist hier die eigentliche Funktion: der teuerste Bedienfehler
+    dieses Features ist ein Stapel im falschen Bestand. Deshalb steht der Name
+    in der Seitenleiste, also auf JEDER Seite.
+    """
+    profile = list_profiles()
+
+    if len(profile) < 2:
+        return
+
+    aktiv = next((p for p in profile if p["active"]), profile[0])
+
+    with ui.row().classes("nav-item cursor-pointer"):
+        ui.icon("person").classes("text-lg")
+        ui.label(aktiv["name"]).classes("text-sm")
+        ui.icon("expand_more").classes("text-sm")
+
+        with ui.menu():
+            for eintrag in profile:
+                if eintrag["active"]:
+                    continue
+
+                # Marker, weil eine Textsuche im Test die innere ItemSection
+                # trifft und nicht den klickbaren Eintrag.
+                ui.menu_item(
+                    f"Zu {eintrag['name']} wechseln",
+                    lambda _=None, kennung=eintrag["id"]: _switch_profile(kennung),
+                ).mark(f"profil-wechsel-{eintrag['id']}")
+
+
 @contextmanager
 def page_layout(title):
     """Seitenleiste + Kopfzeile; der Seiteninhalt entsteht im with-Block."""
@@ -79,6 +129,8 @@ def page_layout(title):
     # braucht den Platz, sonst bricht die Wortmarke um.
     with ui.left_drawer(fixed=True).classes("sidebar p-0").props("width=264 bordered"):
         ui.label("BUEROKRATOR").classes("text-3xl page-title brand")
+
+        render_profile_switcher()
 
         for label, route, icon in NAV_ITEMS:
             active = " active" if _is_active(route, path) else ""

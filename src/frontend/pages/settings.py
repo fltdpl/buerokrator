@@ -4,6 +4,18 @@ from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
 from src.frontend.layout import card, page_layout
 from src.frontend.pages.trash import render_trash
+from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED
+from src.services.profile_service import (
+    absolute_data_paths,
+    activate_profile,
+    create_profile,
+    enable_profiles,
+    list_profiles,
+    missing_profiles,
+    profiles_enabled,
+    remove_profile,
+    rename_profile,
+)
 from src.services.backup_service import list_backups, run_backup, run_restore
 from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
@@ -28,6 +40,7 @@ def settings_page():
 
         with ui.tabs().classes("w-full") as tabs:
             tab_config = ui.tab("Konfiguration", icon="tune")
+            tab_profiles = ui.tab("Profile", icon="group")
             tab_aliases = ui.tab("Aliase", icon="label")
             tab_trash = ui.tab("Papierkorb", icon="delete_outline")
             tab_backup = ui.tab("Backup", icon="save")
@@ -37,6 +50,9 @@ def settings_page():
         with ui.tab_panels(tabs, value=tab_config).classes("w-full"):
             with ui.tab_panel(tab_config):
                 _render_config(config)
+
+            with ui.tab_panel(tab_profiles):
+                _render_profiles()
 
             with ui.tab_panel(tab_aliases):
                 _render_issuer_aliases()
@@ -52,6 +68,166 @@ def settings_page():
 
             with ui.tab_panel(tab_log):
                 _render_log()
+
+
+@ui.refreshable
+def _render_profiles():
+    """Personen des Haushalts: einrichten, umbenennen, wechseln, entfernen.
+
+    Solange es nur eine Person gibt, steht hier bloß die Einladung, eine
+    zweite anzulegen — die App bleibt sonst überall unverändert (ADR 015).
+    """
+    ui.label("Personen im Haushalt").classes("text-xl page-title")
+
+    absolut = absolute_data_paths()
+
+    if absolut:
+        ui.label(
+            "Achtung: "
+            + ", ".join(absolut)
+            + " ist als absoluter Pfad eingetragen. Dieses Verzeichnis wäre "
+            "für alle Personen dasselbe — die Trennung der Bestände greift "
+            "dort nicht. Bitte auf einen relativen Pfad umstellen."
+        ).classes("text-sm").style(f"color: {DANGER}")
+
+    if not profiles_enabled():
+        ui.label(
+            "Diese Installation hat genau einen Dokumentenbestand. Wer eine "
+            "zweite Person aufnimmt, bekommt einen eigenen, getrennten "
+            "Bestand: eigene Dokumente, eigenes Archiv, eigene "
+            "Aussteller-Aliase. Die Einstellungen gelten weiterhin für "
+            "beide."
+        ).classes("text-sm muted")
+
+        ui.label(
+            "Der bisherige Bestand zieht dabei in einen eigenen Ordner um. "
+            "Gelöscht wird nichts — die Originale bleiben als Sicherung "
+            "liegen."
+        ).classes("text-sm muted")
+
+        erster = ui.input("Name der ersten Person", value="Benutzer 1").classes("w-64")
+        zweiter = ui.input("Name der zweiten Person", value="Benutzer 2").classes(
+            "w-64"
+        )
+
+        def einrichten():
+            try:
+                bericht = enable_profiles(erster.value, zweiter.value)
+
+            except RuntimeError as error:
+                ui.notify(str(error), type="negative", timeout=0, close_button=True)
+                return
+
+            ui.notify(
+                "Profile eingerichtet. Der bisherige Bestand liegt jetzt "
+                f"unter {bericht['profil']}; die Originale als Sicherung "
+                f"unter {bericht['altbestand']}.",
+                type="positive",
+                timeout=0,
+                close_button=True,
+            )
+            _render_profiles.refresh()
+
+        ui.button("Zweite Person hinzufügen", on_click=einrichten).props(
+            "color=primary unelevated"
+        )
+
+        return
+
+    fehlend = missing_profiles()
+
+    for eintrag in list_profiles():
+        with ui.row().classes("items-center gap-3 w-full"):
+            ui.icon("person").classes("text-lg").style(
+                f"color: {DARK_ACTIVE if eintrag['active'] else INK_MUTED}"
+            )
+
+            name = ui.input(value=eintrag["name"]).classes("w-64").props("dense")
+
+            def umbenennen(_=None, kennung=eintrag["id"], feld=None):
+                try:
+                    rename_profile(kennung, feld.value)
+
+                except RuntimeError as error:
+                    ui.notify(str(error), type="warning")
+                    return
+
+                ui.notify("Name gespeichert.", type="positive")
+                _render_profiles.refresh()
+
+            name.on(
+                "blur",
+                lambda _=None, kennung=eintrag["id"], feld=name: umbenennen(
+                    kennung=kennung, feld=feld
+                ),
+            )
+
+            if eintrag["active"]:
+                ui.label("geöffnet").classes("text-sm").style(f"color: {DARK_ACTIVE}")
+
+            else:
+                ui.button(
+                    "Öffnen",
+                    on_click=lambda _=None, kennung=eintrag["id"]: _wechseln(kennung),
+                ).props("flat dense")
+
+                ui.button(
+                    "Aus der Liste nehmen",
+                    on_click=lambda _=None, kennung=eintrag["id"]: _entfernen(kennung),
+                ).props("flat dense")
+
+            if eintrag["id"] in fehlend:
+                ui.label("Ordner nicht gefunden").classes("text-sm").style(
+                    f"color: {DANGER}"
+                )
+
+    ui.button("Weitere Person hinzufügen", on_click=_hinzufuegen).props("flat")
+
+    ui.label(
+        "Entfernen nimmt eine Person nur aus dieser Liste. Der Ordner mit "
+        "ihren Dokumenten bleibt liegen und lässt sich jederzeit wieder "
+        "eintragen."
+    ).classes("text-sm muted")
+
+
+def _wechseln(profile_id):
+    try:
+        activate_profile(profile_id)
+
+    except RuntimeError as error:
+        ui.notify(str(error), type="warning")
+        return
+
+    ui.navigate.to("/")
+
+
+def _entfernen(profile_id):
+    try:
+        verzeichnis = remove_profile(profile_id)
+
+    except RuntimeError as error:
+        ui.notify(str(error), type="warning")
+        return
+
+    ui.notify(
+        f"Aus der Liste genommen. Die Dokumente liegen weiterhin unter "
+        f"{verzeichnis}.",
+        type="positive",
+        timeout=0,
+        close_button=True,
+    )
+    _render_profiles.refresh()
+
+
+def _hinzufuegen():
+    try:
+        create_profile()
+
+    except RuntimeError as error:
+        ui.notify(str(error), type="warning")
+        return
+
+    _render_profiles.refresh()
 
 
 def _render_dependency_status(config):

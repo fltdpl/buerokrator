@@ -112,6 +112,126 @@ def active_profile() -> "str | None":
     return _read_profiles()["active"]
 
 
+def profile_exists(profile_id: str) -> bool:
+    return (_profiles_root() / profile_id).is_dir()
+
+
+def missing_profiles() -> list:
+    """Gelistete Profile, deren Verzeichnis fehlt (verschoben, gelöscht)."""
+    return [
+        profile_id
+        for profile_id in _read_profiles()["profiles"]
+        if not profile_exists(profile_id)
+    ]
+
+
+def ensure_active_profile() -> "str | None":
+    """Beim Start: fällt auf ein vorhandenes Profil zurück, wenn nötig.
+
+    Fehlt das Verzeichnis des aktiven Profils (verschoben, gelöscht, ein
+    externer Datenträger nicht eingehängt), würde die App es stillschweigend
+    neu anlegen und wie eine leere Installation aussehen. Gibt die Meldung
+    zurück, damit der Aufrufer sie zeigen kann — oder None, wenn alles passt.
+
+    Bewusst ohne Job-Sperre: das läuft beim Start, bevor etwas laufen kann.
+    """
+    if not profiles_enabled():
+        return None
+
+    daten = _read_profiles()
+
+    if profile_exists(daten["active"]):
+        return None
+
+    ersatz = next(
+        (p for p in daten["profiles"] if profile_exists(p)),
+        None,
+    )
+
+    if ersatz is None:
+        raise RuntimeError(
+            "Kein einziges Profilverzeichnis gefunden. Liegt der Datenordner "
+            "noch am erwarteten Ort?"
+        )
+
+    _schreibe_profiles_datei(ersatz, daten["profiles"])
+    reset_profile_cache()
+    reset_schema_state()
+
+    meldung = (
+        f"Das zuletzt genutzte Profil {profile_name(daten['active'])!r} "
+        f"wurde nicht gefunden. Geöffnet ist stattdessen "
+        f"{profile_name(ersatz)!r}."
+    )
+    logger.warning(meldung)
+
+    return meldung
+
+
+def create_profile(name=None) -> str:
+    """Legt ein weiteres Profil an und gibt seine Kennung zurück."""
+    if not profiles_enabled():
+        raise RuntimeError("Profile sind noch nicht eingerichtet.")
+
+    daten = _read_profiles()
+    ziffern = [int(p) for p in daten["profiles"] if p.isdigit()]
+    neu = str(max(ziffern, default=0) + 1)
+
+    _lege_profil_an(neu, name or f"Benutzer {neu}")
+    _schreibe_profiles_datei(daten["active"], [*daten["profiles"], neu])
+    reset_profile_cache()
+
+    return neu
+
+
+def rename_profile(profile_id: str, name: str) -> None:
+    """Ändert nur den Anzeigenamen — das Verzeichnis heißt weiter wie bisher.
+
+    Genau dafür ist die Kennung fest (ADR 015): ein Umbenennen des Ordners
+    hieße, den ganzen Bestand zu verschieben und jeden `archive_path` in der
+    Datenbank umzuschreiben.
+    """
+    if profile_id not in _read_profiles()["profiles"]:
+        raise RuntimeError(f"Unbekanntes Profil: {profile_id}")
+
+    if not name or not name.strip():
+        raise RuntimeError("Der Name darf nicht leer sein.")
+
+    _lege_profil_an(profile_id, name.strip())
+
+
+def remove_profile(profile_id: str) -> Path:
+    """Nimmt ein Profil aus der Liste — **ohne** Dateien zu löschen.
+
+    Dieselbe Haltung wie beim Papierkorb: das Verzeichnis bleibt liegen und
+    lässt sich später wieder eintragen. Wer es wirklich loswerden will, tut
+    das bewusst im Dateimanager. Gibt das Verzeichnis zurück, damit die
+    Oberfläche sagen kann, wo es liegt.
+    """
+    daten = _read_profiles()
+
+    if profile_id not in daten["profiles"]:
+        raise RuntimeError(f"Unbekanntes Profil: {profile_id}")
+
+    # Deckt zugleich den letzten Eintrag ab: das einzige verbliebene Profil
+    # ist zwangsläufig das geöffnete. Eine eigene Prüfung dafür wäre nie
+    # erreichbar.
+    if profile_id == daten["active"]:
+        raise RuntimeError(
+            "Das geöffnete Profil lässt sich nicht entfernen. Erst wechseln."
+        )
+
+    _verweigere_bei_hintergrund_job("Profil entfernen")
+
+    _schreibe_profiles_datei(
+        daten["active"],
+        [p for p in daten["profiles"] if p != profile_id],
+    )
+    reset_profile_cache()
+
+    return _profiles_root() / profile_id
+
+
 def _verweigere_bei_hintergrund_job(vorhaben: str) -> None:
     """Sperre für alles, was den aktiven Bestand unter den Füßen wegzieht.
 
@@ -153,10 +273,10 @@ def activate_profile(profile_id: str) -> None:
     logger.info("Profil gewechselt auf %s (%s)", profile_id, profile_name(profile_id))
 
 
-def _relative_data_paths() -> list[str]:
-    """Profilgebundene Pfade, so wie sie roh in der Config stehen.
+def _data_paths() -> tuple:
+    """(relative, absolute) Datenpfade, so wie sie ROH in der Config stehen.
 
-    Bewusst die ROHE Datei, nicht `load_config()`: dort sind die Werte schon
+    Bewusst die rohe Datei, nicht `load_config()`: dort sind die Werte schon
     absolutiert, und genau die Unterscheidung relativ/absolut ist hier die
     entscheidende Information.
     """
@@ -175,6 +295,22 @@ def _relative_data_paths() -> list[str]:
 
         else:
             relative.append(str(value))
+
+    return relative, absolute
+
+
+def absolute_data_paths() -> list:
+    """Config-Schlüssel mit absolutem Pfad — hebeln die Profiltrennung aus.
+
+    Für die Warnung auf der Einstellungsseite: ein absoluter Pfad liegt für
+    alle Profile im selben Verzeichnis, `resolve_path` lässt ihn bewusst
+    stehen.
+    """
+    return _data_paths()[1]
+
+
+def _relative_data_paths() -> list:
+    relative, absolute = _data_paths()
 
     if absolute:
         raise RuntimeError(

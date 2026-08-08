@@ -4,13 +4,24 @@
 
 ## Unveröffentlicht
 
-- Intern: Grundlage für mehrere Personen an einer Installation — die App
-  unterscheidet jetzt zwischen dem Verzeichnis der Installation
-  (Einstellungen, Log) und dem des Datenbestands, und der Umzug eines
-  gewachsenen Einzelbestands in die Profilstruktur ist gebaut und geprüft,
-  ebenso der Wechsel zwischen Profilen samt Sperre während eines laufenden
-  Stapel-Imports. Ohne angelegte Profile ändert sich nichts; eine Bedienung
-  dafür gibt es noch nicht
+- **Neu: mehrere Personen an einer Installation.** Wer den Haushalt teilt,
+  kann in den Einstellungen unter „Profile" eine zweite Person aufnehmen.
+  Jede bekommt einen **eigenen, vollständig getrennten Bestand**: eigene
+  Dokumente, eigenes Archiv, eigene Aussteller-Aliase — und damit auch
+  getrennte Steuersummen, denn zwei Menschen geben getrennte Erklärungen ab.
+  Die Einstellungen (Tesseract, Modell, Kategorien) gelten weiter für alle.
+
+  Der bisherige Bestand zieht dabei in einen eigenen Ordner um. **Gelöscht
+  wird nichts** — die Originale bleiben als Sicherung liegen, und auch das
+  Entfernen einer Person nimmt sie nur aus der Liste.
+
+  Wer geöffnet ist, steht in der Seitenleiste, auf dem Dashboard und neben
+  dem Stapel-Import; umgeschaltet wird über die Seitenleiste. **Während ein
+  Import läuft, ist der Wechsel gesperrt** — sonst landete der Rest des
+  Stapels im falschen Bestand.
+
+  **Ohne zweite Person ändert sich nichts:** kein Umschalter, keine
+  Namensanzeige, keine neuen Ordner
   ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
 - **Neu: Kategorie „Ausbildung".** Schul- und Hochschulzeugnisse, Urkunden
   und Fortbildungsnachweise haben jetzt einen eigenen Lebensbereich mit den

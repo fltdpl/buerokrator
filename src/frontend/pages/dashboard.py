@@ -8,7 +8,8 @@ from src.core.document_types import (
     TAX,
 )
 from src.frontend.layout import card, page_layout
-from src.frontend.theme import ACCENTS, INK_MUTED
+from src.frontend.theme import ACCENTS, DARK_ACTIVE, INK_MUTED
+from src.services.profile_service import list_profiles
 from src.services.setup_service import needs_setup
 from src.services.stats_service import get_dashboard_data
 
@@ -22,6 +23,28 @@ def _metric(label, value, icon, accent="primary"):
             with ui.column().classes("gap-0"):
                 ui.label(str(value)).classes("text-3xl font-light leading-none")
                 ui.label(label).classes("text-sm").style(f"color: {INK_MUTED}")
+
+
+def _render_active_profile():
+    """Wessen Bestand hier zu sehen ist — nur bei mehreren Profilen.
+
+    Bewusst doppelt zur Seitenleiste: die Zahlen darunter sind die eines
+    bestimmten Menschen, und wer sie für seine eigenen hält, zieht falsche
+    Schlüsse.
+    """
+    profile = list_profiles()
+
+    if len(profile) < 2:
+        return
+
+    aktiv = next((p for p in profile if p["active"]), profile[0])
+
+    with ui.row().classes("items-center gap-2 py-1"):
+        ui.icon("person").style(f"color: {DARK_ACTIVE}")
+        ui.label("Geöffnet:").classes("text-sm").style(f"color: {INK_MUTED}")
+        ui.label(aktiv["name"]).classes("text-sm text-weight-bold").style(
+            f"color: {DARK_ACTIVE}"
+        )
 
 
 @ui.page("/")
@@ -38,6 +61,8 @@ def dashboard_page():
     with page_layout("Dashboard"):
         ui.label("Dashboard").classes("text-3xl page-title")
         ui.label(f"{stats['total']} Dokumente archiviert").classes("muted")
+
+        _render_active_profile()
 
         # Übernimmt auch die Zahlen der alten Analyse-Seite (entfällt).
         with ui.row().classes("gap-4 w-full no-wrap"):

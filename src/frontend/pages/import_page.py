@@ -11,7 +11,25 @@ from src.processor.batch_import import (
     find_inbox_documents,
     import_inbox_documents,
 )
+from src.frontend.theme import DARK_ACTIVE
 from src.services import import_job
+from src.services.profile_service import list_profiles
+
+
+def _render_import_target():
+    """Wohin importiert wird — nur bei mehreren Profilen."""
+    profile = list_profiles()
+
+    if len(profile) < 2:
+        return
+
+    aktiv = next((p for p in profile if p["active"]), profile[0])
+
+    with ui.row().classes("items-center gap-2"):
+        ui.icon("person").style(f"color: {DARK_ACTIVE}")
+        ui.label(f"Importiert nach {aktiv['name']}").classes(
+            "text-sm text-weight-bold"
+        ).style(f"color: {DARK_ACTIVE}")
 
 
 def _render_result(result, on_reset):
@@ -109,6 +127,11 @@ def import_page():
                 "erkannten Werte passiert danach im Prüf-Workflow. Der Import "
                 "läuft im Hintergrund weiter, auch wenn du die Seite wechselst."
             ).classes("muted")
+
+            # Bewusst hier und nicht am Knopf: den gibt es nur, wenn Dateien
+            # in der Inbox liegen. Das Ziel eines Imports will man aber auch
+            # vorher wissen — es ist der teuerste Fehlgriff dieses Features.
+            _render_import_target()
 
 
             def reset_and_refresh():

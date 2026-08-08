@@ -1,6 +1,6 @@
 # Entscheidung 015
 
-**Status: Schritte 1–3 gebaut (08.08.2026), Schritte 4–5 offen.** Die
+**Status: Schritte 1–4 gebaut (08.08.2026), Schritt 5 (Doku) offen.** Die
 Entscheidungen stehen, der Umsetzungsplan am Ende ist die Bauanleitung.
 
 ## Thema
@@ -257,23 +257,37 @@ Zeitfenster praktisch. Wasserdicht wäre, den laufenden Import beim Start an
 sein Profil zu binden statt den Pfad je Dokument neu aufzulösen — das kostet
 Eingriffe quer durch die Datenbankschicht und bleibt die Reserve.
 
-### 4. Oberfläche
+### 4. Oberfläche — **gebaut**
 
-- **Kopfzeile:** `page_layout` (`layout.py:71`) ist die einzige Stelle, die
-  den Kopf baut. Dort Anzeigename **und** Umschalter — damit auf jeder Seite
-  sichtbar, nicht nur auf dem Dashboard.
-- **Dashboard:** zusätzlich prominent. Die Dopplung ist Absicht; der teuerste
-  Bedienfehler dieses Features ist ein Stapel im falschen Bestand.
-- **Import-Seite:** Anzeigename neben den Import-Knopf.
-- **Einstellungen:** neuer Tab „Profile" neben „Aliase" — anlegen, umbenennen,
-  aus der Liste nehmen. Die Seite ist bereits in Tabs organisiert
-  (`settings.py:29-35`).
-- **Beim Start** das zuletzt aktive Profil. Fehlt dessen Verzeichnis, auf das
-  erste zurückfallen und das sagen, statt mit einem Fehler zu starten.
+- **Seitenleiste** statt einer eigenen Kopfzeile: `page_layout`
+  (`layout.py`) baut die Navigation, und ein Kopfband hätte jede Seite
+  umgestellt. Anzeigename und Umschalter stehen direkt unter der Wortmarke —
+  damit auf **jeder** Seite sichtbar, was das eigentliche Ziel war.
+- **Dashboard:** zusätzlich „Geöffnet: <Name>". Die Dopplung ist Absicht —
+  die Kennzahlen darunter gehören einem bestimmten Menschen.
+- **Import-Seite:** „Importiert nach <Name>" unter der Überschrift des
+  Stapel-Imports — **nicht** am Knopf, denn den gibt es nur, wenn Dateien in
+  der Inbox liegen. Das Ziel will man vorher wissen.
+- **Einstellungen:** neuer Tab „Profile" — einrichten, umbenennen (beim
+  Verlassen des Feldes), öffnen, aus der Liste nehmen, weitere hinzufügen.
+  Dazu die Warnung, wenn ein Datenpfad absolut eingetragen ist.
+- **Beim Start** das zuletzt aktive Profil; fehlt dessen Verzeichnis, fällt
+  `ensure_active_profile()` auf ein vorhandenes zurück und sagt es.
 - **Nach dem Wechsel** auf die Startseite navigieren, damit modulglobaler
-  Seitenzustand (z. B. der Suchfilter der Dokumentenliste) neu aufgebaut wird.
-- Vorbelegte Namen **„Benutzer 1"**, **„Benutzer 2"** — die App ist
-  durchgängig deutsch beschriftet.
+  Seitenzustand (z. B. der Suchfilter der Dokumentenliste) neu entsteht.
+- Vorbelegte Namen **„Benutzer 1"**, **„Benutzer 2"**.
+- **Alles davon erscheint erst ab dem zweiten Profil.** Nur der
+  Einstellungs-Tab ist immer da — sonst käme man nie zur zweiten Person.
+
+Zwei Dinge, die beim Bauen dazukamen:
+
+- **`remove_profile` braucht keine Regel „das letzte bleibt".** Das einzige
+  verbliebene Profil ist zwangsläufig das geöffnete, und das ist ohnehin
+  geschützt. Eine eigene Prüfung wäre nie erreichbar gewesen.
+- ⚠️ **Menüeinträge brauchen einen Marker.** Eine Textsuche im Test trifft
+  die innere `ItemSection` von `ui.menu_item`, nicht den klickbaren Eintrag —
+  der Klick lief dann ins Leere, ohne dass ein Test es merkte. Die Einträge
+  tragen jetzt `profil-wechsel-<kennung>`.
 
 ### 5. Dokumentation
 
