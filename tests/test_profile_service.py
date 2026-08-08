@@ -172,6 +172,16 @@ def test_wal_inhalt_geht_nicht_verloren(installation):
         offen.close()
 
 
+def test_kopierte_datenbank_bleibt_nur_fuer_den_besitzer_lesbar(installation):
+    # Die Kopie entsteht neu und erbt sonst die umask — sie enthält die
+    # OCR-Volltexte aller Dokumente.
+    enable_profiles()
+
+    kopie = installation / "profiles" / "1" / "database" / "buerokrator.db"
+
+    assert oct(kopie.stat().st_mode)[-3:] == "600"
+
+
 def test_zweites_profil_entsteht_leer_und_benannt(installation):
     enable_profiles("Tom", "Alex")
 

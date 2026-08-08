@@ -69,6 +69,20 @@ def _ensure_schema() -> None:
             _migrating_thread = None
 
 
+def reset_schema_state() -> None:
+    """Vergisst, dass das Schema fertig ist — nach einem Profilwechsel nötig.
+
+    Das Flag gilt pro Prozess, nicht pro Datenbank. Ohne diesen Reset würde
+    die Datenbank des neu gewählten Profils nie angelegt oder migriert: der
+    erste Zugriff sähe ein gesetztes Flag und liefe an `init_database`
+    vorbei — auf ein Schema ohne Tabellen.
+    """
+    global _schema_ready
+
+    with _schema_lock:
+        _schema_ready = False
+
+
 def get_connection() -> sqlite3.Connection:
     config = load_config()
 

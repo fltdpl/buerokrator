@@ -7,9 +7,11 @@
 - Intern: Grundlage für mehrere Personen an einer Installation — die App
   unterscheidet jetzt zwischen dem Verzeichnis der Installation
   (Einstellungen, Log) und dem des Datenbestands, und der Umzug eines
-  gewachsenen Einzelbestands in die Profilstruktur ist gebaut und geprüft.
-  Ohne angelegte Profile ändert sich nichts; einen Knopf dafür gibt es noch
-  nicht ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
+  gewachsenen Einzelbestands in die Profilstruktur ist gebaut und geprüft,
+  ebenso der Wechsel zwischen Profilen samt Sperre während eines laufenden
+  Stapel-Imports. Ohne angelegte Profile ändert sich nichts; eine Bedienung
+  dafür gibt es noch nicht
+  ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
 - **Neu: Kategorie „Ausbildung".** Schul- und Hochschulzeugnisse, Urkunden
   und Fortbildungsnachweise haben jetzt einen eigenen Lebensbereich mit den
   Unterarten **Zeugnis / Urkunde**, **Fortbildung / Zertifikat** und

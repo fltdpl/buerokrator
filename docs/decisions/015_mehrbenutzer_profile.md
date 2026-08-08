@@ -1,6 +1,6 @@
 # Entscheidung 015
 
-**Status: Schritte 1–2 gebaut (08.08.2026), Schritte 3–5 offen.** Die
+**Status: Schritte 1–3 gebaut (08.08.2026), Schritte 4–5 offen.** Die
 Entscheidungen stehen, der Umsetzungsplan am Ende ist die Bauanleitung.
 
 ## Thema
@@ -226,18 +226,31 @@ Vier Festlegungen, die beim Bauen dazukamen:
 
 Nicht Teil dieses Schritts: der Knopf, der das auslöst (Schritt 4).
 
-### 3. Sperre während Hintergrund-Jobs
+### 3. Wechsel und Sperre — **gebaut**
 
-- `import_job.is_running()` existiert bereits (`import_job.py:25`) und ist
-  serverweit, nicht an einen Browser-Tab gebunden.
+`profile_service.activate_profile()` und `services/background_jobs`.
+
 - Die Sperre fragt nicht „läuft ein Import", sondern **„läuft ein
-  Hintergrund-Job"** — eine kleine Funktion, in die später Backup oder
-  Neuanalyse eingehängt werden können.
-- Sie greift an **zwei** Stellen: am Umschalter in der Kopfzeile *und* in den
-  Einstellungen. Sonst legt man während des Imports ein Profil an und schaltet
-  über die Hintertür um.
-- Statt einer nackten Fehlermeldung den Fortschritt zeigen („Import läuft —
-  12 von 30").
+  Hintergrund-Job"** (`background_jobs.running_job`). Heute antwortet dort
+  genau eine Quelle, der Stapel-Import; Backup und Neuanalyse kämen dazu,
+  ohne dass die Aufrufer sich ändern.
+- Sie greift an **beiden** Stellen: `activate_profile()` **und**
+  `enable_profiles()`. Sonst richtet man während des Imports Profile ein und
+  schaltet über die Hintertür um.
+- Die Absage nennt den Fortschritt („Profilwechsel nicht möglich:
+  Stapel-Import läuft (12 von 30)."). Ohne Zahl weiß der Nutzer nicht, wie
+  lange er warten soll — und solange kein Fortschritt gemeldet wurde, bleibt
+  die Angabe weg statt irreführend „(0 von 0)" zu behaupten.
+
+⚠️ **Der Wechsel setzt das Schema-Flag zurück** (`database.reset_schema_state`).
+Es gilt pro Prozess, nicht pro Datenbank: ohne Reset liefe der erste Zugriff
+auf das neu gewählte Profil an `init_database` vorbei, auf ein Schema ohne
+Tabellen. Ein Test belegt es, indem er nach dem Wechsel auf das leere zweite
+Profil zugreift.
+
+Der Alias-Zwischenspeicher braucht dagegen **keinen** Reset: er ist nach
+`(Pfad, Zeitstempel, Größe)` geschlüsselt, und der Pfad wandert mit dem
+Profil.
 
 Nicht wasserdicht, sondern angemessen: eine Abfrage beim Klick schließt das
 Zeitfenster praktisch. Wasserdicht wäre, den laufenden Import beim Start an

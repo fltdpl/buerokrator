@@ -18,6 +18,7 @@ stärkere Zusage als eine ZIP-Datei — und verdoppelt den Platzbedarf nicht
 noch ein drittes Mal.
 """
 
+import os
 import shutil
 import sqlite3
 from pathlib import Path
@@ -32,6 +33,8 @@ from src.core.app_home import (
 )
 from src.core.config import PATH_KEYS, config_path
 from src.core.logger import logger
+from src.database.database import reset_schema_state
+from src.services import background_jobs
 
 FIRST_ID = "1"
 SECOND_ID = "2"
@@ -109,6 +112,47 @@ def active_profile() -> "str | None":
     return _read_profiles()["active"]
 
 
+def _verweigere_bei_hintergrund_job(vorhaben: str) -> None:
+    """Sperre für alles, was den aktiven Bestand unter den Füßen wegzieht.
+
+    Der Stapel-Import löst seine Pfade je Dokument neu auf und liefe nach
+    einem Wechsel in den Bestand der anderen Person weiter. Die Abfrage beim
+    Klick schließt das Zeitfenster praktisch — restlos wasserdicht wäre erst,
+    den laufenden Import an sein Profil zu binden (siehe ADR 015).
+    """
+    laeuft = background_jobs.describe_running_job()
+
+    if laeuft:
+        raise RuntimeError(f"{vorhaben} nicht möglich: {laeuft}.")
+
+
+def activate_profile(profile_id: str) -> None:
+    """Wechselt das aktive Profil.
+
+    Danach zeigen alle Pfade auf den neuen Bestand. Aufrufer sollten die
+    Oberfläche neu aufbauen lassen (Schritt 4) — modulglobaler Seitenzustand
+    wie der Suchfilter der Dokumentenliste gehört zum alten Profil.
+    """
+    daten = _read_profiles()
+
+    if profile_id not in daten["profiles"]:
+        raise RuntimeError(f"Unbekanntes Profil: {profile_id}")
+
+    if profile_id == daten["active"]:
+        return
+
+    _verweigere_bei_hintergrund_job("Profilwechsel")
+
+    _schreibe_profiles_datei(profile_id, daten["profiles"])
+    reset_profile_cache()
+
+    # Das Schema-Flag gilt pro Prozess: ohne Reset liefe der erste Zugriff
+    # auf die neue Datenbank an der Migration vorbei.
+    reset_schema_state()
+
+    logger.info("Profil gewechselt auf %s (%s)", profile_id, profile_name(profile_id))
+
+
 def _relative_data_paths() -> list[str]:
     """Profilgebundene Pfade, so wie sie roh in der Config stehen.
 
@@ -166,6 +210,14 @@ def _copy_database(source: Path, target: Path) -> None:
 
     finally:
         quelle.close()
+
+    # Die Kopie entsteht neu und erbt sonst die umask. Sie enthält die
+    # OCR-Volltexte aller Dokumente — dieselbe Zusage wie beim Original.
+    try:
+        os.chmod(target, 0o600)
+
+    except OSError:
+        pass
 
 
 def _rewrite_archive_paths(db_path: Path, alt: Path, neu: Path) -> dict:
@@ -268,6 +320,10 @@ def enable_profiles(erster_name=None, zweiter_name=None) -> dict:
     if profiles_enabled():
         raise RuntimeError("Es gibt bereits Profile.")
 
+    # Der Umzug verschiebt am Ende den Bestand, aus dem ein laufender Import
+    # gerade liest — dieselbe Sperre wie beim Wechsel.
+    _verweigere_bei_hintergrund_job("Profile einrichten")
+
     basis = get_base_home()
     relative = _relative_data_paths()
     profiles_root = _profiles_root()
@@ -335,6 +391,7 @@ def enable_profiles(erster_name=None, zweiter_name=None) -> dict:
     # 4. Umschaltstelle. Ab hier arbeitet die App im Profil.
     _schreibe_profiles_datei(FIRST_ID, [FIRST_ID, SECOND_ID])
     reset_profile_cache()
+    reset_schema_state()
 
     # 5. Originale beiseiteräumen — nicht löschen.
     beiseite = basis / LEGACY_DIR
