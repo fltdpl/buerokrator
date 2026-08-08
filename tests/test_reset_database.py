@@ -1,3 +1,4 @@
+from src.core.app_home import get_app_home
 from src.database.database import get_connection
 from src.database.document_repository import insert_document
 from src.database.init_database import init_database
@@ -34,16 +35,16 @@ def test_reset_clears_archive_and_documents(tmp_path, monkeypatch):
     assert len(list_documents()) == 2
 
     # Archivinhalte anlegen: ein Jahresordner und eine lose Datei.
-    nested = tmp_path / "archive" / "2024" / "Rechnungen"
+    nested = get_app_home() / "archive" / "2024" / "Rechnungen"
     nested.mkdir(parents=True)
     (nested / "a.pdf").write_text("x")
-    (tmp_path / "archive" / "lose.txt").write_text("y")
+    (get_app_home() / "archive" / "lose.txt").write_text("y")
 
     removed = reset_database_and_archive()
 
     # Archivordner bleibt, Inhalte sind weg.
-    assert (tmp_path / "archive").exists()
-    assert list((tmp_path / "archive").iterdir()) == []
+    assert (get_app_home() / "archive").exists()
+    assert list((get_app_home() / "archive").iterdir()) == []
     assert removed == 2
 
     # Datenbank ist leer.

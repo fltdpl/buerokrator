@@ -15,13 +15,20 @@
   wird nichts** — die Originale bleiben als Sicherung liegen, und auch das
   Entfernen einer Person nimmt sie nur aus der Liste.
 
-  Wer geöffnet ist, steht in der Seitenleiste, auf dem Dashboard und neben
-  dem Stapel-Import; umgeschaltet wird über die Seitenleiste. **Während ein
-  Import läuft, ist der Wechsel gesperrt** — sonst landete der Rest des
-  Stapels im falschen Bestand.
+  Das **Nutzerprofil steht immer in der Seitenleiste**, direkt unter dem
+  Programmnamen — auch wenn nur eine Person eingerichtet ist. Sobald es eine
+  zweite gibt, erscheint darunter „Benutzer wechseln"; wer geöffnet ist,
+  zeigen zusätzlich Dashboard und Import-Seite. **Während ein Import läuft,
+  ist der Wechsel gesperrt** — sonst landete der Rest des Stapels im falschen
+  Bestand.
 
-  **Ohne zweite Person ändert sich nichts:** kein Umschalter, keine
-  Namensanzeige, keine neuen Ordner
+  Mehr als fünf Personen sind nicht vorgesehen. Eine Person zu entfernen nimmt
+  sie nur aus der Liste; ihr Ordner bleibt liegen.
+
+  **Für bestehende Installationen:** die Dokumente liegen künftig unter
+  `profiles/<kennung>/`. Ein gewachsener Bestand zieht einmalig mit
+  `python -m tools.port_to_profiles` um — kopierend, mit Gegenprobe, und die
+  Originale bleiben als Sicherung liegen
   ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
 - **Neu: Kategorie „Ausbildung".** Schul- und Hochschulzeugnisse, Urkunden
   und Fortbildungsnachweise haben jetzt einen eigenen Lebensbereich mit den

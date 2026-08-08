@@ -2,6 +2,7 @@
 
 import src.database.database as database
 import src.processor.document_processor as processor
+from src.core.app_home import get_app_home
 from src.core.file_hash import file_hash
 from src.database.document_repository import insert_document
 from src.database.find_duplicate import find_document_by_hash
@@ -77,8 +78,8 @@ def test_dublette_wird_ohne_ocr_und_llm_in_den_papierkorb_verschoben(
 ):
     _setup_project(tmp_path, monkeypatch)
 
-    inbox = tmp_path / "inbox"
-    inbox.mkdir()
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
     original = inbox / "rechnung.pdf"
     original.write_bytes(b"inhalt")
 
@@ -101,14 +102,14 @@ def test_dublette_wird_ohne_ocr_und_llm_in_den_papierkorb_verschoben(
     assert result["duplicate_of"] == document_id
     assert result["duplicate_filename"] == "2024-01-01_Musterversand.pdf"
     assert not original.exists()
-    assert (tmp_path / "trash" / "rechnung.pdf").read_bytes() == b"inhalt"
+    assert (get_app_home() / "trash" / "rechnung.pdf").read_bytes() == b"inhalt"
 
 
 def test_neues_dokument_wird_mit_hash_gespeichert(tmp_path, monkeypatch):
     _setup_project(tmp_path, monkeypatch)
 
-    inbox = tmp_path / "inbox"
-    inbox.mkdir()
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
     source = inbox / "neu.pdf"
     source.write_bytes(b"frischer inhalt")
 

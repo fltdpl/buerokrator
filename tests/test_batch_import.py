@@ -1,3 +1,4 @@
+from src.core.app_home import get_app_home
 import src.processor.batch_import as batch_import
 
 
@@ -26,8 +27,8 @@ def test_find_inbox_documents_filters_supported_types(tmp_path, monkeypatch):
     write_config(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    inbox = tmp_path / "inbox"
-    inbox.mkdir()
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
     (inbox / "a.pdf").write_text("x")
     (inbox / "b.png").write_text("x")
     (inbox / "c.txt").write_text("x")
@@ -51,8 +52,8 @@ def test_import_inbox_documents_splits_success_duplicate_and_failure(
     write_config(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    inbox = tmp_path / "inbox"
-    inbox.mkdir()
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
     (inbox / "ok.pdf").write_text("x")
     (inbox / "bad.pdf").write_text("x")
     (inbox / "dup.pdf").write_text("x")

@@ -2,8 +2,12 @@
 
 ## Archiv
 
-Archiviert wird nach Jahr und Kategorie; die Kategorienamen kommen aus
-`config/settings.yaml` (`archive.category_mapping`):
+Das Archiv liegt im Verzeichnis der jeweiligen Person
+(`profiles/<kennung>/archive/`, siehe
+[ADR 015](decisions/015_mehrbenutzer_profile.md)) — auch dann, wenn es nur
+eine gibt. Darunter wird nach Jahr und Kategorie archiviert; die
+Kategorienamen kommen aus `config/settings.yaml`
+(`archive.category_mapping`), das sich alle Personen teilen:
 
 archive/
 

@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from src.core.app_home import get_app_home
+
 from nicegui import ui
 from nicegui.testing import User
 
@@ -167,8 +169,8 @@ async def test_trash_page_renders_empty(user: User):
 
 @pytest.mark.asyncio
 async def test_trash_page_lists_deleted_files(user: User, tmp_path):
-    trash = tmp_path / "trash"
-    trash.mkdir()
+    trash = get_app_home() / "trash"
+    trash.mkdir(parents=True)
     (trash / "geloescht.pdf").write_text("x", encoding="utf-8")
 
     await user.open("/papierkorb")
@@ -186,7 +188,7 @@ async def test_setup_page_renders(user: User):
 @pytest.mark.asyncio
 async def test_dashboard_redirects_fresh_instance_to_setup(user: User, tmp_path):
     # Frische Instanz nachstellen: DB weg, kein Abschluss-Marker.
-    (tmp_path / "database" / "buerokrator.db").unlink()
+    (get_app_home() / "database" / "buerokrator.db").unlink()
 
     await user.open("/")
     await user.should_see("einsatzbereit")

@@ -6,13 +6,12 @@ from src.frontend.layout import card, page_layout
 from src.frontend.pages.trash import render_trash
 from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED
 from src.services.profile_service import (
+    MAX_PROFILE,
     absolute_data_paths,
     activate_profile,
     create_profile,
-    enable_profiles,
     list_profiles,
     missing_profiles,
-    profiles_enabled,
     remove_profile,
     rename_profile,
 )
@@ -72,10 +71,10 @@ def settings_page():
 
 @ui.refreshable
 def _render_profiles():
-    """Personen des Haushalts: einrichten, umbenennen, wechseln, entfernen.
+    """Personen des Haushalts: umbenennen, wechseln, hinzufügen, entfernen.
 
-    Solange es nur eine Person gibt, steht hier bloß die Einladung, eine
-    zweite anzulegen — die App bleibt sonst überall unverändert (ADR 015).
+    Jede Person hat einen eigenen, vollständig getrennten Bestand. Solange
+    es nur eine gibt, ist das nirgends sonst in der App sichtbar (ADR 015).
     """
     ui.label("Personen im Haushalt").classes("text-xl page-title")
 
@@ -90,53 +89,10 @@ def _render_profiles():
             "dort nicht. Bitte auf einen relativen Pfad umstellen."
         ).classes("text-sm").style(f"color: {DANGER}")
 
-    if not profiles_enabled():
-        ui.label(
-            "Diese Installation hat genau einen Dokumentenbestand. Wer eine "
-            "zweite Person aufnimmt, bekommt einen eigenen, getrennten "
-            "Bestand: eigene Dokumente, eigenes Archiv, eigene "
-            "Aussteller-Aliase. Die Einstellungen gelten weiterhin für "
-            "beide."
-        ).classes("text-sm muted")
-
-        ui.label(
-            "Der bisherige Bestand zieht dabei in einen eigenen Ordner um. "
-            "Gelöscht wird nichts — die Originale bleiben als Sicherung "
-            "liegen."
-        ).classes("text-sm muted")
-
-        erster = ui.input("Name der ersten Person", value="Benutzer 1").classes("w-64")
-        zweiter = ui.input("Name der zweiten Person", value="Benutzer 2").classes(
-            "w-64"
-        )
-
-        def einrichten():
-            try:
-                bericht = enable_profiles(erster.value, zweiter.value)
-
-            except RuntimeError as error:
-                ui.notify(str(error), type="negative", timeout=0, close_button=True)
-                return
-
-            ui.notify(
-                "Profile eingerichtet. Der bisherige Bestand liegt jetzt "
-                f"unter {bericht['profil']}; die Originale als Sicherung "
-                f"unter {bericht['altbestand']}.",
-                type="positive",
-                timeout=0,
-                close_button=True,
-            )
-            _render_profiles.refresh()
-
-        ui.button("Zweite Person hinzufügen", on_click=einrichten).props(
-            "color=primary unelevated"
-        )
-
-        return
-
+    profile = list_profiles()
     fehlend = missing_profiles()
 
-    for eintrag in list_profiles():
+    for eintrag in profile:
         with ui.row().classes("items-center gap-3 w-full"):
             ui.icon("person").classes("text-lg").style(
                 f"color: {DARK_ACTIVE if eintrag['active'] else INK_MUTED}"
@@ -181,7 +137,26 @@ def _render_profiles():
                     f"color: {DANGER}"
                 )
 
-    ui.button("Weitere Person hinzufügen", on_click=_hinzufuegen).props("flat")
+    if len(profile) < MAX_PROFILE:
+        ui.button(
+            "Zweite Person hinzufügen" if len(profile) == 1
+            else "Weitere Person hinzufügen",
+            on_click=_hinzufuegen,
+        ).props("color=primary unelevated" if len(profile) == 1 else "flat")
+
+        if len(profile) == 1:
+            ui.label(
+                "Die zweite Person bekommt einen eigenen, getrennten "
+                "Bestand: eigene Dokumente, eigenes Archiv, eigene "
+                "Aussteller-Aliase — und eigene Steuersummen. Die "
+                "Einstellungen auf dieser Seite gelten weiterhin für alle."
+            ).classes("text-sm muted")
+
+    else:
+        ui.label(
+            f"Mehr als {MAX_PROFILE} Personen sind nicht vorgesehen — diese "
+            "Ablage ist für einen Haushalt gedacht."
+        ).classes("text-sm muted")
 
     ui.label(
         "Entfernen nimmt eine Person nur aus dieser Liste. Der Ordner mit "

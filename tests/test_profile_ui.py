@@ -10,9 +10,19 @@ from nicegui.testing import User
 
 from src.core.app_home import reset_profile_cache
 from src.services import import_job
-from src.services.profile_service import activate_profile, enable_profiles
+from src.services.profile_service import (
+    activate_profile,
+    create_profile,
+    rename_profile,
+)
 
 pytest_plugins = ["nicegui.testing.user_plugin"]
+
+
+def _zwei_personen():
+    """Aus der Einzelperson eine zweite machen — der reale Weg."""
+    rename_profile("1", "Person A")
+    create_profile("Person B")
 
 
 @pytest.fixture(autouse=True)
@@ -77,20 +87,41 @@ async def test_ohne_zweite_person_bleibt_die_app_unveraendert(user: User):
 
 
 @pytest.mark.asyncio
+async def test_das_nutzerprofil_steht_immer_in_der_seitenleiste(user: User):
+    # Auch mit nur einer Person: „wessen Unterlagen sehe ich hier" soll man
+    # nicht suchen müssen.
+    await user.open("/")
+    await user.should_see("Nutzerprofil")
+    await user.should_see("Benutzer 1")
+
+    # Zu wechseln gibt es aber noch nichts.
+    await user.should_not_see("Benutzer wechseln")
+
+
+@pytest.mark.asyncio
+async def test_wechselknopf_erscheint_mit_der_zweiten_person(user: User):
+    _zwei_personen()
+
+    await user.open("/")
+    await user.should_see("Nutzerprofil")
+    await user.should_see("Person A")
+    await user.should_see("Benutzer wechseln")
+
+
+@pytest.mark.asyncio
 async def test_einstellungen_laden_zur_zweiten_person_ein(user: User):
     await user.open("/einstellungen")
     await user.should_see("Zweite Person hinzufügen")
 
 
 @pytest.mark.asyncio
-async def test_einrichten_ueber_die_einstellungen(user: User):
+async def test_zweite_person_ueber_die_einstellungen(user: User):
     """Der Einstiegspunkt des ganzen Features, über die Oberfläche."""
-    from src.services.profile_service import list_profiles, profiles_enabled
+    from src.services.profile_service import list_profiles
 
     await user.open("/einstellungen")
     user.find("Zweite Person hinzufügen").click()
 
-    assert profiles_enabled() is True
     assert [p["name"] for p in list_profiles()] == ["Benutzer 1", "Benutzer 2"]
 
     # Und ab jetzt zeigt die App überall, wer geöffnet ist.
@@ -101,7 +132,7 @@ async def test_einrichten_ueber_die_einstellungen(user: User):
 
 @pytest.mark.asyncio
 async def test_mit_profilen_steht_der_name_auf_dem_dashboard(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
 
     await user.open("/")
     await user.should_see("Geöffnet:")
@@ -110,7 +141,7 @@ async def test_mit_profilen_steht_der_name_auf_dem_dashboard(user: User):
 
 @pytest.mark.asyncio
 async def test_der_name_steht_auf_jeder_seite(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
 
     # Seitenleiste: gilt für alle Seiten, hier stellvertretend zwei.
     await user.open("/dokumente")
@@ -122,7 +153,7 @@ async def test_der_name_steht_auf_jeder_seite(user: User):
 
 @pytest.mark.asyncio
 async def test_das_importziel_steht_neben_dem_knopf(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
 
     await user.open("/import")
     await user.should_see("Importiert nach Person A")
@@ -130,7 +161,7 @@ async def test_das_importziel_steht_neben_dem_knopf(user: User):
 
 @pytest.mark.asyncio
 async def test_nach_dem_wechsel_zeigt_alles_die_andere_person(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
     activate_profile("2")
 
     await user.open("/")
@@ -143,7 +174,7 @@ async def test_nach_dem_wechsel_zeigt_alles_die_andere_person(user: User):
 @pytest.mark.asyncio
 async def test_umschalten_ueber_die_seitenleiste(user: User):
     """Der ganze Klickpfad, nicht nur der Dienst darunter."""
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
 
     await user.open("/")
     user.find(marker="profil-wechsel-2").click()
@@ -155,7 +186,7 @@ async def test_umschalten_ueber_die_seitenleiste(user: User):
 
 @pytest.mark.asyncio
 async def test_umschalten_waehrend_eines_imports_wird_abgelehnt(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
     import_job.start()
     import_job.update_progress(12, 30, "scan.pdf")
 
@@ -171,7 +202,7 @@ async def test_umschalten_waehrend_eines_imports_wird_abgelehnt(user: User):
 
 @pytest.mark.asyncio
 async def test_einstellungen_listen_beide_personen(user: User):
-    enable_profiles("Person A", "Person B")
+    _zwei_personen()
 
     await user.open("/einstellungen")
     await user.should_see("Personen im Haushalt")

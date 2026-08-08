@@ -15,8 +15,8 @@ from src.services import background_jobs, import_job
 from src.services.profile_service import (
     activate_profile,
     active_profile,
-    enable_profiles,
-    profiles_enabled,
+    create_profile,
+    rename_profile,
 )
 
 
@@ -52,7 +52,8 @@ def zwei_profile(tmp_path, monkeypatch):
     conn.commit()
     conn.close()
 
-    enable_profiles("Person A", "Person B")
+    rename_profile("1", "Person A")
+    create_profile("Person B")
 
     return tmp_path
 
@@ -122,21 +123,15 @@ def test_abgebrochener_import_blockiert_nicht_dauerhaft(zwei_profile):
     assert active_profile() == "2"
 
 
-def test_laufender_import_verhindert_auch_das_einrichten(tmp_path, monkeypatch):
-    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
-    (tmp_path / "config").mkdir()
-    (tmp_path / "config" / "settings.yaml").write_text(
-        yaml.safe_dump({"paths": {"archive": "./archive"}}), encoding="utf-8"
-    )
-
+def test_laufender_import_verhindert_das_entfernen(zwei_profile):
     import_job.start()
 
-    # Sonst zöge der Umzug dem laufenden Import den Bestand weg — und über
-    # die Einstellungen wäre die Sperre am Umschalter zu umgehen.
-    with pytest.raises(RuntimeError, match="Stapel-Import läuft"):
-        enable_profiles()
+    # Sonst zöge man dem laufenden Import einen Bestand unter den Füßen weg
+    # — und über die Einstellungen wäre die Sperre am Umschalter umgehbar.
+    from src.services.profile_service import remove_profile
 
-    assert profiles_enabled() is False
+    with pytest.raises(RuntimeError, match="Stapel-Import läuft"):
+        remove_profile("2")
 
 
 def test_die_datenbank_des_neuen_profils_wird_angelegt(zwei_profile):

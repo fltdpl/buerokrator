@@ -1,8 +1,39 @@
 """Globale Test-Fixtures."""
 
 import logging
+from pathlib import Path
 
 import pytest
+
+# Im Entwickler-Modus liegt das App-Home im Repo — ein Test, der seine
+# Umgebung nicht isoliert, schreibt damit in den ECHTEN Bestand. Genau das
+# ist am 08.08.2026 passiert: die Profilverwaltung der Arbeitsinstanz wurde
+# von einem Testlauf überschrieben. Der Schaden war klein, weil nur eine
+# Verwaltungsdatei betroffen war; dieselbe Lücke trifft aber auch Datenbank
+# und Archiv.
+_REPO = Path(__file__).resolve().parents[1]
+_WACHE = (_REPO / "profiles.yaml", _REPO / "database", _REPO / "profiles")
+
+
+def _zustand():
+    return {
+        pfad: pfad.stat().st_mtime_ns if pfad.exists() else None for pfad in _WACHE
+    }
+
+
+@pytest.fixture(autouse=True)
+def kein_test_fasst_den_echten_bestand_an():
+    vorher = _zustand()
+    yield
+    veraendert = [
+        pfad.name for pfad, stand in _zustand().items() if stand != vorher[pfad]
+    ]
+
+    assert not veraendert, (
+        "Dieser Test hat den echten Bestand im Repo verändert "
+        f"({', '.join(veraendert)}). Das App-Home muss isoliert werden — "
+        "BUEROKRATOR_HOME auf tmp_path setzen oder dorthin chdir'en."
+    )
 
 
 @pytest.fixture(autouse=True, scope="session")

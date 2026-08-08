@@ -1,6 +1,7 @@
 """Bulk-Aktionen der Dokumentenliste: löschen, umklassifizieren."""
 
 import src.database.database as database
+from src.core.app_home import get_app_home
 from src.database.document_repository import insert_document
 from src.database.list_documents import get_document
 from src.database.set_document_verified import set_document_verified
@@ -28,7 +29,7 @@ def _setup_project(tmp_path, monkeypatch):
 
 
 def _document(tmp_path, name, document_type="invoice", with_file=True):
-    archive = tmp_path / "archive"
+    archive = get_app_home() / "archive"
     archive.mkdir(parents=True, exist_ok=True)
     path = archive / name
 
@@ -47,7 +48,7 @@ def test_mehrere_dokumente_in_den_papierkorb(tmp_path, monkeypatch):
     _setup_project(tmp_path, monkeypatch)
     first = _document(tmp_path, "a.pdf")
     second = _document(tmp_path, "b.pdf")
-    trash = tmp_path / "trash"
+    trash = get_app_home() / "trash"
 
     assert move_documents_to_trash([first, second], trash_dir=trash) == 2
     assert get_document(first) is None
@@ -60,7 +61,7 @@ def test_fehlende_archivdatei_verhindert_das_loeschen_nicht(tmp_path, monkeypatc
     _setup_project(tmp_path, monkeypatch)
     document_id = _document(tmp_path, "verschwunden.pdf", with_file=False)
 
-    assert move_documents_to_trash([document_id], trash_dir=tmp_path / "trash") == 1
+    assert move_documents_to_trash([document_id], trash_dir=get_app_home() / "trash") == 1
     assert get_document(document_id) is None
 
 
@@ -68,7 +69,7 @@ def test_unbekannte_ids_werden_uebersprungen(tmp_path, monkeypatch):
     _setup_project(tmp_path, monkeypatch)
     document_id = _document(tmp_path, "a.pdf")
 
-    assert move_documents_to_trash([document_id, 999], trash_dir=tmp_path / "trash") == 1
+    assert move_documents_to_trash([document_id, 999], trash_dir=get_app_home() / "trash") == 1
 
 
 def test_umklassifizieren_setzt_typ_und_prueffstatus_zurueck(tmp_path, monkeypatch):
@@ -90,7 +91,7 @@ def test_umklassifizieren_laesst_die_datei_wo_sie_ist(tmp_path, monkeypatch):
 
     reclassify_documents([document_id], "housing")
 
-    assert (tmp_path / "archive" / "a.pdf").exists()
+    assert (get_app_home() / "archive" / "a.pdf").exists()
 
 
 def test_freigabe_widerrufen_zaehlt_nur_geprüfte(tmp_path, monkeypatch):
@@ -119,7 +120,7 @@ def test_freigabe_widerrufen_laesst_felder_und_datei_unangetastet(tmp_path, monk
 
     row = get_document(document_id)
     assert row["extracted_data"] == "{}"
-    assert (tmp_path / "archive" / "a.pdf").exists()
+    assert (get_app_home() / "archive" / "a.pdf").exists()
 
 
 def test_aussteller_vereinheitlichen_schreibt_das_passende_feld(tmp_path, monkeypatch):
@@ -131,7 +132,7 @@ def test_aussteller_vereinheitlichen_schreibt_das_passende_feld(tmp_path, monkey
     invoice = _document(tmp_path, "rechnung.pdf", document_type="invoice")
     lohn = insert_document(
         filename="lohn.pdf",
-        archive_path=str(tmp_path / "archive" / "lohn.pdf"),
+        archive_path=str(get_app_home() / "archive" / "lohn.pdf"),
         document_type="employment",
         extracted_data={
             "document_subtype": "gehaltsabrechnung",

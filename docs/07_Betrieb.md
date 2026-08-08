@@ -21,17 +21,33 @@ Das Schließen des Browser-Tabs beendet die App nicht (dafür der
 Beenden-Knopf in den Einstellungen); ein erneuter Start öffnet dann wieder
 die laufende Instanz.
 
-## Dateien im App-Home
+## Dateien: zwei Wurzeln
 
-Alle Pfade hängen an `src/core/app_home.get_app_home()` (Env
-`BUEROKRATOR_HOME` → cwd im Entwickler-Modus → Benutzer-Datenverzeichnis,
-unter Linux `~/.local/share/buerokrator`):
+Seit [ADR 015](decisions/015_mehrbenutzer_profile.md) gibt es zwei:
+`get_base_home()` für die **Installation**, `get_app_home()` für den
+**Datenbestand des aktiven Profils**. Die Basis wird wie bisher aufgelöst
+(Env `BUEROKRATOR_HOME` → cwd im Entwickler-Modus → Benutzer-Datenverzeichnis,
+unter Linux `~/.local/share/buerokrator`).
 
-- `config/settings.yaml` — Konfiguration (Pfade beim Laden absolutiert)
+Basis — für alle Personen dieselbe:
+
+- `config/settings.yaml` — Konfiguration; **relative** Pfade darin werden
+  gegen das Profil absolutiert, ein absoluter Pfad hebt die Trennung auf
+- `profiles.yaml` — Verwaltung (Liste + aktives Profil); fehlt, solange es
+  nur eine Person gibt
+- `logs/` — inkl. `console.log` des gepackten Starts (pro Start neu, 0600)
+- `.setup_done`, `.nicegui/`
+
+Profil (`profiles/<kennung>/`) — je Person:
+
+- `profile.yaml` — Anzeigename; fehlt, solange nichts umbenannt wurde
 - `config/aussteller_aliase.yaml` — Aussteller-Aliase, nutzerpflegbar
   (Einstellungen → Aliase); enthält persönliche Anbieternamen, gitignored
 - `database/`, `archive/`, `inbox/`, `exports/`, `trash/`, `backups/`
-- `logs/` — inkl. `console.log` des gepackten Starts (pro Start neu, 0600)
+
+Ein Bestand aus der Zeit vor ADR 015 (alles direkt in der Basis) wird
+einmalig mit `python -m tools.port_to_profiles` nachgeholt — bei laufender
+App verweigert das Werkzeug.
 
 ## Qualität
 
@@ -56,6 +72,7 @@ unter Linux `~/.local/share/buerokrator`):
 
 ## Backup
 
+Backups liegen im Profil, sichern also **eine** Person.
 Regelmäßige Sicherung (oder Backup-Knopf in den Einstellungen, der
 Datenbank + Archiv als ZIP sichert und wiederherstellen kann). Die Datenbank
 wird dabei über die SQLite-Backup-API gelesen, nicht als Datei kopiert: im

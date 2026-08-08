@@ -2,6 +2,7 @@ import importlib
 import json
 from pathlib import Path
 
+from src.core.app_home import get_app_home
 from src.core.document_types import ARCHIVE_CATEGORY_LABELS
 
 
@@ -73,8 +74,8 @@ def test_process_archives_invoice_and_stores_document_metadata(
     write_test_config(tmp_path)
     monkeypatch.chdir(tmp_path)
 
-    inbox = tmp_path / "inbox"
-    inbox.mkdir()
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
     source_file = inbox / "Rechnung_Beispiel_OCR.pdf"
     source_file.write_bytes(original_pdf_bytes)
 
@@ -119,7 +120,7 @@ def test_process_archives_invoice_and_stores_document_metadata(
     assert row["filename"] == "2026-03-11_Musterversand_RE-123_42EUR.pdf"
     # Archivpfad ist jetzt App-Home-verankert (absolut), nicht cwd-relativ.
     assert row["archive_path"] == str(
-        tmp_path
+        get_app_home()
         / "archive"
         / "2026"
         / "Rechnungen"

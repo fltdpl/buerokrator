@@ -1,7 +1,7 @@
 # Entscheidung 015
 
-**Status: Schritte 1–4 gebaut (08.08.2026), Schritt 5 (Doku) offen.** Die
-Entscheidungen stehen, der Umsetzungsplan am Ende ist die Bauanleitung.
+**Status: umgesetzt (08.08.2026).** Der Umsetzungsplan am Ende ist als
+Chronik stehengeblieben.
 
 ## Thema
 
@@ -15,18 +15,24 @@ Datenbestand: Datenbank, Archiv, Inbox, Exporte, Papierkorb, Backups und
 Aussteller-Aliase. **Gemeinsam bleiben die Einstellungen** — und alles
 Weitere, was zur Installation gehört (Log, Setup-Marker, UI-Speicher).
 
-Sechs Festlegungen:
+Sieben Festlegungen:
 
 1. **Getrennte Bestände statt Personenspalte.** Kein gemeinsamer Datentopf mit
    einem Feld „Person".
 2. **Einstellungen im Basisverzeichnis, Daten im Profil.**
-3. **Profilordner tragen eine feste Kennung** (`profiles/1/`), der
-   **Anzeigename ist frei änderbar** und steht nur in einer Datei.
-4. **Die Profil-Oberfläche erscheint erst ab dem zweiten Profil.** Nach einer
-   frischen Installation verhält sich die App exakt wie bisher — kein
-   Umschalter, keine Namensanzeige, keine Profildatei.
-5. **Der Wechsel ist gesperrt, solange ein Hintergrund-Job läuft.**
-6. **Ein Profil entfernen heißt: aus der Liste nehmen.** Nie Dateien löschen.
+3. **Profile sind die EINZIGE Struktur**, auch bei einer Person: Daten liegen
+   immer unter `profiles/<kennung>/`. `profiles.yaml` ist nur die Verwaltung
+   und entsteht erst mit der zweiten Person oder einem vergebenen Namen.
+4. **Profilordner tragen eine feste Kennung** (`profiles/1/`), der
+   **Anzeigename ist frei änderbar** und steht nur in einer Datei. Eine
+   Kennung wird **nie wiederverwendet**.
+5. **Das Nutzerprofil steht immer in der Seitenleiste**, direkt unter der
+   Wortmarke und in der Flucht der Navigationspunkte; der Umschalter
+   erscheint darunter ab der zweiten Person, eine Trennlinie setzt beides
+   von der Navigation ab.
+6. **Der Wechsel ist gesperrt, solange ein Hintergrund-Job läuft.**
+7. **Ein Profil entfernen heißt: aus der Liste nehmen.** Nie Dateien löschen.
+   Höchstens `MAX_PROFILE` (5) Personen gleichzeitig.
 
 ## Begründung
 
@@ -103,6 +109,12 @@ Umlaute, Leerzeichen und doppelte Namen sind unproblematisch.
   Profile bekommen ein Unterverzeichnis). Spart den teuersten Schritt, erzeugt
   aber eine dauerhafte Asymmetrie: ausgerechnet der erste Bestand wäre beim
   Auszug nicht als Verzeichnis mitzunehmen.
+- **Zwei Strukturen dauerhaft nebeneinander** (mit und ohne Profile). War die
+  erste Fassung und ist wieder verworfen: sie kostete eine Verzweigung in
+  jeder Pfadauflösung, einen zweiten Zustand in der Oberfläche und hielt die
+  Migration dauerhaft in der App. Da noch keine fremde Installation existiert,
+  war der Übergang einmalig — und ein einmaliger Vorgang gehört nicht ins
+  Produkt, sondern nach `tools/`.
 - **Ein dritter Wert „gemeinsam"** für Haushaltsdokumente. Die gemeinsame
   Mitte ist klein und wird **doppelt importiert**, einmal je Profil; bei einer
   Kopie wird das Häkchen „steuerrelevant" entfernt. Das Feld `tax_relevant`
@@ -111,26 +123,30 @@ Umlaute, Leerzeichen und doppelte Namen sind unproblematisch.
 
 ## Aufbau
 
-Vorher (unverändert, solange es nur ein Profil gibt):
+Vor ADR 015 (Bestände in dieser Form holt `tools/port_to_profiles.py` nach):
 
     <basis>/
       config/settings.yaml
       config/aussteller_aliase.yaml
       database/  archive/  inbox/  trash/  backups/  logs/
 
-Nachher:
+Heute:
 
     <basis>/
       config/settings.yaml        ← gemeinsam
-      profiles.yaml               ← Liste + aktives Profil (neu)
+      profiles.yaml               ← Verwaltung; fehlt bei einer Person
       logs/  .setup_done  .nicegui
       profiles/
         1/
-          profile.yaml            ← nur der Anzeigename (neu)
+          profile.yaml            ← Anzeigename; fehlt ohne Umbenennen
           config/aussteller_aliase.yaml
           database/  archive/  inbox/  exports/  trash/  backups/
         2/
           …
+
+Eine frische Installation legt also `profiles/1/` an und sonst nichts —
+weder `profiles.yaml` noch `profile.yaml`. Beide entstehen erst, wenn es
+etwas zu verwalten gibt.
 
 **Zur Installation, nicht zum Bestand** gehören außer den Einstellungen auch
 Log, Setup-Marker und NiceGUI-Speicher. Log und UI-Speicher werden beim
@@ -140,7 +156,7 @@ als eines, das nach dem Umschalten in den falschen Bestand schreibt. Der
 Setup-Marker gehört dorthin, weil der Assistent Ollama und Tesseract prüft:
 das zweite Profil soll ihn nicht erneut sehen.
 
-`<basis>` ist das, was `get_app_home()` heute liefert — also
+`<basis>` ist das, was `get_base_home()` liefert — also
 `BUEROKRATOR_HOME`, der Repo-Ordner im Entwicklermodus oder das
 Benutzer-Datenverzeichnis.
 
@@ -269,10 +285,17 @@ Eingriffe quer durch die Datenbankschicht und bleibt die Reserve.
 
 ### 4. Oberfläche — **gebaut**
 
-- **Seitenleiste** statt einer eigenen Kopfzeile: `page_layout`
-  (`layout.py`) baut die Navigation, und ein Kopfband hätte jede Seite
-  umgestellt. Anzeigename und Umschalter stehen direkt unter der Wortmarke —
-  damit auf **jeder** Seite sichtbar, was das eigentliche Ziel war.
+- **Seitenleiste** statt einer eigenen Kopfzeile: technisch wären das fünf
+  Zeilen (`ui.header()`), aber eine Leiste für ein einziges Label kostet auf
+  **jeder** Seite vertikalen Platz — am teuersten in der Dokumentansicht mit
+  der PDF-Vorschau — und wäre eine Fläche, die das Theme nicht kennt.
+  Anzeigename und Umschalter stehen deshalb unter der Wortmarke, linksbündig
+  zu den Navigationspunkten, abgesetzt durch eine Trennlinie.
+
+  ⚠️ Der Drawer-Inhalt ist eine **Flex-Spalte**: die Trennlinie braucht
+  `align-self: stretch` (sonst Breite 0) und `flex: 0 0 1px` (sonst drückt
+  der Überlauf die Höhe auf 0). Beides fehlte zuerst — die Linie stand im
+  DOM, das CSS wurde ausgeliefert, und zu sehen war trotzdem nichts.
 - **Dashboard:** zusätzlich „Geöffnet: <Name>". Die Dopplung ist Absicht —
   die Kennzahlen darunter gehören einem bestimmten Menschen.
 - **Import-Seite:** „Importiert nach <Name>" unter der Überschrift des
@@ -299,10 +322,28 @@ Zwei Dinge, die beim Bauen dazukamen:
   der Klick lief dann ins Leere, ohne dass ein Test es merkte. Die Einträge
   tragen jetzt `profil-wechsel-<kennung>`.
 
-### 5. Dokumentation
+### 5. Dokumentation — **gebaut**
 
-`02_Datenmodell` (Verzeichnisaufbau), `05_Ordnerstruktur` (Profilebene über
-dem Archiv), `07_Betrieb` (Backup und Migration je Profil), `CHANGELOG`.
+`02_Datenmodell` (archive_path ist absolut), `05_Ordnerstruktur` (Archiv
+liegt im Profil), `07_Betrieb` (zwei Wurzeln, Backup je Profil, Verweis auf
+das Umzugswerkzeug), `CHANGELOG`.
+
+### 6. Profile als einzige Struktur — **gebaut**
+
+Nachgezogen, nachdem klar war, dass noch keine fremde Installation
+existiert. `get_app_home()` verzweigt nicht mehr, `enable_profiles()` ist
+nach `tools/port_to_profiles.py` gewandert, und die Oberfläche kennt nur
+noch einen Zustand. Dazu kamen `MAX_PROFILE`, die immer sichtbare
+Profilzeile und zwei Funde aus den Tests:
+
+- ⚠️ **Kennungen dürfen nicht wiederverwendet werden.** `remove_profile`
+  nimmt nur aus der Liste, der Ordner bleibt liegen — eine erneut vergebene
+  Kennung hätte der neuen Person den Bestand der entfernten untergeschoben.
+  `create_profile` zählt deshalb auch belegte Verzeichnisse mit.
+- ⚠️ **Beim Anlegen der zweiten Person muss das Verzeichnis der ersten
+  entstehen.** Bis dahin war es nur gedacht; ohne es hätte der nächste Start
+  die erste Person als „nicht gefunden" behandelt und auf die zweite
+  umgeschaltet.
 
 ## Testgrundsätze
 

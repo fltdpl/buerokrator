@@ -12,11 +12,11 @@ import yaml
 from src.core.app_home import get_app_home, reset_profile_cache
 from src.services import import_job
 from src.services.profile_service import (
+    MAX_PROFILE,
     absolute_data_paths,
     activate_profile,
     active_profile,
     create_profile,
-    enable_profiles,
     ensure_active_profile,
     list_profiles,
     missing_profiles,
@@ -57,7 +57,8 @@ def zwei_profile(tmp_path, monkeypatch):
     conn.commit()
     conn.close()
 
-    enable_profiles("Person A", "Person B")
+    rename_profile("1", "Person A")
+    create_profile("Person B")
 
     return tmp_path
 
@@ -171,3 +172,46 @@ def test_absolute_pfade_werden_fuer_die_warnung_gemeldet(zwei_profile):
     einstellungen.write_text(yaml.safe_dump(inhalt), encoding="utf-8")
 
     assert absolute_data_paths() == ["paths.archive"]
+
+
+def test_deckel_bei_maximal_fuenf_personen(zwei_profile):
+    while len(list_profiles()) < MAX_PROFILE:
+        create_profile()
+
+    assert len(list_profiles()) == MAX_PROFILE
+
+    with pytest.raises(RuntimeError, match="Haushalt"):
+        create_profile()
+
+
+def test_der_deckel_gilt_der_anzahl_nicht_der_kennung(zwei_profile):
+    # Anlegen und Entfernen treibt die Kennungen hoch. Hinge der Deckel an
+    # ihnen, wäre er nach ein paar Runden erreicht, obwohl nur zwei Personen
+    # geführt werden.
+    for _ in range(6):
+        remove_profile(create_profile())
+
+    assert len(list_profiles()) == 2
+
+    neu = create_profile()
+
+    assert int(neu) > MAX_PROFILE
+    assert len(list_profiles()) == 3
+
+
+def test_eine_kennung_wird_nie_wiederverwendet(zwei_profile):
+    """Sonst erbte die neue Person den Bestand der entfernten.
+
+    `remove_profile` nimmt nur aus der Liste; der Ordner bleibt liegen.
+    """
+    erste = create_profile("Zwischendurch")
+    (zwei_profile / "profiles" / erste / "archive").mkdir(parents=True)
+    (zwei_profile / "profiles" / erste / "archive" / "alt.pdf").write_bytes(b"x")
+
+    remove_profile(erste)
+    zweite = create_profile("Danach")
+
+    assert zweite != erste
+    assert not (zwei_profile / "profiles" / zweite / "archive").exists()
+    # Der Bestand der entfernten Person liegt unangetastet weiter da.
+    assert (zwei_profile / "profiles" / erste / "archive" / "alt.pdf").exists()

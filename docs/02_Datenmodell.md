@@ -4,7 +4,9 @@
 
 - id — eindeutige ID, in der GUI als Route `/dokumente/<id>` und für das PDF-Serving (`/pdf/<id>`) genutzt
 - filename
-- archive_path
+- archive_path — **absolut**; relative Werte aus älteren Beständen hat
+  `tools/port_to_profiles` umgeschrieben (sie lösten gegen das
+  Arbeitsverzeichnis auf und waren damit vom Startort abhängig)
 - document_type
 - extracted_data — JSON, Felder je Typ/Subtyp (siehe unten)
 - created_at

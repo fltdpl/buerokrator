@@ -1,7 +1,8 @@
-"""Profilebene über dem App-Home (ADR 015, Schritt 1).
+"""Auflösung der Profilebene (ADR 015).
 
-Der wichtigste Test steht zuerst: ohne `profiles.yaml` ändert sich nichts.
-Daran hängt die gesamte übrige Testsuite und der Entwicklermodus.
+Daten liegen **immer** unter `profiles/<kennung>/`; `profiles.yaml` ist nur
+die Verwaltung und darf fehlen. Der Rest der Datei behandelt die Fälle, in
+denen sie da, aber unbrauchbar ist — dort wird bewusst laut gescheitert.
 """
 
 import pytest
@@ -37,10 +38,12 @@ def _profile_datei(basis, inhalt):
     (basis / app_home.PROFILES_FILE).write_text(inhalt, encoding="utf-8")
 
 
-def test_ohne_profildatei_bleibt_alles_wie_bisher(basis):
+def test_ohne_profildatei_gilt_das_standardprofil(basis):
+    # Es gibt keine Installation ohne Profil — die Datei ist nur die
+    # Verwaltung, nicht die Struktur.
     assert get_base_home() == basis
-    assert get_app_home() == basis
-    assert resolve_path("archive") == basis / "archive"
+    assert get_app_home() == basis / "profiles" / "1"
+    assert resolve_path("archive") == basis / "profiles" / "1" / "archive"
 
 
 def test_mit_profil_trennen_sich_basis_und_daten(basis):
@@ -107,9 +110,9 @@ def test_zweiter_aufruf_parst_nicht_erneut(basis, monkeypatch):
     ],
 )
 def test_unbrauchbare_profildatei_ist_ein_harter_fehler(basis, inhalt):
-    # Kein stiller Rückfall auf die Basis: nach der Migration liegt dort
-    # kein Bestand mehr, die App würde eine leere Installation vortäuschen
-    # und neue Importe am Bestand vorbeischreiben.
+    # Kein stiller Rückfall auf das Standardprofil: das öffnete einen
+    # fremden oder leeren Bestand und schriebe neue Importe am eigentlichen
+    # Bestand vorbei.
     _profile_datei(basis, inhalt)
 
     with pytest.raises(RuntimeError):

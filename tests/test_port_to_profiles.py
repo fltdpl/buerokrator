@@ -1,4 +1,4 @@
-"""Umzug eines Einzelbestands in die Profilstruktur (ADR 015, Schritt 2).
+"""Einmaliger Umzug eines profillosen Bestands (tools/port_to_profiles).
 
 Schwerpunkt sind die Abbruchpfade: der Umzug fasst echte Dokumente an, und
 `archive_path` steht absolut in der Datenbank. Ein halber Umzug wäre
@@ -11,15 +11,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from src.core.app_home import get_app_home, get_base_home, reset_profile_cache
-from src.services import profile_service
-from src.services.profile_service import (
-    LEGACY_DIR,
-    active_profile,
-    enable_profiles,
-    list_profiles,
-    profiles_enabled,
-)
+from src.core.app_home import get_app_home, reset_profile_cache
+from src.services.profile_service import active_profile, list_profiles
+from tools import port_to_profiles
+from tools.port_to_profiles import LEGACY_DIR, enable_profiles, profiles_enabled
 
 # Vor der conftest-Fixture festhalten (sie leitet aliases_path um).
 from src.organizer.issuer_normalizer import aliases_path as _echter_aliases_path
@@ -31,6 +26,16 @@ def sauberer_profil_cache():
     reset_profile_cache()
     yield
     reset_profile_cache()
+
+
+@pytest.fixture(autouse=True)
+def keine_portpruefung(monkeypatch):
+    """Der Port-Check gehört dem Werkzeug, nicht jedem Testfall.
+
+    Sonst hinge die halbe Datei daran, ob auf diesem Rechner gerade eine
+    App läuft. Ein eigener Test prüft die Sperre.
+    """
+    monkeypatch.setattr(port_to_profiles, "_verweigere_bei_laufender_app", lambda: None)
 
 
 @pytest.fixture
@@ -100,10 +105,12 @@ def _pfade_in_db(db):
         conn.close()
 
 
-def test_vorher_gibt_es_keine_profile(installation):
+def test_vorher_gibt_es_keine_verwaltung(installation):
+    # Der Bestand liegt noch in der alten Struktur: keine profiles.yaml,
+    # und das Standard-Profilverzeichnis existiert nicht.
     assert profiles_enabled() is False
-    assert list_profiles() == []
-    assert get_app_home() == get_base_home()
+    assert not (installation / "profiles").exists()
+    assert (installation / "database" / "buerokrator.db").exists()
 
 
 def test_umzug_verschiebt_bestand_und_zieht_die_pfade_nach(installation):
@@ -190,8 +197,6 @@ def test_kein_pfad_bleibt_relativ(installation):
     existiert — und ein relativer Pfad „existiert" solange, wie der Prozess
     zufällig im alten Basisverzeichnis läuft.
     """
-    from pathlib import Path as P
-
     enable_profiles()
 
     pfade = _pfade_in_db(
@@ -199,7 +204,7 @@ def test_kein_pfad_bleibt_relativ(installation):
     )
 
     assert pfade, "Aufbau: keine Dokumente"
-    assert all(P(p).is_absolute() for p in pfade)
+    assert all(Path(eintrag).is_absolute() for eintrag in pfade)
 
 
 def test_gegenprobe_faellt_auf_relative_pfade_nicht_herein(installation, monkeypatch):
@@ -272,18 +277,16 @@ def test_absoluter_pfad_in_den_einstellungen_verhindert_den_umzug(installation):
 def test_fehlende_datei_bricht_ab_und_laesst_alles_stehen(installation, monkeypatch):
     # Gegenprobe simulieren: eine Archivdatei verschwindet zwischen Kopie
     # und Prüfung. Danach muss die Installation unverändert dastehen.
-    echte_pruefung = profile_service._pruefe_bestand
+    echte_pruefung = port_to_profiles._pruefe_bestand
 
     def kaputt(db_path, erwartete_zeilen):
         for pfad in _pfade_in_db(db_path):
-            from pathlib import Path
-
             Path(pfad).unlink()
             break
 
         return echte_pruefung(db_path, erwartete_zeilen)
 
-    monkeypatch.setattr(profile_service, "_pruefe_bestand", kaputt)
+    monkeypatch.setattr(port_to_profiles, "_pruefe_bestand", kaputt)
 
     with pytest.raises(RuntimeError, match="nicht am neuen Ort"):
         enable_profiles()
@@ -292,7 +295,6 @@ def test_fehlende_datei_bricht_ab_und_laesst_alles_stehen(installation, monkeypa
     assert not (installation / "profiles").exists()
     assert not (installation / LEGACY_DIR).exists()
     assert (installation / "database" / "buerokrator.db").exists()
-    assert get_app_home() == get_base_home()
 
 
 def test_reste_eines_abgebrochenen_umzugs_werden_gemeldet(installation):
@@ -306,13 +308,13 @@ def test_datenbank_wird_ueber_die_sqlite_api_kopiert(installation, monkeypatch):
     # Eine reine Dateikopie verlöre im WAL-Modus die zuletzt importierten
     # Dokumente — derselbe Fehler steckte schon einmal im Backup.
     gerufen = []
-    echt = profile_service._copy_database
+    echt = port_to_profiles._copy_database
 
     def merke(source, target):
         gerufen.append(source)
         return echt(source, target)
 
-    monkeypatch.setattr(profile_service, "_copy_database", merke)
+    monkeypatch.setattr(port_to_profiles, "_copy_database", merke)
     enable_profiles()
 
     assert len(gerufen) == 1
@@ -322,10 +324,28 @@ def test_datenbank_wird_ueber_die_sqlite_api_kopiert(installation, monkeypatch):
 def test_feste_pfade_decken_sich_mit_ihren_definitionen(installation):
     # FIXED_ITEMS spiegelt trash und die Alias-Datei. Wandert eine davon,
     # muss die Liste mitwandern — sonst bliebe sie beim Umzug liegen.
-    basis = get_base_home()
+    # Gegen das App-Home, nicht die Basis: die Namen unterhalb des
+    # Datenverzeichnisses sind dieselben geblieben, nur liegt es heute im
+    # Profil. Genau diese relativen Namen zieht das Werkzeug um.
+    heim = get_app_home()
 
-    assert str(_echter_trash_dir().relative_to(basis)) == profile_service.FIXED_ITEMS[0]
+    assert str(_echter_trash_dir().relative_to(heim)) == port_to_profiles.FIXED_ITEMS[0]
     assert (
-        str(_echter_aliases_path().relative_to(basis))
-        == profile_service.FIXED_ITEMS[1]
+        str(_echter_aliases_path().relative_to(heim))
+        == port_to_profiles.FIXED_ITEMS[1]
     )
+
+
+def test_laufende_app_verhindert_den_umzug(installation, monkeypatch):
+    """Die App könnte gerade importieren — dann zöge der Umzug ihr den
+    Bestand weg. Die Job-Sperre der App greift hier nicht: sie ist
+    prozesslokal, das Werkzeug läuft in einem eigenen Prozess."""
+    def belegt():
+        raise RuntimeError("Auf 127.0.0.1:8081 läuft etwas")
+
+    monkeypatch.setattr(port_to_profiles, "_verweigere_bei_laufender_app", belegt)
+
+    with pytest.raises(RuntimeError, match="läuft etwas"):
+        enable_profiles()
+
+    assert not (installation / "profiles").exists()

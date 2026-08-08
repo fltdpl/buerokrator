@@ -1,55 +1,39 @@
 """Profile: mehrere Personen an einer Installation (ADR 015).
 
 Framework-frei und testbar. Die Auflösung der Pfade liegt in
-`core/app_home`; hier steht die Verwaltung — vor allem der einmalige Umzug
-eines gewachsenen Einzelbestands in die Profilstruktur.
+`core/app_home`; hier steht die Verwaltung.
 
-**Der Umzug ist der heikelste Vorgang der App**, weil `archive_path` absolut
-in der Datenbank steht: ein reines Verschieben der Ordner hinterließe eine
-Datenbank, die auf nicht mehr vorhandene Dateien zeigt. Deshalb wird
-kopiert, umgeschrieben, gegengeprüft — und erst ganz zum Schluss
-`profiles.yaml` geschrieben. Diese Datei ist die Umschaltstelle: solange sie
-fehlt, läuft die App unverändert auf dem alten Bestand weiter, und ein
-Abbruch hinterlässt nichts als ein unbenutztes Verzeichnis.
+**Profile sind die einzige Struktur**, auch bei einer einzigen Person: die
+Daten liegen immer unter `<basis>/profiles/<kennung>/`. `profiles.yaml`
+entsteht erst, wenn es etwas zu verwalten gibt — eine zweite Person oder
+einen vergebenen Namen. Wer die App frisch installiert, sieht davon nichts.
 
-Ein zusätzliches Backup gibt es bewusst NICHT: der Umzug kopiert und löscht
-nie: die Originale wandern am Ende nach `vor-profilen/`. Das ist eine
-stärkere Zusage als eine ZIP-Datei — und verdoppelt den Platzbedarf nicht
-noch ein drittes Mal.
+Den einmaligen Umzug eines gewachsenen Bestands aus der alten, profillosen
+Struktur macht `tools/port_to_profiles.py`. Er gehört nicht in die App: er
+läuft genau einmal je Installation und fasst dabei jede Zeile der Datenbank
+an.
 """
 
-import os
-import shutil
-import sqlite3
 from pathlib import Path
 
 import yaml
 
 from src.core.app_home import (
+    DEFAULT_PROFILE,
     PROFILES_DIR,
     PROFILES_FILE,
     get_base_home,
     reset_profile_cache,
 )
-from src.core.config import PATH_KEYS, config_path
 from src.core.logger import logger
 from src.database.database import reset_schema_state
 from src.services import background_jobs
 
-FIRST_ID = "1"
-SECOND_ID = "2"
-
-# Verzeichnis, in das die Originale nach dem Umzug wandern. Gelöscht wird
-# nichts — dieselbe Haltung wie beim Papierkorb.
-LEGACY_DIR = "vor-profilen"
-
-# Profilgebundene Dinge, die NICHT in der Config stehen. Die Pfade spiegeln
-# `organizer.trash.get_trash_dir` und `organizer.issuer_normalizer
-# .aliases_path`; ein Test hält sie deckungsgleich.
-FIXED_ITEMS = (
-    "trash",
-    "config/aussteller_aliase.yaml",
-)
+# Deckel für die Anzahl gleichzeitig geführter Profile. Technisch bräuchte es
+# ihn nicht — er markiert die Fläche: ein Haushalt, keine Mandantenfähigkeit.
+# Er gilt für die ANZAHL, nicht für die Kennung: wer anlegt und entfernt,
+# bekommt höhere Kennungen, aber nie eine Sperre durch sie.
+MAX_PROFILE = 5
 
 
 def _profiles_file() -> Path:
@@ -60,55 +44,72 @@ def _profiles_root() -> Path:
     return get_base_home() / PROFILES_DIR
 
 
-def profiles_enabled() -> bool:
-    return _profiles_file().exists()
-
-
 def _read_profiles() -> dict:
-    if not profiles_enabled():
-        return {"active": None, "profiles": []}
+    """Verwaltungsstand; ohne Datei gilt das Standardprofil allein."""
+    datei = _profiles_file()
 
-    content = yaml.safe_load(_profiles_file().read_text(encoding="utf-8"))
+    if not datei.exists():
+        return {"active": DEFAULT_PROFILE, "profiles": [DEFAULT_PROFILE]}
 
-    if not isinstance(content, dict):
-        raise RuntimeError(f"{_profiles_file()} ist unbrauchbar.")
+    inhalt = yaml.safe_load(datei.read_text(encoding="utf-8"))
+
+    if not isinstance(inhalt, dict):
+        raise RuntimeError(f"{datei} ist unbrauchbar.")
 
     return {
-        "active": content.get("active"),
-        "profiles": list(content.get("profiles") or []),
+        "active": inhalt.get("active"),
+        "profiles": list(inhalt.get("profiles") or []),
     }
 
 
+def _schreibe_profiles_datei(aktiv: str, profile: list) -> None:
+    _profiles_file().write_text(
+        yaml.safe_dump({"active": aktiv, "profiles": list(profile)}),
+        encoding="utf-8",
+    )
+
+
 def profile_name(profile_id: str) -> str:
-    """Anzeigename aus der Profildatei; Rückfall auf die Kennung."""
-    path = _profiles_root() / profile_id / "profile.yaml"
+    """Anzeigename aus der Profildatei; Rückfall auf eine Vorbelegung."""
+    pfad = _profiles_root() / profile_id / "profile.yaml"
 
     try:
-        content = yaml.safe_load(path.read_text(encoding="utf-8"))
+        inhalt = yaml.safe_load(pfad.read_text(encoding="utf-8"))
 
     except (OSError, yaml.YAMLError):
-        return profile_id
+        return default_profile_name(profile_id)
 
-    name = (content or {}).get("name") if isinstance(content, dict) else None
+    name = (inhalt or {}).get("name") if isinstance(inhalt, dict) else None
 
-    return name if isinstance(name, str) and name.strip() else profile_id
+    return (
+        name if isinstance(name, str) and name.strip()
+        else default_profile_name(profile_id)
+    )
 
 
-def list_profiles() -> list[dict]:
-    """Alle Profile in Anzeigereihenfolge: [{"id", "name", "active"}]."""
-    data = _read_profiles()
+def default_profile_name(profile_id: str) -> str:
+    return f"Benutzer {profile_id}"
+
+
+def list_profiles() -> list:
+    """Alle Profile in Anzeigereihenfolge: [{"id", "name", "active"}].
+
+    Enthält immer mindestens einen Eintrag — es gibt keine Installation
+    ohne Profil.
+    """
+    daten = _read_profiles()
 
     return [
         {
             "id": profile_id,
             "name": profile_name(profile_id),
-            "active": profile_id == data["active"],
+            "active": profile_id == daten["active"],
         }
-        for profile_id in data["profiles"]
+        for profile_id in daten["profiles"]
     ]
 
 
-def active_profile() -> "str | None":
+def active_profile() -> str:
     return _read_profiles()["active"]
 
 
@@ -117,7 +118,14 @@ def profile_exists(profile_id: str) -> bool:
 
 
 def missing_profiles() -> list:
-    """Gelistete Profile, deren Verzeichnis fehlt (verschoben, gelöscht)."""
+    """Gelistete Profile, deren Verzeichnis fehlt (verschoben, gelöscht).
+
+    Das Standardprofil einer frischen Installation zählt nicht dazu: sein
+    Verzeichnis entsteht erst beim ersten Schreibzugriff.
+    """
+    if not _profiles_file().exists():
+        return []
+
     return [
         profile_id
         for profile_id in _read_profiles()["profiles"]
@@ -133,9 +141,12 @@ def ensure_active_profile() -> "str | None":
     neu anlegen und wie eine leere Installation aussehen. Gibt die Meldung
     zurück, damit der Aufrufer sie zeigen kann — oder None, wenn alles passt.
 
+    Eine frische Installation ohne `profiles.yaml` ist davon ausgenommen:
+    dort ist das fehlende Verzeichnis der Normalzustand.
+
     Bewusst ohne Job-Sperre: das läuft beim Start, bevor etwas laufen kann.
     """
-    if not profiles_enabled():
+    if not _profiles_file().exists():
         return None
 
     daten = _read_profiles()
@@ -143,10 +154,7 @@ def ensure_active_profile() -> "str | None":
     if profile_exists(daten["active"]):
         return None
 
-    ersatz = next(
-        (p for p in daten["profiles"] if profile_exists(p)),
-        None,
-    )
+    ersatz = next((p for p in daten["profiles"] if profile_exists(p)), None)
 
     if ersatz is None:
         raise RuntimeError(
@@ -154,30 +162,66 @@ def ensure_active_profile() -> "str | None":
             "noch am erwarteten Ort?"
         )
 
-    _schreibe_profiles_datei(ersatz, daten["profiles"])
-    reset_profile_cache()
-    reset_schema_state()
-
     meldung = (
         f"Das zuletzt genutzte Profil {profile_name(daten['active'])!r} "
         f"wurde nicht gefunden. Geöffnet ist stattdessen "
         f"{profile_name(ersatz)!r}."
     )
+
+    _schreibe_profiles_datei(ersatz, daten["profiles"])
+    reset_profile_cache()
+    reset_schema_state()
     logger.warning(meldung)
 
     return meldung
 
 
-def create_profile(name=None) -> str:
-    """Legt ein weiteres Profil an und gibt seine Kennung zurück."""
-    if not profiles_enabled():
-        raise RuntimeError("Profile sind noch nicht eingerichtet.")
+def _lege_profil_an(profile_id: str, name: str) -> Path:
+    verzeichnis = _profiles_root() / profile_id
+    verzeichnis.mkdir(parents=True, exist_ok=True)
+    (verzeichnis / "profile.yaml").write_text(
+        yaml.safe_dump({"name": name}, allow_unicode=True),
+        encoding="utf-8",
+    )
 
+    return verzeichnis
+
+
+def create_profile(name=None) -> str:
+    """Legt ein weiteres Profil an und gibt seine Kennung zurück.
+
+    Beim ersten Aufruf entsteht dabei auch `profiles.yaml`: bis dahin kam
+    die Installation ohne Verwaltung aus.
+    """
     daten = _read_profiles()
+
+    if len(daten["profiles"]) >= MAX_PROFILE:
+        raise RuntimeError(
+            f"Mehr als {MAX_PROFILE} Personen sind nicht vorgesehen. Diese "
+            "Ablage ist für einen Haushalt gedacht; wer eine Person nicht "
+            "mehr braucht, nimmt sie aus der Liste."
+        )
+
+    # Erste Verwaltung: die bisher nur gedachten Profile werden real. Ohne
+    # das fehlte dem Standardprofil sein Verzeichnis, und es gälte ab sofort
+    # als „nicht gefunden" — der Start würde auf die neue Person umschalten.
+    if not _profiles_file().exists():
+        for vorhanden in daten["profiles"]:
+            _lege_profil_an(vorhanden, profile_name(vorhanden))
+
+    # Auch belegte VERZEICHNISSE zählen, nicht nur gelistete Profile.
+    # `remove_profile` nimmt nur aus der Liste und lässt den Ordner liegen —
+    # eine wiederverwendete Kennung würde der neuen Person den Bestand der
+    # entfernten unterschieben.
     ziffern = [int(p) for p in daten["profiles"] if p.isdigit()]
+    ziffern += [
+        int(ordner.name)
+        for ordner in _profiles_root().glob("*")
+        if ordner.is_dir() and ordner.name.isdigit()
+    ]
     neu = str(max(ziffern, default=0) + 1)
 
-    _lege_profil_an(neu, name or f"Benutzer {neu}")
+    _lege_profil_an(neu, name or default_profile_name(neu))
     _schreibe_profiles_datei(daten["active"], [*daten["profiles"], neu])
     reset_profile_cache()
 
@@ -250,8 +294,9 @@ def activate_profile(profile_id: str) -> None:
     """Wechselt das aktive Profil.
 
     Danach zeigen alle Pfade auf den neuen Bestand. Aufrufer sollten die
-    Oberfläche neu aufbauen lassen (Schritt 4) — modulglobaler Seitenzustand
-    wie der Suchfilter der Dokumentenliste gehört zum alten Profil.
+    Oberfläche neu aufbauen lassen — Seiten halten modulglobalen Zustand
+    (z. B. den Suchfilter der Dokumentenliste), der zum vorherigen Bestand
+    gehört.
     """
     daten = _read_profiles()
 
@@ -273,356 +318,21 @@ def activate_profile(profile_id: str) -> None:
     logger.info("Profil gewechselt auf %s (%s)", profile_id, profile_name(profile_id))
 
 
-def _data_paths() -> tuple:
-    """(relative, absolute) Datenpfade, so wie sie ROH in der Config stehen.
-
-    Bewusst die rohe Datei, nicht `load_config()`: dort sind die Werte schon
-    absolutiert, und genau die Unterscheidung relativ/absolut ist hier die
-    entscheidende Information.
-    """
-    raw = yaml.safe_load(config_path().read_text(encoding="utf-8")) or {}
-    relative = []
-    absolute = []
-
-    for section, key in PATH_KEYS:
-        value = (raw.get(section) or {}).get(key)
-
-        if not value:
-            continue
-
-        if Path(value).is_absolute():
-            absolute.append(f"{section}.{key}")
-
-        else:
-            relative.append(str(value))
-
-    return relative, absolute
-
-
 def absolute_data_paths() -> list:
     """Config-Schlüssel mit absolutem Pfad — hebeln die Profiltrennung aus.
 
     Für die Warnung auf der Einstellungsseite: ein absoluter Pfad liegt für
     alle Profile im selben Verzeichnis, `resolve_path` lässt ihn bewusst
-    stehen.
+    stehen. Bewusst die ROHE Config, nicht `load_config()`: dort ist bereits
+    absolutiert, und genau die Unterscheidung ist hier die Information.
     """
-    return _data_paths()[1]
-
-
-def _relative_data_paths() -> list:
-    relative, absolute = _data_paths()
-
-    if absolute:
-        raise RuntimeError(
-            "Profile brauchen relative Pfade in den Einstellungen. Absolut "
-            f"eingetragen ist: {', '.join(absolute)}. Ein absoluter Pfad "
-            "läge für alle Personen im selben Verzeichnis — die Trennung "
-            "wäre damit aufgehoben."
-        )
-
-    return relative
-
-
-def _copy_database(source: Path, target: Path) -> None:
-    """DB über die SQLite-API kopieren, nicht als Datei.
-
-    Im WAL-Modus stehen committete Transaktionen in der -wal-Datei, bis ein
-    Checkpoint läuft. Eine reine Dateikopie lieferte dann still einen Stand
-    ohne die zuletzt importierten Dokumente — derselbe Fehler, der beim
-    Backup schon einmal steckte (siehe backup_service).
-    """
-    target.parent.mkdir(parents=True, exist_ok=True)
-
-    quelle = sqlite3.connect(source)
-
-    try:
-        ziel = sqlite3.connect(target)
-
-        try:
-            quelle.backup(ziel)
-
-        finally:
-            ziel.close()
-
-    finally:
-        quelle.close()
-
-    # Die Kopie entsteht neu und erbt sonst die umask. Sie enthält die
-    # OCR-Volltexte aller Dokumente — dieselbe Zusage wie beim Original.
-    try:
-        os.chmod(target, 0o600)
-
-    except OSError:
-        pass
-
-
-def _rewrite_archive_paths(
-    db_path: Path, alt: Path, neu: Path, alt_basis: Path
-) -> dict:
-    """Setzt `archive_path` vom alten auf das neue Archiv um.
-
-    ⚠️ **Relative Pfade müssen mit.** Ältere Importe haben sie hinterlassen;
-    sie sind gegen das App-Home gemeint, lösen aber gegen das
-    Arbeitsverzeichnis auf. Beim ersten Port am echten Bestand blieben sie
-    stehen und zeigten danach ins Leere — die Gegenprobe merkte es nicht,
-    weil der Prozess zufällig im alten Basisverzeichnis lief. Hier werden sie
-    erst gegen die alte Basis absolut gemacht und dann wie alle anderen
-    umgesetzt; danach ist **kein** Pfad mehr relativ.
-    """
-    altes_praefix = f"{alt}/"
-    neues_praefix = f"{neu}/"
-
-    conn = sqlite3.connect(db_path)
-
-    try:
-        cursor = conn.cursor()
-        umgeschrieben = 0
-        unberuehrt = 0
-
-        for document_id, pfad in cursor.execute(
-            "SELECT id, archive_path FROM documents"
-        ).fetchall():
-            if not pfad:
-                unberuehrt += 1
-                continue
-
-            absolut = str(pfad if Path(pfad).is_absolute() else alt_basis / pfad)
-
-            if absolut.startswith(altes_praefix):
-                neuer = absolut.replace(altes_praefix, neues_praefix, 1)
-
-            elif absolut != pfad:
-                # Lag außerhalb des Archivs, war aber relativ: wenigstens
-                # eindeutig machen. Die Gegenprobe entscheidet dann.
-                neuer = absolut
-
-            else:
-                unberuehrt += 1
-                continue
-
-            cursor.execute(
-                "UPDATE documents SET archive_path = ? WHERE id = ?",
-                (neuer, document_id),
-            )
-            umgeschrieben += 1
-
-        conn.commit()
-
-        return {"umgeschrieben": umgeschrieben, "unberuehrt": unberuehrt}
-
-    finally:
-        conn.close()
-
-
-def _pruefe_bestand(db_path: Path, erwartete_zeilen: int) -> int:
-    """Gegenprobe: gleiche Zeilenzahl, und jede Datei liegt am neuen Ort."""
-    conn = sqlite3.connect(db_path)
-
-    try:
-        pfade = [
-            row[0]
-            for row in conn.execute("SELECT archive_path FROM documents").fetchall()
-        ]
-
-    finally:
-        conn.close()
-
-    if len(pfade) != erwartete_zeilen:
-        raise RuntimeError(
-            f"Umzug abgebrochen: die Kopie hat {len(pfade)} Zeilen, "
-            f"das Original {erwartete_zeilen}."
-        )
-
-    # Zuerst: kein Pfad darf relativ geblieben sein. Ein relativer Pfad löst
-    # gegen das Arbeitsverzeichnis auf — die Existenzprüfung darunter wäre
-    # dann zufällig grün, je nachdem, wo der Prozess gerade steht. Genau so
-    # ging der erste Port am echten Bestand halb daneben.
-    relativ = [pfad for pfad in pfade if pfad and not Path(pfad).is_absolute()]
-
-    if relativ:
-        raise RuntimeError(
-            f"Umzug abgebrochen: {len(relativ)} Dokument(e) haben nach dem "
-            "Umschreiben noch einen relativen Pfad."
-        )
-
-    fehlend = [pfad for pfad in pfade if pfad and not Path(pfad).exists()]
-
-    if fehlend:
-        raise RuntimeError(
-            f"Umzug abgebrochen: {len(fehlend)} Dokument(e) liegen nicht am "
-            f"neuen Ort, zuerst {fehlend[0]}."
-        )
-
-    return len(pfade)
-
-
-def _zeilenzahl(db_path: Path) -> int:
-    conn = sqlite3.connect(db_path)
-
-    try:
-        return conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
-
-    finally:
-        conn.close()
-
-
-def _lege_profil_an(profile_id: str, name: str) -> Path:
-    verzeichnis = _profiles_root() / profile_id
-    verzeichnis.mkdir(parents=True, exist_ok=True)
-    (verzeichnis / "profile.yaml").write_text(
-        yaml.safe_dump({"name": name}, allow_unicode=True),
-        encoding="utf-8",
-    )
-
-    return verzeichnis
-
-
-def enable_profiles(erster_name=None, zweiter_name=None) -> dict:
-    """Legt die Profilstruktur an und zieht den bisherigen Bestand um.
-
-    Reihenfolge ist Absicht (ADR 015): kopieren, Pfade umschreiben,
-    gegenprüfen, `profiles.yaml` ZULETZT, danach erst die Originale
-    beiseiteräumen. Bricht etwas vorher ab, bleibt der alte Bestand
-    unangetastet und die App läuft unverändert weiter.
-    """
-    if profiles_enabled():
-        raise RuntimeError("Es gibt bereits Profile.")
-
-    # Der Umzug verschiebt am Ende den Bestand, aus dem ein laufender Import
-    # gerade liest — dieselbe Sperre wie beim Wechsel.
-    _verweigere_bei_hintergrund_job("Profile einrichten")
-
-    basis = get_base_home()
-    relative = _relative_data_paths()
-    profiles_root = _profiles_root()
-
-    if profiles_root.exists():
-        raise RuntimeError(
-            f"{profiles_root} existiert bereits — Rest eines abgebrochenen "
-            "Umzugs? Bitte prüfen und entfernen."
-        )
-
-    erstes = profiles_root / FIRST_ID
-    umgezogen = []
-    bericht = {"umgeschrieben": 0, "geprueft": 0, "unberuehrt": 0}
-
-    try:
-        _lege_profil_an(FIRST_ID, erster_name or "Benutzer 1")
-        _lege_profil_an(SECOND_ID, zweiter_name or "Benutzer 2")
-
-        # 1. Kopieren. Die Datenbank braucht den SQLite-Weg (WAL), alles
-        #    andere sind schlichte Dateien.
-        db_relativ = _db_relative_path()
-
-        for relativ in [*relative, *FIXED_ITEMS]:
-            quelle = basis / relativ
-            ziel = erstes / relativ
-
-            if not quelle.exists():
-                continue
-
-            if relativ == db_relativ:
-                _copy_database(quelle, ziel)
-
-            elif quelle.is_dir():
-                shutil.copytree(quelle, ziel)
-
-            else:
-                ziel.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(quelle, ziel)
-
-            umgezogen.append(relativ)
-
-        # 2. Archivpfade in der KOPIE umschreiben, 3. gegenprüfen.
-        archiv_relativ = _config_relative("paths", "archive")
-        db_quelle = basis / db_relativ
-        db_ziel = erstes / db_relativ
-
-        if db_ziel.exists() and archiv_relativ:
-            erwartet = _zeilenzahl(db_quelle)
-            bericht.update(
-                _rewrite_archive_paths(
-                    db_ziel,
-                    basis / archiv_relativ,
-                    erstes / archiv_relativ,
-                    basis,
-                )
-            )
-            bericht["geprueft"] = _pruefe_bestand(db_ziel, erwartet)
-
-    except Exception:
-        # Vor der Umschaltstelle: das halbe Profilverzeichnis wieder
-        # entfernen, damit ein zweiter Versuch sauber startet. Die
-        # Originale wurden bis hier nur gelesen.
-        shutil.rmtree(profiles_root, ignore_errors=True)
-        raise
-
-    # 4. Umschaltstelle. Ab hier arbeitet die App im Profil.
-    _schreibe_profiles_datei(FIRST_ID, [FIRST_ID, SECOND_ID])
-    reset_profile_cache()
-    reset_schema_state()
-
-    # 5. Originale beiseiteräumen — nicht löschen.
-    beiseite = basis / LEGACY_DIR
-    for relativ in umgezogen:
-        _raeume_beiseite(basis / relativ, beiseite / relativ)
-
-    logger.info(
-        "Profile eingerichtet: %s Dokumentpfade umgeschrieben, "
-        "Altbestand nach %s",
-        bericht["umgeschrieben"],
-        beiseite,
-    )
-
-    bericht["altbestand"] = beiseite
-    bericht["profil"] = erstes
-
-    return bericht
-
-
-# Seitendateien von SQLite. Sie gehören zur Datenbank: bleibt eine -wal
-# zurück, ist der beiseitegeräumte Altbestand unvollständig — genau die
-# Sicherung, auf die man im Zweifel zurückgreifen will.
-_DB_SEITENDATEIEN = ("-wal", "-shm", "-journal")
-
-
-def _raeume_beiseite(quelle: Path, ziel: Path) -> None:
-    """Verschiebt ein Original zur Seite, samt SQLite-Seitendateien.
-
-    Räumt danach ein leer gewordenes Elternverzeichnis ab, damit am alten
-    Ort nichts stehen bleibt, was die App versehentlich neu befüllen könnte.
-    """
-    ziel.parent.mkdir(parents=True, exist_ok=True)
-    shutil.move(str(quelle), str(ziel))
-
-    if not ziel.is_dir():
-        for endung in _DB_SEITENDATEIEN:
-            nebendatei = quelle.with_name(quelle.name + endung)
-
-            if nebendatei.exists():
-                shutil.move(str(nebendatei), str(ziel.with_name(ziel.name + endung)))
-
-        try:
-            quelle.parent.rmdir()
-
-        except OSError:
-            # Nicht leer (oder gar nicht da) — dann bleibt es, wie es ist.
-            pass
-
-
-def _schreibe_profiles_datei(aktiv: str, profile: list) -> None:
-    _profiles_file().write_text(
-        yaml.safe_dump({"active": aktiv, "profiles": list(profile)}),
-        encoding="utf-8",
-    )
-
-
-def _config_relative(section: str, key: str) -> "str | None":
-    raw = yaml.safe_load(config_path().read_text(encoding="utf-8")) or {}
-    value = (raw.get(section) or {}).get(key)
-
-    return str(value) if value else None
-
-
-def _db_relative_path() -> "str | None":
-    return _config_relative("database", "path")
+    from src.core.config import PATH_KEYS, config_path
+
+    roh = yaml.safe_load(config_path().read_text(encoding="utf-8")) or {}
+
+    return [
+        f"{abschnitt}.{schluessel}"
+        for abschnitt, schluessel in PATH_KEYS
+        if (wert := (roh.get(abschnitt) or {}).get(schluessel))
+        and Path(wert).is_absolute()
+    ]

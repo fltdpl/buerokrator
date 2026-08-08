@@ -11,10 +11,11 @@ Es gibt **zwei** Wurzeln (siehe ADR 015):
 - `get_app_home()` — der Datenbestand des **aktiven Profils**: Datenbank,
   Archiv, Inbox, Papierkorb, Backups, Aussteller-Aliase.
 
-Solange keine `profiles.yaml` in der Basis liegt, liefern beide dasselbe
-Verzeichnis — eine Installation ohne Profile verhält sich exakt wie vor
-Einführung dieser Ebene. Das ist die Verträglichkeitszusage, an der die
-gesamte bestehende Testsuite und der Entwicklermodus hängen.
+**Profile sind die einzige Struktur**, auch bei einer einzigen Person: die
+Daten liegen immer unter `<basis>/profiles/<kennung>/`. Fehlt die
+`profiles.yaml`, gilt `DEFAULT_PROFILE` — eine frische Installation braucht
+die Datei also gar nicht, sie entsteht erst mit der zweiten Person oder einem
+vergebenen Namen. Damit gibt es nur einen Verzeichnisaufbau statt zweier.
 
 Auflösung der Basis, in dieser Reihenfolge:
 1. Umgebungsvariable BUEROKRATOR_HOME — explizit gewinnt (auch der
@@ -44,9 +45,11 @@ import yaml
 
 APP_NAME = "buerokrator"
 
-# Profilebene — optional, liegt über der Basis.
+# Profilebene unter der Basis. Die Datei ist optional: ohne sie gilt
+# DEFAULT_PROFILE, eine Einzelperson braucht also keine Verwaltung.
 PROFILES_FILE = "profiles.yaml"
 PROFILES_DIR = "profiles"
+DEFAULT_PROFILE = "1"
 
 # Die Kennung wird zu einem Pfadsegment. Dieselbe Strenge wie beim
 # Dateinamensbau: nichts, was aus dem Profilverzeichnis hinausführt.
@@ -82,14 +85,14 @@ def get_base_home() -> Path:
     return _user_data_dir()
 
 
-def _read_active_profile(base: Path) -> "str | None":
-    """Kennung des aktiven Profils, oder None wenn es keine Profile gibt.
+def _read_active_profile(base: Path) -> str:
+    """Kennung des aktiven Profils.
 
-    Eine FEHLENDE Datei heißt „keine Profile" — das ist der Normalfall einer
-    Einzelnutzer-Installation. Eine VORHANDENE, aber unbrauchbare Datei ist
-    dagegen ein harter Fehler: nach der Profil-Migration liegt in der Basis
-    kein Bestand mehr, ein stiller Rückfall dorthin würde eine leere
-    Installation vortäuschen und neue Importe am Bestand vorbeischreiben.
+    Eine FEHLENDE Datei heißt `DEFAULT_PROFILE` — der Normalfall einer
+    Installation mit einer Person, die nichts umbenannt hat. Eine VORHANDENE,
+    aber unbrauchbare Datei ist dagegen ein harter Fehler: ein stiller
+    Rückfall auf das Standardprofil würde einen fremden oder leeren Bestand
+    öffnen und neue Importe am eigentlichen Bestand vorbeischreiben.
     """
     path = base / PROFILES_FILE
 
@@ -97,7 +100,7 @@ def _read_active_profile(base: Path) -> "str | None":
         info = path.stat()
 
     except OSError:
-        return None
+        return DEFAULT_PROFILE
 
     stamp = (info.st_mtime_ns, info.st_size)
     key = str(base)
@@ -136,14 +139,10 @@ def reset_profile_cache() -> None:
 
 
 def get_app_home() -> Path:
-    """Datenverzeichnis des aktiven Profils (ohne Profile: die Basis)."""
+    """Datenverzeichnis des aktiven Profils."""
     base = get_base_home()
-    active = _read_active_profile(base)
 
-    if active is None:
-        return base
-
-    return base / PROFILES_DIR / active
+    return base / PROFILES_DIR / _read_active_profile(base)
 
 
 def resolve_path(value: "str | Path") -> Path:

@@ -86,35 +86,50 @@ def _switch_profile(profile_id):
 
 
 def render_profile_switcher():
-    """Aktives Profil samt Umschalter — nur wenn es mehr als eines gibt.
+    """Aktives Profil samt Umschalter, direkt unter der Wortmarke.
 
-    Sichtbarkeit ist hier die eigentliche Funktion: der teuerste Bedienfehler
-    dieses Features ist ein Stapel im falschen Bestand. Deshalb steht der Name
-    in der Seitenleiste, also auf JEDER Seite.
+    Der Name steht **immer** da, auch bei einer einzigen Person: es ist die
+    Antwort auf „wessen Unterlagen sehe ich hier gerade", und die soll man
+    nicht suchen müssen. Der Umschalter erscheint erst, wenn es überhaupt
+    etwas zu wechseln gibt — der teuerste Bedienfehler dieses Features wäre
+    ein Stapel im falschen Bestand.
+
+    Oben statt unten und in derselben Flucht wie die Navigationspunkte: das
+    Profil gehört zur Identität der Ansicht, nicht zu den Fußnoten. Eine
+    eigene Kopfzeile wäre die Alternative gewesen — sie hätte auf jeder Seite
+    vertikalen Platz gekostet, am teuersten in der Dokumentansicht.
     """
     profile = list_profiles()
-
-    if len(profile) < 2:
-        return
-
     aktiv = next((p for p in profile if p["active"]), profile[0])
 
-    with ui.row().classes("nav-item cursor-pointer"):
-        ui.icon("person").classes("text-lg")
-        ui.label(aktiv["name"]).classes("text-sm")
-        ui.icon("expand_more").classes("text-sm")
+    # Name und Umschalter in EINEM Block ohne Zwischenraum: die Drawer-Spalte
+    # setzt zwischen ihren Kindern eine Lücke, die den Knopf sonst vom Namen
+    # abrücken würde, zu dem er gehört.
+    with ui.column().classes("w-full gap-0"):
+        with ui.column().classes("profile-block gap-0"):
+            ui.label("Nutzerprofil").classes("text-xs profile-role")
+            ui.label(aktiv["name"]).classes("text-sm")
 
-        with ui.menu():
-            for eintrag in profile:
-                if eintrag["active"]:
-                    continue
+        if len(profile) > 1:
+            with ui.row().classes("nav-item cursor-pointer").mark("profil-wechseln"):
+                ui.icon("swap_horiz").classes("text-lg")
+                ui.label("Benutzer wechseln").classes("text-sm")
 
-                # Marker, weil eine Textsuche im Test die innere ItemSection
-                # trifft und nicht den klickbaren Eintrag.
-                ui.menu_item(
-                    f"Zu {eintrag['name']} wechseln",
-                    lambda _=None, kennung=eintrag["id"]: _switch_profile(kennung),
-                ).mark(f"profil-wechsel-{eintrag['id']}")
+                with ui.menu():
+                    for eintrag in profile:
+                        if eintrag["active"]:
+                            continue
+
+                        # Marker, weil eine Textsuche im Test die innere
+                        # ItemSection trifft und nicht den klickbaren Eintrag.
+                        ui.menu_item(
+                            f"Zu {eintrag['name']} wechseln",
+                            lambda _=None, kennung=eintrag["id"]: _switch_profile(
+                                kennung
+                            ),
+                        ).mark(f"profil-wechsel-{eintrag['id']}")
+
+    ui.element("div").classes("sidebar-divider")
 
 
 @contextmanager

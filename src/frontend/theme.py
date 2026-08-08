@@ -125,6 +125,34 @@ body, .nicegui-content {{
     transition: background 0.2s, opacity 0.2s;
 }}
 
+/* Nutzerprofil unter der Wortmarke. Linksbündig zu den Navigationspunkten:
+   deren Inhalt beginnt bei 0.6rem Rand + 0.9rem Innenabstand = 1.5rem,
+   genau wie die Wortmarke. */
+.profile-block {{
+    padding: 0 0.9rem 0.1rem;
+    margin: 0 0.6rem;
+    color: {SIDEBAR_TEXT};
+}}
+
+.profile-block .profile-role {{
+    opacity: 0.55;
+}}
+
+/* Trennt „wer bin ich" von „wohin gehe ich". Bewusst zurückhaltend: eine
+   kräftige Linie zerschnitte die Seitenleiste in zwei Blöcke. */
+.sidebar-divider {{
+    /* align-self/flex-shrink sind hier nicht kosmetisch: der Drawer-Inhalt
+       ist eine Flex-Spalte. Ohne stretch bekäme das leere div die Breite 0,
+       ohne shrink:0 drückt der Überlauf seine Höhe auf 0 — beides macht die
+       Linie unsichtbar, obwohl sie im DOM steht. */
+    align-self: stretch;
+    flex: 0 0 1px;
+    height: 1px;
+    min-height: 1px;
+    background: rgba(253, 252, 220, 0.28);
+    margin: 0.5rem 1.5rem 0.6rem;
+}}
+
 .nav-item:hover {{
     background: rgba(253, 252, 220, 0.12);
     opacity: 1;

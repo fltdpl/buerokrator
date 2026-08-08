@@ -1,5 +1,6 @@
 import json
 
+from src.core.app_home import get_app_home
 from src.database.document_repository import insert_document
 from src.database.init_database import init_database
 from src.database.list_documents import list_documents
@@ -63,14 +64,14 @@ def test_move_to_trash_keeps_file_and_removes_db_row(tmp_path, monkeypatch):
 
     init_database()
 
-    folder = tmp_path / "archive" / "2024" / "Rechnungen"
+    folder = get_app_home() / "archive" / "2024" / "Rechnungen"
     folder.mkdir(parents=True)
     pdf = folder / "rechnung.pdf"
     pdf.write_bytes(b"original")
 
     document_id = insert_document(
         "rechnung.pdf",
-        "archive/2024/Rechnungen/rechnung.pdf",
+        str(pdf),
         "invoice",
         {"amount": 10},
     )
@@ -80,7 +81,7 @@ def test_move_to_trash_keeps_file_and_removes_db_row(tmp_path, monkeypatch):
     # Datei ist NICHT vernichtet, sondern im Papierkorb.
     assert not pdf.exists()
     assert trashed.exists()
-    assert trashed.resolve().parent == tmp_path / "trash"
+    assert trashed.resolve().parent == get_app_home() / "trash"
     assert trashed.read_bytes() == b"original"
 
     # DB-Eintrag ist weg.
@@ -93,17 +94,18 @@ def test_move_to_trash_avoids_name_collisions(tmp_path, monkeypatch):
 
     init_database()
 
-    folder = tmp_path / "archive" / "2024" / "Rechnungen"
+    folder = get_app_home() / "archive" / "2024" / "Rechnungen"
     folder.mkdir(parents=True)
 
-    trash = tmp_path / "trash"
-    trash.mkdir()
+    trash = get_app_home() / "trash"
+    trash.mkdir(parents=True)
     (trash / "doppelt.pdf").write_bytes(b"alt")
 
-    (folder / "doppelt.pdf").write_bytes(b"neu")
+    neu = folder / "doppelt.pdf"
+    neu.write_bytes(b"neu")
     document_id = insert_document(
         "doppelt.pdf",
-        "archive/2024/Rechnungen/doppelt.pdf",
+        str(neu),
         "invoice",
         {},
     )
