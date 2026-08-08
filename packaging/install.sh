@@ -5,6 +5,7 @@
 #   Menüeintrag → ~/.local/share/applications/buerokrator.desktop
 # Nutzerdaten liegen getrennt davon in ~/.local/share/buerokrator (App-Home)
 # und bleiben bei Updates/Deinstallation erhalten.
+# Deinstallation: ~/.local/opt/buerokrator/uninstall.sh
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -20,6 +21,11 @@ mkdir -p "${OPT}" "${BIN}" "${APPS}"
 cp -r buerokrator/. "${OPT}/"
 
 ln -sf "${OPT}/buerokrator" "${BIN}/buerokrator"
+
+# Der Deinstaller wandert mit in die Installation: das entpackte Tarball wird
+# üblicherweise gelöscht, und dann gäbe es keinen Weg zurück mehr.
+cp uninstall.sh "${OPT}/uninstall.sh"
+chmod +x "${OPT}/uninstall.sh"
 
 # Icon für den Menüeintrag. Der Menüeintrag bekommt einen ABSOLUTEN
 # Icon-Pfad ins Installationsverzeichnis — der Theme-Lookup über
@@ -53,3 +59,4 @@ fi
 
 echo "Fertig. Start über das Anwendungsmenü oder: ${BIN}/buerokrator"
 echo "(Falls ~/.local/bin nicht im PATH ist, den vollen Pfad verwenden.)"
+echo "Deinstallation später: ${OPT}/uninstall.sh (Nutzerdaten bleiben erhalten)"

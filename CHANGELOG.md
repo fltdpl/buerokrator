@@ -4,6 +4,26 @@
 
 ## Unveröffentlicht
 
+- **Neu: Deinstallation mit einem Befehl.** Bisher verteilte die
+  Installation das Programm auf vier Verzeichnisse, und wer es wieder
+  loswerden wollte, musste sie einzeln von Hand aufräumen. Jetzt liegt ein
+  Deinstaller neben dem Programm:
+
+  ```bash
+  ~/.local/opt/buerokrator/uninstall.sh
+  ```
+
+  Er zeigt erst, was er entfernen wird, und fragt nach. Der Menüeintrag
+  verschwindet dabei sofort und bleibt nicht als Karteileiche stehen.
+
+  **Ihre Dokumente, die Datenbank und die Einstellungen rührt er nicht an** —
+  eine erneute Installation findet sie an derselben Stelle wieder. Wer sie
+  mit wegräumen möchte, ruft `uninstall.sh --daten-verschieben` auf: der
+  Datenordner wandert dann nach `~/buerokrator-daten-<datum>`. **Gelöscht
+  wird er auch dann nicht**, das bleibt eine bewusste Handbewegung.
+
+  Ein Starter gleichen Namens in `~/.local/bin`, der nicht zu dieser
+  Installation gehört, bleibt ebenfalls stehen.
 - **Neu: mehrere Personen an einer Installation.** Wer den Haushalt teilt,
   kann in den Einstellungen unter „Profile" eine zweite Person aufnehmen.
   Jede bekommt einen **eigenen, vollständig getrennten Bestand**: eigene

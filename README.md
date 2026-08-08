@@ -97,10 +97,23 @@ Beenden-Knopf da); ein erneuter Start öffnet dann einfach wieder die schon
 laufende Instanz.
 
 Tesseract (erforderlich) und Ollama (optional, siehe *Voraussetzungen*)
-bleiben auch beim Paket Systemabhängigkeiten. Alle Nutzerdaten liegen getrennt vom Programm in
-`~/.local/share/buerokrator`; zum Entfernen genügt das Löschen von
-`~/.local/opt/buerokrator`, dem Symlink `~/.local/bin/buerokrator` und
-dem Menüeintrag `~/.local/share/applications/buerokrator.desktop`.
+bleiben auch beim Paket Systemabhängigkeiten. Alle Nutzerdaten liegen
+getrennt vom Programm in `~/.local/share/buerokrator`.
+
+### Deinstallation
+
+Der Deinstaller wird mitinstalliert und liegt neben dem Programm:
+
+```bash
+~/.local/opt/buerokrator/uninstall.sh
+```
+
+Er entfernt Programm, Starter, Menüeintrag und Symbole — **die Dokumente,
+die Datenbank und die Einstellungen bleiben unberührt**, damit eine erneute
+Installation sie wiederfindet. Wer sie mit wegräumen will, ruft
+`uninstall.sh --daten-verschieben` auf: das verschiebt den Datenordner nach
+`~/buerokrator-daten-<datum>`. Gelöscht wird er auch dann nicht — das bleibt
+eine bewusste Handbewegung. `--ja` überspringt die Rückfrage.
 
 ## Installation aus dem Quellcode
 

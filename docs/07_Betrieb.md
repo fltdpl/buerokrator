@@ -64,7 +64,7 @@ App verweigert das Werkzeug.
 2. Committen, `git tag vX.Y.Z`, `git push && git push --tags`.
 3. `bash packaging/build_linux.sh` → `dist/buerokrator-<v>-linux-<arch>.tar.gz`.
 4. E2E-Smoke: Tarball in ein frisches `HOME` entpacken, `install.sh`,
-   starten, HTTP-Antwort prüfen, aufräumen.
+   starten, HTTP-Antwort prüfen, mit `uninstall.sh` wieder aufräumen.
 5. Tarball vor dem Upload auf Echtdaten prüfen — Release-Pakete bündeln
    `src/classifier/prompts/*` mit: `tar xzOf <t>.tar.gz | grep -a <marker>`.
 6. GitHub-Release anlegen, CHANGELOG-Abschnitt als Notes:
