@@ -48,7 +48,7 @@ Backup neben der DB; bei jeder Schemaänderung SCHEMA_VERSION erhöhen.
 ## Dokumentenschema (`extracted_data`)
 
 Die gültigen Felder sind je Dokumenttyp — bei tax, pension, employment und
-housing zusätzlich je `document_subtype` (bei education und bank
+housing zusätzlich je `document_subtype` (bei education, health und bank
 kategorisiert der Subtyp nur) — zentral in
 **`src/core/document_fields.py`** definiert (`ALLOWED_FIELDS` + die
 `*_SUBTYPE_FIELDS`-Sätze). Diese Whitelist greift bei Extraktion und

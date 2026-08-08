@@ -21,6 +21,7 @@ archive/
     - Arbeit (employment)
     - Recht (legal)
     - Ausbildung (education)
+    - Gesundheit (health)
     - Sonstiges (unknown)
 
 Beispiel:

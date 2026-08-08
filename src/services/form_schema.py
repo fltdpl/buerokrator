@@ -21,6 +21,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -54,6 +55,15 @@ EMPLOYMENT_SUBTYPE_LABELS = {
 EDUCATION_SUBTYPE_LABELS = {
     "zeugnis": "Zeugnis / Urkunde",
     "fortbildung": "Fortbildung / Zertifikat",
+    "sonstiges": "Sonstiges",
+}
+
+HEALTH_SUBTYPE_LABELS = {
+    "arztunterlagen": "Arztunterlagen / Befund",
+    "krankenkasse": "Krankenkasse",
+    "reha": "Reha / Kur",
+    "attest": "Attest / AU",
+    "impfung": "Impfung",
     "sonstiges": "Sonstiges",
 }
 
@@ -262,6 +272,12 @@ def subtype_config(document_type):
             "labels": EDUCATION_SUBTYPE_LABELS,
         }
 
+    if document_type == HEALTH:
+        return {
+            "options": list(HEALTH_SUBTYPE_LABELS),
+            "labels": HEALTH_SUBTYPE_LABELS,
+        }
+
     return None
 
 
@@ -297,6 +313,15 @@ def form_fields(document_type, subtype=None):
         # eigentliche Aussage ("Abschlusszeugnis", "Master of Science").
         return [
             _text("issuer", "Schule / Hochschule / Anbieter", required=True),
+            _text("document_date", "Datum", required=True),
+            _text("subject", "Betreff", required=True),
+        ]
+
+    if document_type == HEALTH:
+        # Wie Ausbildung: ein Satz für alle Unterarten, der Betreff trägt die
+        # Aussage ("Befund Knie", "Impfung Tetanus").
+        return [
+            _text("issuer", "Praxis / Klinik / Kasse", required=True),
             _text("document_date", "Datum", required=True),
             _text("subject", "Betreff", required=True),
         ]

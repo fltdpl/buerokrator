@@ -17,6 +17,8 @@ Feldsätze).
 - legal (Recht: Anwalt/Gericht/Behörde; Korrespondenzpartner + Betreff)
 - education (Ausbildung: Schul- und Hochschulzeugnisse, Urkunden,
   Fortbildungsnachweise; ohne Steuerrelevanz)
+- health (Gesundheit: Arztunterlagen, Kassenbescheide, Reha, Atteste,
+  Impfnachweise; ohne Steuerrelevanz)
 - unknown (mit Freitext-Betreff)
 
 **Konvention: Typ = Lebensbereich.** Eine Nebenkostenabrechnung ist
@@ -35,9 +37,27 @@ Entscheidend ist, **was bescheinigt wird**, nicht wer im Briefkopf steht
 - Die Rechnung für einen Lehrgang ist `invoice`, die Teilnahmebescheinigung
   dazu `education` — wie bei Arztrechnungen, die `invoice` bleiben.
 
+### Abgrenzung health ↔ invoice ↔ insurance ↔ employment
+
+Derselbe Test, angewandt auf Gesundheit
+([ADR 016](decisions/016_kategorie_gesundheit.md)):
+
+- **Arztrechnungen bleiben `invoice`**, auch mit Diagnose darauf. Der Befund
+  zur Behandlung ist `health`. Am Beleg hängt der Steuerzweck
+  `krankheitskosten`.
+- **Beiträge zur Kranken-/Pflegeversicherung bleiben `insurance`** — die
+  Vorsorge-Auswertung erkennt sie an „kranken"/„pflege". Nur die
+  Leistungsseite der Kasse (Kostenübernahme, Erstattung,
+  Zuzahlungsbefreiung) ist `health`.
+- Ein Krankenhaus kann **Arbeitgeber** sein: dessen Gehaltsabrechnung ist
+  `employment`.
+- Die **Arbeitsunfähigkeitsbescheinigung** ist `health` — bescheinigt wird
+  ein Gesundheitszustand, nicht eine Arbeitsleistung.
+- **Patientenverfügung und Vorsorgevollmacht** sind `legal`.
+
 ## Kanonische Subtypen (`document_subtype`)
 
-Nur diese sechs Typen kennen Subtypen (`KNOWN_SUBTYPES`); bei den übrigen
+Nur diese sieben Typen kennen Subtypen (`KNOWN_SUBTYPES`); bei den übrigen
 gilt der Feldsatz des Typs.
 
 - **employment**: arbeitsvertrag, kuendigung, arbeitszeugnis,
@@ -50,6 +70,7 @@ gilt der Feldsatz des Typs.
   mieterhoehung, hausgeldabrechnung, sonstiges
 - **bank**: kontoauszug, kreditkartenabrechnung, depotuebersicht, sonstiges
 - **education**: zeugnis, fortbildung, sonstiges
+- **health**: arztunterlagen, krankenkasse, reha, attest, impfung, sonstiges
 
 Frei eingegebene oder vom Modell erfundene Subtypen werden über
 `SUBTYPE_ALIASES` und einen Fuzzy-Match auf dieses Vokabular normalisiert

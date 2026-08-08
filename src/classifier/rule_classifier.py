@@ -4,6 +4,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -140,6 +141,47 @@ KEYWORD_WEIGHTS = {
         ("bafoeg", 2),
         ("zertifikat", 1),
         ("seminar", 1),
+    ),
+    HEALTH: (
+        # Dieselbe Linie wie bei education: ausschließlich Dokumenttitel und
+        # Textbausteine. Namen von Einrichtungen ("Klinik", "Praxis",
+        # "Krankenhaus") stehen bewusst NICHT hier — Kliniken sind auch
+        # Arbeitgeber und Rechnungssteller und zögen deren Gehaltsabrechnungen
+        # und Rechnungen hierher.
+        ("arztbrief", 3),
+        ("arztbericht", 3),
+        ("befundbericht", 3),
+        ("laborbefund", 3),
+        ("entlassungsbericht", 3),
+        ("operationsbericht", 3),
+        ("arbeitsunfähigkeitsbescheinigung", 3),
+        ("arbeitsunfaehigkeitsbescheinigung", 3),
+        ("krankmeldung", 3),
+        ("impfbescheinigung", 3),
+        ("impfausweis", 3),
+        ("impfpass", 3),
+        ("zuzahlungsbefreiung", 3),
+        ("heilmittelverordnung", 3),
+        ("ärztliches attest", 3),
+        ("aerztliches attest", 3),
+        ("anschlussheilbehandlung", 3),
+        # Starke Indizien, die aber allein nicht reichen sollen.
+        ("befund", 2),
+        ("anamnese", 2),
+        ("rehabilitation", 2),
+        ("arbeitsunfähig", 2),
+        ("arbeitsunfaehig", 2),
+        ("vorsorgeuntersuchung", 2),
+        # Bewusst schwach (Gewicht 1 = entscheidet nie allein):
+        # "krankenkasse" ist die Grenze zu insurance — die Kasse bescheinigt
+        # auch BEITRÄGE, und die gehören als Vorsorgeaufwendung zu insurance
+        # (src/tax/tax_summary.py erkennt sie an "kranken"/"pflege").
+        # "diagnose" und "attest" stehen ebenso auf Arztrechnungen bzw. in
+        # Rechtsschreiben ("wird hiermit attestiert").
+        ("krankenkasse", 1),
+        ("diagnose", 1),
+        ("attest", 1),
+        ("impfung", 1),
     ),
 }
 

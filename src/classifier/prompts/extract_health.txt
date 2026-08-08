@@ -1,0 +1,56 @@
+Antworte ausschließlich mit JSON.
+Verwende keine Arrays.
+Liefere ausschließlich die Felder aus dem Schema.
+Keine zusätzlichen Felder.
+
+Schema:
+
+{{
+  "document_subtype": "",
+  "issuer": "",
+  "document_date": "",
+  "subject": ""
+}}
+
+document_subtype:
+Wähle exakt einen dieser Werte:
+
+"arztunterlagen"
+  = Arztbrief, Arztbericht, Befund und Befundbericht, Laborwerte,
+    Bildgebung (MRT, Röntgen, Ultraschall), Operationsbericht,
+    Entlassungsbericht des Krankenhauses, Therapiebericht,
+    Medikationsplan, Überweisung
+"krankenkasse"
+  = Leistungsbescheid, Kostenübernahme oder -zusage, Erstattung,
+    Zuzahlungsbefreiung, Krankengeld, Bonusheft, Mitgliedsbescheinigung
+    — also die Kasse als LEISTUNGSTRÄGER
+"reha"
+  = Reha-Bescheid, Rehabilitationsbericht, Anschlussheilbehandlung,
+    Kur und Heilverfahren
+"attest"
+  = Arbeitsunfähigkeitsbescheinigung, Krankmeldung, ärztliches Attest,
+    Bescheinigung über Sport- oder Schulbefreiung — alles, was einen
+    Gesundheitszustand für DRITTE bescheinigt
+"impfung"
+  = Impfbescheinigung, Impfausweis, Impfnachweis, Impfzertifikat
+"sonstiges"
+  = alles andere aus dem Bereich Gesundheit
+
+Verwende ausschließlich einen dieser sechs Werte.
+Erfinde keine neuen Werte.
+
+issuer:
+Die ausstellende Stelle (Praxis, Klinik, Labor, Krankenkasse).
+Der Briefkopf entscheidet, nicht eine beiläufig genannte Einrichtung.
+
+document_date:
+Ausstellungsdatum im Format DD.MM.YYYY falls erkennbar
+
+subject:
+Kurze Angabe, WORUM es geht — die eigentliche Aussage des Dokuments
+(z. B. "Befund Kniegelenk", "Kostenübernahme Physiotherapie",
+"Impfung Tetanus"). Kein Name der Person, keine Versichertennummer.
+
+Dokument:
+
+{document_text}

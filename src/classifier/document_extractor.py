@@ -8,6 +8,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -127,6 +128,7 @@ PROMPT_FILES = {
     EMPLOYMENT: "extract_employment.txt",
     LEGAL: "extract_legal.txt",
     EDUCATION: "extract_education.txt",
+    HEALTH: "extract_health.txt",
 }
 
 
@@ -204,6 +206,10 @@ def extract_education(text):
     return _extract(EDUCATION, text)
 
 
+def extract_health(text):
+    return _extract(HEALTH, text)
+
+
 def extract_employment(text):
     data = _extract(EMPLOYMENT, text, max_input_chars=EMPLOYMENT_MAX_INPUT_CHARS)
 
@@ -243,6 +249,7 @@ def extract_document(
         EMPLOYMENT: extract_employment,
         LEGAL: extract_legal,
         EDUCATION: extract_education,
+        HEALTH: extract_health,
     }
 
     extractor = extractors.get(document_type)

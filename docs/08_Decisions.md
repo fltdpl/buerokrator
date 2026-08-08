@@ -17,3 +17,4 @@ Diese Seite enthält alle Architektur- und Technologieentscheidungen des Projekt
 - [013 Kein trainiertes Modell](decisions/013_kein_trainiertes_modell.md)
 - [014 Kategorie Ausbildung](decisions/014_kategorie_ausbildung.md)
 - [015 Mehrbenutzer über Profile](decisions/015_mehrbenutzer_profile.md)
+- [016 Kategorie Gesundheit](decisions/016_kategorie_gesundheit.md)

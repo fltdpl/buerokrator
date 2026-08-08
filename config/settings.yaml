@@ -32,6 +32,7 @@ supported_document_types:
 - employment
 - legal
 - education
+- health
 - unknown
 archive:
   category_mapping:
@@ -44,4 +45,5 @@ archive:
     employment: Arbeit
     legal: Recht
     education: Ausbildung
+    health: Gesundheit
     unknown: Sonstiges

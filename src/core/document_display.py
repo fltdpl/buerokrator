@@ -4,6 +4,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -62,6 +63,15 @@ EMPLOYMENT_SUBTYPE_SHORT_LABELS = {
 EDUCATION_SUBTYPE_SHORT_LABELS = {
     "zeugnis": "Zeugnis / Urkunde",
     "fortbildung": "Fortbildung",
+    "sonstiges": "Sonstiges",
+}
+
+HEALTH_SUBTYPE_SHORT_LABELS = {
+    "arztunterlagen": "Arztunterlagen",
+    "krankenkasse": "Krankenkasse",
+    "reha": "Reha / Kur",
+    "attest": "Attest / AU",
+    "impfung": "Impfung",
     "sonstiges": "Sonstiges",
 }
 
@@ -140,6 +150,13 @@ def get_document_art_label(document_type, extracted_data):
             return data.get("subject") or "Sonstiges"
 
         return EDUCATION_SUBTYPE_SHORT_LABELS.get(subtype) or "Ausbildung"
+
+    if document_type == HEALTH:
+        subtype = data.get("document_subtype")
+        if subtype == "sonstiges":
+            return data.get("subject") or "Sonstiges"
+
+        return HEALTH_SUBTYPE_SHORT_LABELS.get(subtype) or "Gesundheit"
 
     if document_type == LEGAL:
         return data.get("subject") or "Recht"

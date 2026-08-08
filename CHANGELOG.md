@@ -4,6 +4,32 @@
 
 ## Unveröffentlicht
 
+- **Neu: Kategorie „Gesundheit".** Arztbriefe, Befunde, Bescheide der
+  Krankenkasse, Reha-Unterlagen, Atteste und Impfnachweise haben jetzt einen
+  eigenen Lebensbereich mit den Unterarten **Arztunterlagen / Befund**,
+  **Krankenkasse**, **Reha / Kur**, **Attest / AU**, **Impfung** und
+  **Sonstiges**. Sie bekommen einen eigenen Archivordner und lassen sich
+  filtern, statt unter „Sonstiges" zu landen.
+
+  Zwei Abgrenzungen sind bewusst so gewählt:
+
+  **Arztrechnungen bleiben „Rechnung"** — auch wenn eine Diagnose darauf
+  steht. Der Befund zur Behandlung gehört zu Gesundheit, die Rechnung dazu
+  bleibt bei den Rechnungen, weil dort die Krankheitskosten für die
+  Steuererklärung hängen.
+
+  **Bescheinigungen über Kranken- und Pflegeversicherungs-Beiträge bleiben
+  „Versicherung"** — sie sind Vorsorgeaufwendungen und werden als solche
+  ausgewertet. Nur die Leistungsseite der Kasse (Kostenübernahme,
+  Erstattung, Zuzahlungsbefreiung) ist Gesundheit.
+
+  Die Arbeitsunfähigkeitsbescheinigung zählt zu Gesundheit, auch wenn sie
+  beim Arbeitgeber vorzulegen ist. Patientenverfügung und Vorsorgevollmacht
+  bleiben bei „Recht".
+
+  Am vorhandenen Bestand wurde nichts umsortiert und keine bestehende
+  Zuordnung verändert; Bestandsdokumente wandern nur, wenn Sie sie selbst
+  umstellen ([ADR 016](docs/decisions/016_kategorie_gesundheit.md)).
 - **Neu: Deinstallation mit einem Befehl.** Bisher verteilte die
   Installation das Programm auf vier Verzeichnisse, und wer es wieder
   loswerden wollte, musste sie einzeln von Hand aufräumen. Jetzt liegt ein

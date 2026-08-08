@@ -17,6 +17,7 @@ housing
 employment
 legal
 education
+health
 unknown
 
 Verwende ausschließlich einen dieser Werte.
@@ -93,6 +94,16 @@ education:
   Seminarnachweise
 - Bescheide zur Ausbildungsförderung (BAföG, Stipendien)
 
+health:
+- Arztbriefe, Arztberichte, Befunde und Befundberichte, Laborwerte
+- Bildgebung (MRT, Röntgen, Ultraschall), Operationsberichte
+- Entlassungsberichte aus Krankenhaus und Reha
+- Bescheide der Krankenkasse als Leistungsträger: Kostenübernahme,
+  Erstattung, Zuzahlungsbefreiung, Krankengeld, Bonusheft
+- Reha- und Kurbescheide, Anschlussheilbehandlung
+- Arbeitsunfähigkeitsbescheinigungen, Krankmeldungen, ärztliche Atteste
+- Impfbescheinigungen und Impfnachweise
+
 unknown:
 - Dokumente, die keiner der Kategorien eindeutig zugeordnet werden können
 
@@ -121,6 +132,19 @@ Entscheidungsregeln bei Überschneidungen:
   Einrichtung im Briefkopf steht.
 - Die RECHNUNG für einen Lehrgang oder ein Seminar ist invoice; die
   Teilnahmebescheinigung oder das Zertifikat dazu ist education.
+- Eine Arztrechnung oder Zahnarztrechnung ist invoice, NICHT health — auch
+  wenn eine Diagnose darauf steht. Der Befund zur Behandlung ist health,
+  die Rechnung dazu invoice.
+- Bescheinigungen der Krankenkasse über gezahlte BEITRÄGE zur Kranken- und
+  Pflegeversicherung sind insurance, NICHT health. Nur die Leistungsseite
+  (Kostenübernahme, Erstattung, Zuzahlungsbefreiung) ist health.
+- Ein Krankenhaus oder eine Praxis kann auch ARBEITGEBER sein. Eine
+  Gehaltsabrechnung, Lohnsteuerbescheinigung oder SV-Meldung einer Klinik
+  ist employment, NICHT health.
+- Die Arbeitsunfähigkeitsbescheinigung ist health, auch wenn sie zur
+  Vorlage beim Arbeitgeber bestimmt ist: bescheinigt wird ein
+  Gesundheitszustand, nicht eine Arbeitsleistung.
+- Patientenverfügung und Vorsorgevollmacht sind legal, NICHT health.
 
 Dokument:
 

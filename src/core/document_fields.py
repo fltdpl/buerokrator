@@ -7,6 +7,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -162,6 +163,10 @@ ALLOWED_FIELDS = {
     # bescheinigt, steht im Betreff. Bewusst ohne amount: die Kosten einer
     # Fortbildung stehen auf der Rechnung (invoice), nicht auf dem Nachweis.
     EDUCATION: {"document_subtype", "issuer", "document_date", "subject"},
+    # Gesundheit: derselbe Satz wie Ausbildung und legal. Bewusst OHNE amount —
+    # die Kosten einer Behandlung stehen auf der Arztrechnung (invoice), nicht
+    # auf dem Befund. Das ist dieselbe Grenze wie bei Fortbildungskosten.
+    HEALTH: {"document_subtype", "issuer", "document_date", "subject"},
 }
 
 # Pension-Subtypen: der Bauspar-Jahresauszug nutzt Kapitalertragsfelder statt
@@ -266,6 +271,14 @@ KNOWN_SUBTYPES = {
         "fortbildung",
         "sonstiges",
     },
+    HEALTH: {
+        "arztunterlagen",
+        "krankenkasse",
+        "reha",
+        "attest",
+        "impfung",
+        "sonstiges",
+    },
 }
 
 # Aliasse für frei eingegebene oder vom LLM erfundene Subtypen.
@@ -348,6 +361,88 @@ SUBTYPE_ALIASES = {
         "seminarbescheinigung": "fortbildung",
         "schulung": "fortbildung",
     },
+    # Gesundheit trägt dieselbe Last wie Ausbildung: der Fuzzy-Match erkennt
+    # keinen einzigen realen Wortlaut ("impfbescheinigung" liegt gegen
+    # "impfung" bei ≈0,58, cutoff ist 0,85). Ohne diese Tabelle liefe jedes
+    # echte Dokument über constrain_subtype in "sonstiges".
+    HEALTH: {
+        # Was Ärztinnen und Ärzte schreiben — für dich, nicht für Dritte.
+        "arztbrief": "arztunterlagen",
+        "arztbericht": "arztunterlagen",
+        "befund": "arztunterlagen",
+        "befundbericht": "arztunterlagen",
+        "laborbefund": "arztunterlagen",
+        "laborwerte": "arztunterlagen",
+        "laborergebnis": "arztunterlagen",
+        "diagnose": "arztunterlagen",
+        "anamnese": "arztunterlagen",
+        "therapiebericht": "arztunterlagen",
+        "medikationsplan": "arztunterlagen",
+        "operationsbericht": "arztunterlagen",
+        "op-bericht": "arztunterlagen",
+        "mrt": "arztunterlagen",
+        "mrt-befund": "arztunterlagen",
+        "röntgenbefund": "arztunterlagen",
+        "roentgenbefund": "arztunterlagen",
+        "ultraschall": "arztunterlagen",
+        "sonographie": "arztunterlagen",
+        "überweisung": "arztunterlagen",
+        "ueberweisung": "arztunterlagen",
+        # Der Entlassungsbericht landet bewusst HIER und nicht bei "reha":
+        # ihn schreiben Krankenhäuser wie Reha-Kliniken, und der Klinikfall
+        # ist der häufigere. Für Reha entscheidet das Wort "Reha" selbst.
+        "entlassungsbericht": "arztunterlagen",
+        "entlassungsbrief": "arztunterlagen",
+        # Die Kasse als Leistungsträger — NICHT ihre Beitragsbescheinigung,
+        # die bleibt insurance (Vorsorgeaufwendungen).
+        "leistungsbescheid": "krankenkasse",
+        "kostenübernahme": "krankenkasse",
+        "kostenuebernahme": "krankenkasse",
+        "kostenzusage": "krankenkasse",
+        "erstattung": "krankenkasse",
+        "erstattungsbescheid": "krankenkasse",
+        "zuzahlungsbefreiung": "krankenkasse",
+        "zuzahlung": "krankenkasse",
+        "bonusheft": "krankenkasse",
+        "bonusbescheinigung": "krankenkasse",
+        "krankengeld": "krankenkasse",
+        "mitgliedsbescheinigung": "krankenkasse",
+        "kasse": "krankenkasse",
+        "rehabilitation": "reha",
+        "rehabilitationsbericht": "reha",
+        "rehabescheid": "reha",
+        "reha-bescheid": "reha",
+        "rehamassnahme": "reha",
+        "rehaklinik": "reha",
+        "kur": "reha",
+        "kurantrag": "reha",
+        "kurbescheid": "reha",
+        "anschlussheilbehandlung": "reha",
+        "ahb": "reha",
+        "heilverfahren": "reha",
+        # Bescheinigt einen Zustand für DRITTE (Arbeitgeber, Schule).
+        "arbeitsunfähigkeitsbescheinigung": "attest",
+        "arbeitsunfaehigkeitsbescheinigung": "attest",
+        "au-bescheinigung": "attest",
+        "au": "attest",
+        "arbeitsunfähigkeit": "attest",
+        "arbeitsunfaehigkeit": "attest",
+        "krankmeldung": "attest",
+        "krankschreibung": "attest",
+        "ärztliches attest": "attest",
+        "aerztliches attest": "attest",
+        "ärztliche bescheinigung": "attest",
+        "aerztliche bescheinigung": "attest",
+        "sportbefreiung": "attest",
+        "schulbefreiung": "attest",
+        "impfbescheinigung": "impfung",
+        "impfausweis": "impfung",
+        "impfpass": "impfung",
+        "impfnachweis": "impfung",
+        "impfzertifikat": "impfung",
+        "impfdokumentation": "impfung",
+        "schutzimpfung": "impfung",
+    },
 }
 
 
@@ -383,6 +478,7 @@ SUBTYPE_FALLBACK = {
     BANK: ("sonstiges", "subject"),
     EMPLOYMENT: ("sonstiges", "subject"),
     EDUCATION: ("sonstiges", "subject"),
+    HEALTH: ("sonstiges", "subject"),
 }
 
 

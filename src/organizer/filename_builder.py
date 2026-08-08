@@ -7,6 +7,7 @@ from src.core.document_types import (
     BANK,
     EDUCATION,
     EMPLOYMENT,
+    HEALTH,
     HOUSING,
     INSURANCE,
     INVOICE,
@@ -125,6 +126,7 @@ def build_filename(classification, extracted_data, original_file_path):
         EMPLOYMENT: build_employment_filename,
         LEGAL: build_legal_filename,
         EDUCATION: build_education_filename,
+        HEALTH: build_health_filename,
     }
 
     builder = builders.get(document_type)
@@ -454,6 +456,28 @@ def build_education_filename(
 
     subtype = _text_value(extracted_data.get("document_subtype"), "").capitalize()
     subject = _clean_name(extracted_data.get("subject"), subtype or "Ausbildung")
+
+    return f"{document_date}_{issuer}_{subject}{suffix}"
+
+
+def build_health_filename(
+    extracted_data,
+    suffix,
+):
+    """Datum + Aussteller + Betreff, wie bei education.
+
+    Der Betreff bleibt bewusst im Namen (Nutzerentscheidung): ein Ordner
+    voller "2026-03-12_Musterpraxis_Gesundheit.pdf" wäre unbrauchbar. Wer
+    Diagnosen nicht im Dateinamen führen will, hält den Betreff allgemein.
+    """
+    document_date = normalize_date(
+        _text_value(extracted_data.get("document_date"), "unknown_date")
+    )
+
+    issuer = _issuer_name(extracted_data.get("issuer"), "unknown_issuer")
+
+    subtype = _text_value(extracted_data.get("document_subtype"), "").capitalize()
+    subject = _clean_name(extracted_data.get("subject"), subtype or "Gesundheit")
 
     return f"{document_date}_{issuer}_{subject}{suffix}"
 
