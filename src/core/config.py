@@ -11,7 +11,7 @@ from src.core.app_home import get_app_home, get_base_home, resolve_path
 # absolutiert (eine zentrale Stelle statt vieler Konsumenten) und beim
 # Speichern wieder relativiert, wenn sie innerhalb des App-Home liegen —
 # so bleibt die YAML-Datei portabel/diff-freundlich.
-_PATH_KEYS = (
+PATH_KEYS = (
     ("paths", "inbox"),
     ("paths", "archive"),
     ("paths", "exports"),
@@ -56,7 +56,7 @@ def load_config() -> dict:
     with open(path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    for section, key in _PATH_KEYS:
+    for section, key in PATH_KEYS:
         value = (config.get(section) or {}).get(key)
 
         if value:
@@ -70,7 +70,7 @@ def save_config(config: dict) -> None:
     config = copy.deepcopy(config)
     home = get_app_home()
 
-    for section, key in _PATH_KEYS:
+    for section, key in PATH_KEYS:
         value = (config.get(section) or {}).get(key)
 
         if not value:

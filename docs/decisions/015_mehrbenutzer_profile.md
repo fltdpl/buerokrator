@@ -1,6 +1,6 @@
 # Entscheidung 015
 
-**Status: Schritt 1 gebaut (08.08.2026), Schritte 2–5 offen.** Die
+**Status: Schritte 1–2 gebaut (08.08.2026), Schritte 3–5 offen.** Die
 Entscheidungen stehen, der Umsetzungsplan am Ende ist die Bauanleitung.
 
 ## Thema
@@ -11,8 +11,9 @@ Dokumentenbestände mit einem Profilumschalter in der App
 ## Entscheidung (08.08.2026)
 
 Ein Haushalt kann mehrere **Profile** anlegen. Jedes Profil hat seinen eigenen
-Datenbestand: Datenbank, Archiv, Inbox, Papierkorb, Backups, Log und
-Aussteller-Aliase. Die **Einstellungen bleiben gemeinsam**.
+Datenbestand: Datenbank, Archiv, Inbox, Exporte, Papierkorb, Backups und
+Aussteller-Aliase. **Gemeinsam bleiben die Einstellungen** — und alles
+Weitere, was zur Installation gehört (Log, Setup-Marker, UI-Speicher).
 
 Sechs Festlegungen:
 
@@ -177,29 +178,53 @@ wird zu einem Pfadsegment.
 **Diese Stufe ändert ohne `profiles.yaml` nichts** — nachgewiesen durch die
 unveränderte Testsuite und einen eigenen Test dafür.
 
-### 2. Migration „zweite Person hinzufügen"
+### 2. Migration „zweite Person hinzufügen" — **gebaut**
 
-Der teuerste Schritt, weil **`archive_path` absolut in der Datenbank steht**
-(am Bestand geprüft). Ein Ordnerumzug allein hinterlässt eine Datenbank, die
-auf nicht mehr vorhandene Dateien zeigt.
+`services/profile_service.enable_profiles()`, framework-frei. Der teuerste
+Schritt, weil **`archive_path` absolut in der Datenbank steht** (am Bestand
+geprüft). Ein Ordnerumzug allein hinterlässt eine Datenbank, die auf nicht
+mehr vorhandene Dateien zeigt.
 
 Reihenfolge, bewusst abbruchsicher:
 
-1. Datenbank sichern (vorhandene Backup-Funktion).
-2. `profiles/1/` anlegen, Inhalte **kopieren**, nicht verschieben.
+1. Beide Profilverzeichnisse samt `profile.yaml` anlegen.
+2. Inhalte **kopieren**, nicht verschieben — die Datenpfade aus der Config
+   plus `trash/` und die Alias-Datei.
 3. In der **Kopie** der Datenbank jeden `archive_path` umschreiben
    (Präfixtausch).
 4. **Gegenprobe:** gleiche Zeilenzahl wie vorher, und für jede Zeile existiert
-   die Datei unter dem neuen Pfad. Schlägt sie fehl: abbrechen, nichts
-   anfassen, Klartextmeldung.
+   die Datei unter dem neuen Pfad. Schlägt sie fehl: das halbe
+   Profilverzeichnis entfernen und mit Klartextmeldung abbrechen. Bis hierher
+   wurden die Originale nur **gelesen**.
 5. Erst jetzt `profiles.yaml` schreiben — **das ist die Umschaltstelle.**
    Bricht der Vorgang vorher ab, läuft die App unverändert auf der alten
-   Struktur weiter; es liegt lediglich ein unbenutztes Verzeichnis herum.
-6. Die alten Verzeichnisse **nicht löschen**, sondern nach
-   `<basis>/vor-profilen/` verschieben — im Geist der Regel „Löschen
-   verschiebt nach `trash/`, nie `unlink`". Der Nutzer entfernt sie selbst,
-   wenn alles läuft.
-7. Zweites Profil leer anlegen.
+   Struktur weiter.
+6. Die Originale **nicht löschen**, sondern nach `<basis>/vor-profilen/`
+   verschieben — im Geist der Regel „Löschen verschiebt nach `trash/`, nie
+   `unlink`". Der Nutzer entfernt sie selbst, wenn alles läuft.
+
+Vier Festlegungen, die beim Bauen dazukamen:
+
+- ⚠️ **Die Datenbank wird über `sqlite3.Connection.backup()` kopiert**, nie
+  als Datei. Im WAL-Modus stehen committete Transaktionen in der `-wal`, bis
+  ein Checkpoint läuft — und der läuft nicht, solange eine zweite Verbindung
+  offen ist. Eine Dateikopie verlöre still die zuletzt importierten
+  Dokumente. Derselbe Fehler steckte schon einmal im Backup; ein Test hält
+  ihn jetzt auch hier fest.
+- **SQLite-Seitendateien** (`-wal`, `-shm`, `-journal`) wandern beim
+  Beiseiteräumen mit, und ein leer gewordenes Elternverzeichnis wird
+  abgeräumt. Sonst bliebe am alten Ort ein Rest liegen, den die App
+  versehentlich neu befüllen könnte, und der Altbestand wäre unvollständig.
+- **Ein absoluter Datenpfad in den Einstellungen verhindert den Umzug**
+  (Klartextmeldung, kein Teilumzug). Er läge für alle Profile im selben
+  Verzeichnis — die Trennung wäre von Anfang an aufgehoben. Geprüft wird die
+  **rohe** Config, weil `load_config()` bereits absolutiert hat.
+- **Kein zusätzliches Backup.** Der Plan sah eines vor; es wäre reiner
+  Ballast: der Umzug kopiert und löscht nie, die Originale liegen am Ende
+  vollständig in `vor-profilen/`. Das ist eine stärkere Zusage als eine
+  ZIP-Datei — und verdoppelt den Platzbedarf nicht ein drittes Mal.
+
+Nicht Teil dieses Schritts: der Knopf, der das auslöst (Schritt 4).
 
 ### 3. Sperre während Hintergrund-Jobs
 
