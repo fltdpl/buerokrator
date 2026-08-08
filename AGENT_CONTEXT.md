@@ -72,8 +72,12 @@ Rückfrage. **Sprache Deutsch**, Erklärungen knapp.
 
 ## Konventionen beim Programmieren
 
-- **Pfade** über `src/core/app_home.get_app_home()`, nie relativ zur cwd
-  (Config-Pfade sind nach `load_config()` bereits absolut).
+- **Pfade** nie relativ zur cwd, sondern über eine der beiden Wurzeln
+  (ADR 015): `get_app_home()` für **Daten** des aktiven Profils (DB, Archiv,
+  Inbox, Papierkorb, Backups, Aliase), `get_base_home()` für die
+  **Installation** (Einstellungen, Log, Setup-Marker, UI-Speicher).
+  Config-Pfade sind nach `load_config()` bereits absolut — und gegen das
+  Profil aufgelöst, weil sie in der Datei relativ stehen.
 - **DB** über `with open_connection() as conn:`; Zeilen per Spaltenname
   lesen, nie per Position. Migration läuft automatisch und versioniert — bei
   Schemaänderung `SCHEMA_VERSION` erhöhen.
@@ -117,6 +121,7 @@ python -m pytest -q                 # Testsuite
 python -m src.frontend.main         # App auf http://localhost:8081
 python -m tools.tax_check <jahr>          # Steuerwerte gegen die eigene Erklärung
 python -m tools.evaluate --limit 40       # Qualitätsmessung (braucht Ollama)
+python -m tools.port_to_profiles          # einmalig: Altbestand in die Profilstruktur
 bash packaging/build_linux.sh       # Release-Tarball nach dist/
 ```
 

@@ -41,7 +41,8 @@ Benennt Dateien typabhängig um und archiviert sie nach
 
 **Aussteller-Aliase** (`issuer_normalizer.py`): vereinheitlicht Schreibweisen
 desselben Ausstellers. Die Zuordnung steht NICHT im Code, sondern in der
-nutzerpflegbaren Datei `config/aussteller_aliase.yaml` im App-Home (kanonischer
+nutzerpflegbaren Datei `config/aussteller_aliase.yaml` im Profilverzeichnis —
+je Person eine eigene (kanonischer
 Name → Liste der Schreibweisen, `*` am Ende matcht als Präfix; gitignored —
 Anbieternamen sind Nutzerdaten). Geladen wird mtime-gecacht, Änderungen wirken
 ohne Neustart; unlesbares YAML ergibt eine leere Zuordnung plus Log-Warnung,

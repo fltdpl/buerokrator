@@ -273,9 +273,14 @@ fielen ein ungetestetes Modul und die Abhängigkeit `watchdog` weg.
 ## Installierbarkeit / Packaging (Plan & Details: todo.md)
 
 Entschieden (15.07.2026): Desktop-Einzelplatz, **Linux zuerst**, Windows
-später; kein Server, vorerst Single-User. Multinutzer = geteilter
-Laptop (getrennte Linux-Konten trennen die Daten bereits; später ggf.
-Profil-Umschalter).
+später; kein Server.
+
+Mehrbenutzer ist seit dem 08.08.2026 gebaut — aber als **Profile innerhalb
+einer Installation**, nicht über getrennte Linux-Konten: ein Haushalt teilt
+sich oft einen Login. Jede Person hat einen eigenen Bestand, die
+Einstellungen sind gemeinsam ([ADR 015](docs/decisions/015_mehrbenutzer_profile.md)).
+Gleichzeitige Nutzung durch zwei Personen bleibt ausdrücklich draußen — ein
+Profil ist ein Modus des Prozesses, kein Konto.
 
 Stand: Linux-Paket released (v0.1.0, v0.2.0, v0.2.1 als Tarball + rootloses
 `install.sh`). Release-Ablauf und Version-Quelle siehe `docs/07_Betrieb.md`.

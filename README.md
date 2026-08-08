@@ -30,6 +30,7 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
   Formulare (Lohnsteuerbescheinigung, SV-Meldung, Entgeltnachweis,
   Bauspar-Jahresauszug) liest zusätzlich ein deterministischer Regelparser
 - Automatische Umbenennung und Archivierung nach `archive/<Jahr>/<Kategorie>/`
+- Mehrere Personen je Installation, mit vollständig getrennten Beständen
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
 - Hinweis auf inhaltliche Dubletten: derselbe Beleg ein zweites Mal
@@ -149,9 +150,10 @@ Weiterführende Dokumentation liegt im Ordner `docs/`.
 
 ## Datenschutz
 
-Persönliche Dokumente werden nicht versioniert. Von Git ausgeschlossen sind
-u. a. `inbox/`, `archive/`, `exports/`, `database/`, `trash/`, `backups/` und
-`logs/`.
+Persönliche Dokumente werden nicht versioniert. Die Daten jeder Person
+liegen unter `profiles/<kennung>/` (Datenbank, Archiv, Inbox, Papierkorb,
+Backups, Aussteller-Aliase); dieses Verzeichnis ist vollständig von Git
+ausgeschlossen, ebenso `logs/`.
 
 ## Lizenz
 
