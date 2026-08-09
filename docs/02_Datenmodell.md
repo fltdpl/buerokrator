@@ -37,11 +37,44 @@ stammt aus fremden PDFs und wird in der Oberfläche zuerst escaped
 (`_snippet_html` in `pages/documents.py`), danach wäre echtes Markup im
 Rohtext nicht mehr vom unseren zu unterscheiden.
 
+## Tags: tags und document_tags
+
+Zwei Tabellen (Schema v5): `tags` und `document_tags` als n:m-Verknüpfung.
+
+Tags sind **flach** — ein Wert, keine Systematik. Ein erster Entwurf sah
+Namensräume vor (`koerper:knie`); er wurde vor der Veröffentlichung
+verworfen, weil er ein Problem löst, das erst bei sehr vielen Tags entsteht,
+dafür aber schon vor dem **ersten** Tag eine Ordnung verlangt. Gruppieren
+ließe sich später ergänzen, ohne zu ändern, wie ein Tag geschrieben wird.
+
+**Zwei Spalten für den Namen:** `name` ist die Schreibweise für die Anzeige,
+`key` (casefold) trägt die Eindeutigkeit. „Knie-OP" bleibt „Knie-OP",
+trifft aber „knie-op". `COLLATE NOCASE` wäre die naheliegende Alternative
+und scheidet aus: es faltet nur ASCII, „Ärzte" und „ärzte" blieben zwei
+Tags. `color_index` ist eine **laufende Nummer**, kein Farbwert — welche
+Palette daraus wird, weiß allein `frontend/theme.py`.
+
+Tags sind bewusst **kein** Feld in `extracted_data` und laufen an der
+Whitelist vorbei: dort steht, was **im** Dokument steht, ein Tag ist, was
+der Nutzer **über** das Dokument sagt. Nur so gelten sie für alle
+Kategorien, ohne dass jeder Dokumenttyp sie einzeln erlauben muss — und nur
+so kann ein Tag Dokumente verschiedener Kategorien zusammenhalten (Befund,
+Rechnung und Krankmeldung zu derselben Behandlung).
+
+Die Fremdschlüssel stehen als Absicht in der Definition, greifen aber
+nicht: SQLite erzwingt sie nur mit `PRAGMA foreign_keys=ON`, und das setzt
+die Anwendung nicht. `delete_document` räumt die Zuordnungen deshalb
+ausdrücklich mit ab. Ein Tag ohne Zuordnung bleibt als Vokabel bestehen —
+Aufräumen ist eine bewusste Handlung, kein Nebeneffekt des Speicherns.
+
+Normalisierung liegt an einer einzigen Stelle
+(`services/tag_service`); die Persistenz normalisiert nichts.
+
 ## Migration
 
 Automatisch beim ersten Zugriff (`database.get_connection` →
 `init_database`, ALTER TABLE für fehlende Spalten) und versioniert:
-`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 3).
+`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 4).
 Bestands-DBs mit älterem Stand bekommen vor der Migration automatisch ein
 Backup neben der DB; bei jeder Schemaänderung SCHEMA_VERSION erhöhen.
 

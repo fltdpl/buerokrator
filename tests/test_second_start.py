@@ -6,9 +6,32 @@ verstellt die App-Registrierung der User-Fixture-Tests (frontend_smoke).
 """
 
 import http.server
+import sys
 import threading
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def main_nicht_in_sys_modules_zuruecklassen():
+    """Räumt src.frontend.main nach jedem Test wieder aus sys.modules.
+
+    Sonst zahlt JEDES alphabetisch nachfolgende Modul mit User-Fixture den
+    Preis: die Fixture baut die App neu auf und importiert main erneut —
+    ein Modul, das schon in sys.modules liegt, wird dabei nicht noch einmal
+    ausgeführt, die @ui.page-Dekoratoren laufen also nicht, und alle Seiten
+    antworten mit 404. Der Import in den Test zu verlegen (siehe Docstring)
+    verhindert nur den Schaden beim Einsammeln, nicht diesen.
+
+    Es reicht NICHT, nur main zu entfernen: die Dekoratoren stehen in den
+    Seitenmodulen (src.frontend.pages.*), und die bleiben sonst geladen.
+    """
+    yield
+
+    for name in [
+        name for name in sys.modules if name == "src.frontend" or name.startswith("src.frontend.")
+    ]:
+        del sys.modules[name]
 
 
 def _main():

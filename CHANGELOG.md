@@ -4,6 +4,34 @@
 
 ## Unveröffentlicht
 
+- **Neu: Tags an Dokumenten (erster Schritt).** Beim Prüfen lässt sich
+  jedem Dokument eine beliebige Zahl von Stichwörtern anhängen — für **alle**
+  Kategorien. Damit lässt sich zusammenhalten, was quer durch die Kategorien
+  gehört: der Befund, die Rechnung und die Krankmeldung zu **derselben**
+  Behandlung.
+
+  Ein Tag ist einfach ein Wort — „Knie-OP“, „Auto“, „Umzug 2026“. Keine
+  Systematik, keine Pflicht: Dokumente ohne Tags bleiben, wie sie sind, und
+  wo keine vergeben sind, steht nur ein kleiner Knopf **＋ Tag**. Jedes Tag
+  bekommt automatisch einen farbigen Punkt, damit man es in einer Reihe
+  wiedererkennt.
+
+  Der Knopf öffnet eine Liste aller bisherigen Tags zum Ankreuzen, mit
+  Suchfeld — Wiederverwenden ist der häufigere Fall als Neuanlegen. Ein neues
+  Tag entsteht über **Neues Tag anlegen** und wird erst beim **Speichern**
+  wirklich angelegt; wer die Seite verlässt, ohne zu speichern, hinterlässt
+  nichts.
+
+  Groß- und Kleinschreibung wird beim Vergleich ignoriert, damit „Knie“ und
+  „knie“ nicht als zwei Stichwörter nebeneinander stehen — die Schreibweise,
+  mit der Sie ein Tag angelegt haben, bleibt aber erhalten.
+
+  **Noch nicht in diesem Schritt:** Tags in der Trefferliste, Filtern und
+  Suchen danach, Vergabe an mehrere Dokumente auf einmal sowie Umbenennen
+  und Zusammenführen. Das kommt in den nächsten Schritten.
+
+  Die Datenbank wird dafür einmalig erweitert; vorher legt die App
+  automatisch eine Sicherung neben der Datenbank an.
 - **Neu: Kategorie „Gesundheit".** Arztbriefe, Befunde, Bescheide der
   Krankenkasse, Reha-Unterlagen, Atteste und Impfnachweise haben jetzt einen
   eigenen Lebensbereich mit den Unterarten **Arztunterlagen / Befund**,

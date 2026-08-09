@@ -10,7 +10,7 @@ from src.database.database import open_connection
 # Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
 # erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
 # bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 
 DOCUMENT_COLUMNS = {
@@ -173,6 +173,100 @@ def create_fts(cursor):
         )
 
 
+def _drop_verworfene_tag_tabellen(cursor):
+    """Entfernt die Tag-Tabellen des verworfenen ersten Entwurfs.
+
+    Der erste Entwurf hatte eine Spalte `namespace` (Tags als
+    „namensraum:wert"). Er wurde vor der Veröffentlichung verworfen, liegt
+    aber auf Entwicklungsmaschinen schon in Datenbanken —
+    `CREATE TABLE IF NOT EXISTS` ließe sie stumm stehen, und jede Abfrage
+    liefe danach gegen fehlende Spalten.
+
+    Nur wenn nichts drinsteht: Tags gab es nie in einer Veröffentlichung,
+    ein gefüllter Bestand kann also nur ein Missverständnis sein — und
+    stillschweigend Daten zu löschen wäre der schlimmere Fehler.
+    """
+    vorhanden = cursor.execute(
+        """
+        SELECT name FROM sqlite_master
+        WHERE type = 'table' AND name = 'tags'
+        """
+    ).fetchone()
+
+    if vorhanden is None:
+        return
+
+    spalten = {row["name"] for row in cursor.execute("PRAGMA table_info(tags)")}
+
+    if "namespace" not in spalten:
+        return
+
+    belegt = cursor.execute("SELECT COUNT(*) AS n FROM tags").fetchone()["n"]
+
+    if belegt:
+        raise RuntimeError(
+            "Die Tabelle 'tags' stammt aus einem verworfenen Entwurf, "
+            "enthält aber Einträge. Bitte melden — automatisch wird hier "
+            "nichts gelöscht."
+        )
+
+    cursor.execute("DROP TABLE IF EXISTS document_tags")
+    cursor.execute("DROP TABLE tags")
+    logger.info("Tag-Tabellen des verworfenen Entwurfs entfernt (waren leer).")
+
+
+def create_tag_tables(cursor):
+    """Tags und ihre Zuordnung (Schema v5).
+
+    Zwei Tabellen statt einer Spalte auf `documents`: ein Dokument trägt
+    beliebig viele Tags, und dieselbe Vokabel soll an vielen Dokumenten
+    hängen, ohne dass ihre Schreibweise mehrfach gespeichert wird.
+
+    Tags sind **flach** — ein Wert, keine Systematik. Zwei Spalten für den
+    Namen: `name` ist die Schreibweise für die Anzeige (deutsche Substantive
+    kleinzuschreiben sähe falsch aus), `key` der casefold-Vergleichswert und
+    die eigentliche Eindeutigkeit. `COLLATE NOCASE` wäre die naheliegende
+    Alternative gewesen und scheidet aus: es faltet nur ASCII, „Ärzte" und
+    „ärzte" blieben zwei Tags.
+
+    Der Fremdschlüssel steht als Dokumentation der Absicht da: SQLite
+    erzwingt ihn nur mit `PRAGMA foreign_keys=ON`, und das setzt diese
+    Anwendung bewusst nicht. Das Aufräumen beim Löschen eines Dokuments
+    erledigt deshalb `delete_document` ausdrücklich.
+    """
+    _drop_verworfene_tag_tabellen(cursor)
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            key TEXT NOT NULL UNIQUE,
+            color_index INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT
+        )
+        """
+    )
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS document_tags (
+            document_id INTEGER NOT NULL REFERENCES documents (id)
+                ON DELETE CASCADE,
+            tag_id INTEGER NOT NULL REFERENCES tags (id) ON DELETE CASCADE,
+            PRIMARY KEY (document_id, tag_id)
+        )
+        """
+    )
+    # Die Gegenrichtung: "welche Dokumente hängen an diesem Tag" ist die
+    # Abfrage des Filters, der Primärschlüssel deckt nur die andere ab.
+    cursor.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_document_tags_tag
+        ON document_tags (tag_id)
+        """
+    )
+
+
 def _backup_before_migration(conn, old_version):
     """Sichert die DB-Datei, bevor eine Migration sie verändert.
 
@@ -247,6 +341,7 @@ def init_database():
         migrate_documents_table(cursor)
         create_indexes(cursor)
         create_fts(cursor)
+        create_tag_tables(cursor)
 
         cursor.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 

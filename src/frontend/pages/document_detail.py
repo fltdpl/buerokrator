@@ -19,6 +19,7 @@ from src.frontend.listing_order import adjacent_id, get_listing_order
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, page_layout
+from src.frontend.theme import tag_color
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
@@ -26,6 +27,15 @@ from src.services.document_service import (
 )
 from src.services.duplicate_service import find_content_duplicates
 from src.services.issuer_memory import type_mismatch
+from src.services.tag_service import (
+    add_to_selection,
+    is_selected,
+    list_tags,
+    remove_from_selection,
+    set_document_tags,
+    tag_key,
+    tags_for_document,
+)
 from src.tax.tax_purpose import TAX_PURPOSE_LABELS
 from src.tax.tax_relevance import default_tax_relevance, resolve_tax_relevance
 from src.services.form_schema import (
@@ -296,6 +306,13 @@ def document_detail_page(document_id: int):
     # Ausgangswerte für den Dirty-Check: Formularfelder beim Aufbau (siehe
     # form_area) plus Typ/Subtyp beim Seitenaufruf.
     initial_values = {}
+
+    # Tags sind kein Formularfeld: sie hängen nicht am Dokumenttyp und laufen
+    # an der Whitelist vorbei. Die Seite hält sie deshalb als eigenen Stand
+    # (kanonische Schreibweisen) und schreibt sie erst beim Speichern —
+    # sonst hinterließe ein Seitenwechsel ohne Speichern Vokabular.
+    initial_tags = [tag["name"] for tag in tags_for_document(document_id)]
+    tag_state = list(initial_tags)
     original_meta = {
         "document_type": state["document_type"],
         "subtype": state["subtype"] or "",
@@ -341,6 +358,8 @@ def document_detail_page(document_id: int):
                 else None
             ),
         )
+
+        set_document_tags(document_id, tag_state)
 
         if verify:
             set_document_verified(document_id, 1)
@@ -412,6 +431,9 @@ def document_detail_page(document_id: int):
             return True
 
         if notes_area.value != (document["notes"] or ""):
+            return True
+
+        if sorted(tag_state) != sorted(initial_tags):
             return True
 
         if bool(tax_relevant_checkbox.value) != initial_tax_relevant:
@@ -510,6 +532,129 @@ def document_detail_page(document_id: int):
             inputs[field["key"]] = element
             initial_values[field["key"]] = default
 
+    @ui.refreshable
+    def tag_area():
+        """Vergebene Tags plus ein Knopf, um weitere zuzuweisen.
+
+        Ohne vergebene Tags steht hier NUR der Knopf: Tags sind für kein
+        Dokument Pflicht, und eine leere Struktur mit Überschrift sähe aus
+        wie ein Formularfeld, das man noch ausfüllen muss.
+
+        Flach, ohne Namensräume — die waren der erste Entwurf und verlangten
+        eine Systematik, bevor überhaupt ein Tag vergeben war.
+        """
+        vorhandene = list_tags()
+        farben = {tag_key(tag["name"]): tag["color_index"] for tag in vorhandene}
+
+        with ui.row().classes("items-center gap-1 flex-wrap w-full"):
+            for name in tag_state:
+                # Ein noch nicht gespeichertes Tag bekommt schon die Farbe,
+                # die es beim Speichern erhalten wird.
+                nummer = farben.get(tag_key(name), len(vorhandene))
+
+                ui.chip(
+                    name,
+                    icon="circle",
+                    removable=True,
+                    # color=None ist nicht kosmetisch: der Standard ist
+                    # "primary", und Quasar macht daraus eine bg-primary-Klasse
+                    # mit !important — in diesem Theme fast schwarz, also
+                    # dunkle Schrift auf dunklem Grund. Eigenes CSS kommt
+                    # dagegen nicht an.
+                    color=None,
+                    on_value_change=lambda _event, wert=name: _remove_tag(wert),
+                ).props("dense").classes("tag-chip").style(
+                    f"--tag-color:{tag_color(nummer)}"
+                )
+
+            # Solange nichts vergeben ist, trägt der Knopf eine Beschriftung:
+            # ein nacktes Plus unter den Formularfeldern ist beim ersten Mal
+            # nicht zu deuten. Sobald Chips danebenstehen, erklärt es sich.
+            if tag_state:
+                plus = ui.button(icon="add").props("flat dense round")
+
+            else:
+                plus = ui.button("＋ Tag").props("flat dense no-caps")
+
+            with plus.mark("tag-plus"):
+                ui.tooltip("Tag zuweisen")
+
+                with ui.menu().classes("w-72"):
+                    with ui.column().classes("w-full gap-1 p-2"):
+                        eingabe = (
+                            ui.input(placeholder="Tags filtern oder neues anlegen …")
+                            .props("dense autofocus")
+                            .classes("w-full")
+                            .mark("tag-eingabe")
+                        )
+
+                        @ui.refreshable
+                        def auswahlliste():
+                            begriff = tag_key(eingabe.value or "")
+                            passend = [
+                                tag
+                                for tag in vorhandene
+                                if begriff in tag_key(tag["name"])
+                            ]
+
+                            if not passend:
+                                ui.label("Noch keine passenden Tags.").classes(
+                                    "text-xs muted px-1"
+                                )
+                                return
+
+                            with ui.column().classes(
+                                "w-full gap-0 max-h-60 overflow-auto"
+                            ):
+                                for tag in passend:
+                                    with ui.row().classes("items-center gap-2 w-full"):
+                                        ui.checkbox(
+                                            tag["name"],
+                                            value=is_selected(tag_state, tag["name"]),
+                                            on_change=lambda event, wert=tag["name"]: (
+                                                _toggle_tag(wert, event.value)
+                                            ),
+                                        ).props("dense").mark(
+                                            f"tag-auswahl-{tag['name']}"
+                                        )
+
+                        eingabe.on_value_change(lambda _event: auswahlliste.refresh())
+                        auswahlliste()
+
+                        # Immer sichtbar, nicht erst wenn der Text zu nichts
+                        # passt: ein Knopf, der beim Tippen erscheint und
+                        # verschwindet, ist schwerer zu treffen als einer,
+                        # der steht.
+                        ui.button(
+                            "＋ Neues Tag anlegen", on_click=lambda: _add_typed(eingabe)
+                        ).props("flat dense no-caps align=left").classes(
+                            "w-full"
+                        ).mark("tag-neu")
+
+    def _add_typed(eingabe):
+        """Angelegt wird erst beim Speichern — hier wandert es nur in den Stand."""
+        try:
+            tag_state[:] = add_to_selection(tag_state, eingabe.value)
+
+        except ValueError as fehler:
+            ui.notify(str(fehler), type="negative")
+            return
+
+        tag_area.refresh()
+
+    def _toggle_tag(name, gesetzt):
+        if gesetzt and not is_selected(tag_state, name):
+            tag_state.append(name)
+
+        elif not gesetzt:
+            tag_state[:] = remove_from_selection(tag_state, name)
+
+        tag_area.refresh()
+
+    def _remove_tag(name):
+        tag_state[:] = remove_from_selection(tag_state, name)
+        tag_area.refresh()
+
     def refresh_tax_relevance_default():
         # Nach Typ-/Subtypwechsel gilt ein anderer Steuerrelevanz-Default
         # (Review P3) — die Checkbox folgt ihm; der Nutzer kann weiterhin
@@ -584,6 +729,8 @@ def document_detail_page(document_id: int):
 
                 form_area()
 
+                tag_area()
+
                 tax_relevant_checkbox = ui.checkbox(
                     "Steuerrelevant",
                     value=initial_tax_relevant,
@@ -614,7 +761,9 @@ def document_detail_page(document_id: int):
                         ).classes("text-xs muted")
 
                 with ui.row().classes("gap-2 w-full"):
-                    ui.button("💾 Speichern", on_click=lambda: save(verify=False))
+                    ui.button(
+                        "💾 Speichern", on_click=lambda: save(verify=False)
+                    ).mark("speichern")
 
                     ui.button(
                         "✅ Speichern & Freigeben",

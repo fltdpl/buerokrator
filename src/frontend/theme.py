@@ -59,6 +59,39 @@ CHART_SERIES = {
 }
 CHART_GRID = "#e4e8e6"  # zurückhaltende Gitterlinien auf Weiß
 
+# Punktfarben der Tags. Nur der PUNKT ist farbig, der Chip bleibt neutral —
+# eine Wand getönter Flächen würde das zurückhaltende Layout erschlagen, und
+# die Farbe ist ohnehin nur eine Wiedererkennungshilfe: der Name trägt die
+# Aussage. Sechs reichen; darüber hinaus wiederholen sie sich.
+#
+# Kontrast ist hier unkritisch (kein Text auf diesen Farben), Unterscheidbarkeit
+# dagegen schon: die sechs Töne sind über den Farbkreis verteilt statt aus
+# einer Familie, damit sie auch bei Farbfehlsichtigkeit auseinandergehen.
+TAG_COLORS = (
+    "#0081a7",  # Petrol (Farbton der Kartenrahmen)
+    "#f07167",  # Koralle
+    "#008300",  # Grün
+    "#c07f43",  # Ocker
+    "#7b5ea7",  # Violett
+    "#1e2229",  # Anthrazit
+)
+
+
+def tag_color(color_index):
+    """Farbe zur gespeicherten laufenden Nummer.
+
+    Die Datenbank speichert nur eine Nummer, keine Farbe — so kann die
+    Palette sich ändern, ohne dass Bestandsdaten anzufassen wären.
+    """
+    try:
+        nummer = int(color_index)
+
+    except (TypeError, ValueError):
+        nummer = 0
+
+    return TAG_COLORS[nummer % len(TAG_COLORS)]
+
+
 # Akzentfarbe je Kennzahl-Karte (wie in der Vorlage: farbiges Icon links).
 ACCENTS = {
     "primary": PRIMARY,
@@ -181,6 +214,37 @@ body, .nicegui-content {{
 .q-table tbody tr:hover {{ background: {LIGHT}; }}
 
 .q-field--outlined .q-field__control {{ border-radius: 6px; }}
+
+/* Tag-Chips. Der Selektor führt .q-chip mit, weil Quasars eigene
+   Chip-Farbe sonst gewinnt — ein Inline-Style am Element reicht dafür
+   nicht (dunkler Grund auf dunkler Schrift, real passiert). */
+.q-chip.tag-chip {{
+    background: {SURFACE};
+    color: {INK};
+    border: 1px solid {BORDER};
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 400;
+}}
+
+/* Der farbige Punkt vor dem Namen — die einzige Farbe am Tag. Quasar
+   rendert ihn als führendes Icon (.q-chip__icon--left); ohne diese Regel
+   erbt er die Schriftfarbe des Chips und alle Punkte sehen gleich aus. */
+.q-chip.tag-chip .q-chip__icon--left {{
+    color: var(--tag-color, {INK_MUTED});
+    font-size: 0.6rem;
+    margin-right: 0.35rem;
+    opacity: 1;
+}}
+
+/* Das Entfernen-Kreuz erbt sonst eine Farbe, die auf der hellen Tönung
+   kaum zu sehen ist. */
+.q-chip.tag-chip .q-chip__icon--remove {{
+    color: {INK_MUTED};
+    opacity: 1;
+}}
+
+.q-chip.tag-chip .q-chip__icon--remove:hover {{ color: {DANGER}; }}
 """
 
 
