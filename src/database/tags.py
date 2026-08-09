@@ -230,6 +230,111 @@ def remove_tag_from_documents(document_ids, key):
     return entfernt
 
 
+def _documents_of_tag(cursor, tag_id):
+    return [
+        row["document_id"]
+        for row in cursor.execute(
+            "SELECT document_id FROM document_tags WHERE tag_id = ?", (tag_id,)
+        )
+    ]
+
+
+def get_tag(tag_id):
+    with open_connection() as conn:
+        row = conn.execute(
+            "SELECT id, name, key, color_index FROM tags WHERE id = ?", (tag_id,)
+        ).fetchone()
+
+    return dict(row) if row is not None else None
+
+
+def key_belongs_to_other_tag(key, tag_id):
+    """Trägt ein ANDERES Tag diesen Schlüssel schon?"""
+    with open_connection() as conn:
+        row = conn.execute(
+            "SELECT id FROM tags WHERE key = ? AND id <> ?", (key, tag_id)
+        ).fetchone()
+
+    return row is not None
+
+
+def rename_tag(tag_id, name, key):
+    """Benennt ein Tag um und zieht die betroffenen `tags_text` nach.
+
+    Ohne das Nachziehen fände die Suche das Tag weiterhin unter dem ALTEN
+    Namen und unter dem neuen gar nicht — ein Fehler, der erst Wochen später
+    auffällt.
+    """
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "UPDATE tags SET name = ?, key = ? WHERE id = ?", (name, key, tag_id)
+        )
+
+        _sync_tags_text(cursor, _documents_of_tag(cursor, tag_id))
+
+        conn.commit()
+
+
+def merge_tags(source_id, target_id):
+    """Führt `source` in `target` zusammen; gibt die Zahl der umgezogenen
+    Dokumente zurück und entfernt das Quell-Tag.
+
+    Dokumente, die BEIDE Tags tragen, bekommen keine doppelte Zuordnung —
+    der Primärschlüssel würde sie ohnehin abweisen, aber ein Abbruch mitten
+    im Zusammenführen wäre das schlechtere Verhalten.
+    """
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        betroffen = _documents_of_tag(cursor, source_id)
+
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO document_tags (document_id, tag_id)
+            SELECT document_id, ? FROM document_tags WHERE tag_id = ?
+            """,
+            (target_id, source_id),
+        )
+        umgezogen = cursor.rowcount
+
+        cursor.execute("DELETE FROM document_tags WHERE tag_id = ?", (source_id,))
+        cursor.execute("DELETE FROM tags WHERE id = ?", (source_id,))
+
+        _sync_tags_text(cursor, betroffen)
+
+        conn.commit()
+
+    return umgezogen
+
+
+def delete_tag(tag_id):
+    """Entfernt ein Tag samt seiner Zuordnungen; gibt deren Zahl zurück."""
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        betroffen = _documents_of_tag(cursor, tag_id)
+
+        cursor.execute("DELETE FROM document_tags WHERE tag_id = ?", (tag_id,))
+        cursor.execute("DELETE FROM tags WHERE id = ?", (tag_id,))
+
+        _sync_tags_text(cursor, betroffen)
+
+        conn.commit()
+
+    return len(betroffen)
+
+
+def set_tag_color(tag_id, color_index):
+    """Farb-Nummer setzen. Die Anzeige ändert sich, die Suche nicht."""
+    with open_connection() as conn:
+        conn.execute(
+            "UPDATE tags SET color_index = ? WHERE id = ?", (color_index, tag_id)
+        )
+        conn.commit()
+
+
 def tags_by_documents(document_ids):
     """{document_id: [Tag, …]} für viele Dokumente in EINER Abfrage.
 

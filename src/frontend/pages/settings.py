@@ -4,7 +4,14 @@ from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
 from src.frontend.layout import card, page_layout
 from src.frontend.pages.trash import render_trash
-from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED
+from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED, TAG_COLORS, tag_color
+from src.services.tag_service import (
+    delete_tag,
+    list_tags,
+    merge_tags,
+    rename_tag,
+    set_tag_color,
+)
 from src.services.profile_service import (
     MAX_PROFILE,
     absolute_data_paths,
@@ -41,6 +48,7 @@ def settings_page():
             tab_config = ui.tab("Konfiguration", icon="tune")
             tab_profiles = ui.tab("Profile", icon="group")
             tab_aliases = ui.tab("Aliase", icon="label")
+            tab_tags = ui.tab("Tags", icon="sell")
             tab_trash = ui.tab("Papierkorb", icon="delete_outline")
             tab_backup = ui.tab("Backup", icon="save")
             tab_database = ui.tab("Datenbank", icon="storage")
@@ -55,6 +63,9 @@ def settings_page():
 
             with ui.tab_panel(tab_aliases):
                 _render_issuer_aliases()
+
+            with ui.tab_panel(tab_tags):
+                _render_tags()
 
             with ui.tab_panel(tab_trash):
                 render_trash()
@@ -323,6 +334,184 @@ def _render_config(config):
         ui.notify("Einstellungen gespeichert.")
 
     ui.button("💾 Speichern", on_click=save).props("color=primary unelevated")
+
+
+@ui.refreshable
+def _render_tags():
+    """Verwaltung der Tags: umbenennen, zusammenführen, Farbe, löschen.
+
+    Hier ist eine Tabelle richtig, wo im Prüf-Workflow Chips richtig sind:
+    dort sind Tags eine Menge, hier Datensätze mit Nutzungszahl.
+
+    **Zusammenführen ist die eigentliche Pflichtfunktion.** Groß- und
+    Kleinschreibung fängt die App schon ab, aber „Knie OP" gegen „Knie-OP"
+    kann sie nicht erraten — ohne diese Fläche bliebe der erste Tippfehler
+    dauerhaft, und genau daran sterben selbstgebaute Tag-Systeme.
+    """
+    with card("w-full gap-2"):
+        ui.label("Tags").classes("text-xl page-title")
+        ui.label(
+            "Stichwörter, die Sie an Dokumente vergeben haben — quer über "
+            "alle Kategorien. Vergeben wird beim Prüfen oder aus der "
+            "Dokumentenliste heraus."
+        ).classes("text-sm muted")
+
+        tags = list_tags()
+
+        if not tags:
+            ui.label(
+                "Noch keine Tags vergeben. Sobald Sie in der Dokumentenliste "
+                "oder beim Prüfen eines vergeben, erscheint es hier."
+            ).classes("text-sm muted").mark("tag-verwaltung-leer")
+            return
+
+        # Markierungen tragen die ID, nicht den Namen: NiceGUI zerlegt sie
+        # an Leerzeichen (Element.mark), ein Tag „Knie OP" ergaebe also
+        # zwei Marken — davon eine streunende namens „OP".
+        for tag in tags:
+            with ui.row().classes("items-center gap-3 w-full"):
+                ui.icon("circle").classes("text-xs").style(
+                    f"color: {tag_color(tag['color_index'])}"
+                )
+
+                feld = (
+                    ui.input(value=tag["name"]).props("dense").classes("w-56")
+                    .mark(f"tag-name-{tag['id']}")
+                )
+
+                def umbenennen(_=None, tag_id=tag["id"], eingabe=None):
+                    try:
+                        rename_tag(tag_id, eingabe.value)
+
+                    except ValueError as fehler:
+                        ui.notify(str(fehler), type="warning")
+                        _render_tags.refresh()
+                        return
+
+                    ui.notify("Umbenannt.", type="positive")
+                    _render_tags.refresh()
+
+                feld.on(
+                    "blur",
+                    lambda _=None, tag_id=tag["id"], eingabe=feld: umbenennen(
+                        tag_id=tag_id, eingabe=eingabe
+                    ),
+                )
+
+                ui.label(
+                    f"{tag['usage']} Dokument(e)" if tag["usage"] else "verwaist"
+                ).classes("text-sm muted").mark(f"tag-nutzung-{tag['id']}")
+
+                # Farbe: die Palette ist kurz genug, um sie ganz zu zeigen —
+                # ein Farbwähler wäre für sechs Werte zu viel Apparat.
+                #
+                # Bewusst ui.icon statt ui.button: auf einem Quasar-Button
+                # erreicht ein Inline-`color` das Icon nicht, alle sechs
+                # Felder blieben schwarz (real passiert). Am Icon selbst
+                # greift es.
+                with ui.row().classes("items-center gap-1"):
+                    for nummer, farbe in enumerate(TAG_COLORS):
+                        aktiv = nummer == tag["color_index"] % len(TAG_COLORS)
+
+                        punkt = ui.icon("circle").classes(
+                            "cursor-pointer " + ("text-base" if aktiv else "text-xs")
+                        ).style(
+                            f"color: {farbe}; opacity: {1 if aktiv else 0.55}"
+                        )
+                        punkt.on(
+                            "click",
+                            lambda _=None, tag_id=tag["id"], n=nummer: (
+                                _farbe_setzen(tag_id, n)
+                            ),
+                        )
+
+                andere = [other for other in tags if other["id"] != tag["id"]]
+
+                if andere:
+                    ziel = {other["id"]: other["name"] for other in andere}
+                    auswahl = (
+                        ui.select(ziel, label="zusammenführen mit")
+                        .props("dense")
+                        .classes("w-48")
+                        .mark(f"tag-merge-ziel-{tag['id']}")
+                    )
+
+                    ui.button(
+                        "Zusammenführen",
+                        on_click=lambda _=None, quelle=tag["id"], feld=auswahl: (
+                            _zusammenfuehren(quelle, feld.value)
+                        ),
+                    ).props("flat dense no-caps").mark(f"tag-merge-{tag['id']}")
+
+                ui.button(
+                    "Löschen",
+                    on_click=lambda _=None, tag_id=tag["id"], name=tag["name"], anzahl=tag[
+                        "usage"
+                    ]: _loeschen_bestaetigen(tag_id, name, anzahl),
+                ).props("flat dense no-caps color=negative").mark(
+                    f"tag-loeschen-{tag['id']}"
+                )
+
+
+def _farbe_setzen(tag_id, nummer):
+    try:
+        set_tag_color(tag_id, nummer, farbanzahl=len(TAG_COLORS))
+
+    except ValueError as fehler:
+        ui.notify(str(fehler), type="warning")
+        return
+
+    _render_tags.refresh()
+
+
+def _zusammenfuehren(quelle_id, ziel_id):
+    if not ziel_id:
+        ui.notify("Bitte ein Ziel-Tag wählen.", type="warning")
+        return
+
+    try:
+        umgezogen = merge_tags(quelle_id, ziel_id)
+
+    except ValueError as fehler:
+        ui.notify(str(fehler), type="warning")
+        return
+
+    ui.notify(f"Zusammengeführt — {umgezogen} Dokument(e) umgezogen.", type="positive")
+    _render_tags.refresh()
+
+
+def _loeschen_bestaetigen(tag_id, name, anzahl):
+    """Rückfrage mit Anzahl: Löschen nimmt das Tag von allen Dokumenten.
+
+    Verlustfrei für die Dokumente selbst — nur die Stichwörter fallen weg,
+    und die lassen sich neu vergeben. Trotzdem eine Rückfrage, weil bei
+    vielen Dokumenten sonst unbemerkt viel verschwindet.
+    """
+    def loeschen():
+        dialog.close()
+
+        try:
+            betroffen = delete_tag(tag_id)
+
+        except ValueError as fehler:
+            ui.notify(str(fehler), type="warning")
+            return
+
+        ui.notify(f"Tag gelöscht — von {betroffen} Dokument(en) entfernt.")
+        _render_tags.refresh()
+
+    with ui.dialog() as dialog, ui.card():
+        ui.label(
+            f"„{name}“ von {anzahl} Dokument(en) entfernen und löschen?"
+            if anzahl
+            else f"„{name}“ löschen? Es hängt an keinem Dokument."
+        )
+
+        with ui.row().classes("justify-end w-full"):
+            ui.button("Abbrechen", on_click=dialog.close).props("flat")
+            ui.button("Ja, löschen", on_click=loeschen).props("color=negative")
+
+    dialog.open()
 
 
 def _render_issuer_aliases():

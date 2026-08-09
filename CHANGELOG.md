@@ -58,7 +58,23 @@
   Bereits vergebene Tags werden dabei einmalig nachgetragen; die Datenbank
   wird erneut erweitert und vorher wieder gesichert.
 
-  **Noch nicht in diesem Schritt:** Tags umbenennen und zusammenführen.
+- **Neu: Tags verwalten.** *Einstellungen → Tags* zeigt alle vergebenen
+  Stichwörter mit der Zahl der Dokumente, an denen sie hängen.
+
+  **Umbenennen** geht direkt im Namensfeld — auch nur die Schreibweise
+  („knie-op" → „Knie-OP"). **Zusammenführen** räumt auf, was die App nicht
+  erraten kann: Groß- und Kleinschreibung fängt sie ab, aber „Knie OP" und
+  „Knie-OP" sind für sie zwei Dinge. Beim Zusammenführen ziehen alle
+  Dokumente des einen Tags auf das andere um, ohne doppelte Einträge.
+
+  Dazu die **Farbe** — sechs Punkte zur Auswahl, die aktuelle ist
+  hervorgehoben — und **Löschen** mit Rückfrage, die vorher sagt, von wie
+  vielen Dokumenten das Stichwort verschwindet. Die Dokumente selbst bleiben
+  dabei unangetastet.
+
+  Alle vier Änderungen wirken sofort auch in der Suche: nach einem
+  Umbenennen findet man das Tag unter dem neuen Namen, nicht mehr unter dem
+  alten.
 - **Neu: Kategorie „Gesundheit".** Arztbriefe, Befunde, Bescheide der
   Krankenkasse, Reha-Unterlagen, Atteste und Impfnachweise haben jetzt einen
   eigenen Lebensbereich mit den Unterarten **Arztunterlagen / Befund**,

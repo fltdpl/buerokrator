@@ -22,8 +22,14 @@ import re
 
 from src.database.tags import (
     add_tag_to_documents as _add_tag_to_documents,
+    delete_tag as _delete_tag,
     document_ids_with_all_tags as _document_ids_with_all_tags,
+    get_tag,
+    key_belongs_to_other_tag,
     list_tags as _list_tags,
+    merge_tags as _merge_tags,
+    rename_tag as _rename_tag,
+    set_tag_color as _set_tag_color,
     remove_tag_from_documents as _remove_tag_from_documents,
     set_document_tags as _set_document_tags,
     tags_by_documents as _tags_by_documents,
@@ -116,6 +122,71 @@ def remove_tag_from_documents(document_ids, eingabe):
     name = normalize_tag_name(eingabe)
 
     return _remove_tag_from_documents(list(document_ids), tag_key(name))
+
+
+def rename_tag(tag_id, neuer_name):
+    """Benennt ein Tag um.
+
+    Eine reine Änderung der Schreibweise ist ausdrücklich erlaubt („knie-op"
+    → „Knie-OP"): der Schlüssel bleibt derselbe, es entsteht kein Konflikt.
+    Trägt dagegen ein ANDERES Tag den Schlüssel schon, wäre die Umbenennung
+    in Wahrheit ein Zusammenführen — und das soll man ausdrücklich wollen,
+    nicht versehentlich auslösen.
+    """
+    name = normalize_tag_name(neuer_name)
+    key = tag_key(name)
+
+    if get_tag(tag_id) is None:
+        raise ValueError("Dieses Tag gibt es nicht mehr.")
+
+    if key_belongs_to_other_tag(key, tag_id):
+        raise ValueError(
+            f"„{name}“ gibt es schon. Zum Vereinigen die beiden Tags "
+            "zusammenführen."
+        )
+
+    _rename_tag(tag_id, name, key)
+
+
+def merge_tags(quelle_id, ziel_id):
+    """Führt zwei Tags zusammen; gibt die Zahl der umgezogenen Dokumente."""
+    if quelle_id == ziel_id:
+        raise ValueError("Ein Tag lässt sich nicht mit sich selbst zusammenführen.")
+
+    if get_tag(quelle_id) is None or get_tag(ziel_id) is None:
+        raise ValueError("Eines der beiden Tags gibt es nicht mehr.")
+
+    return _merge_tags(quelle_id, ziel_id)
+
+
+def delete_tag(tag_id):
+    """Entfernt ein Tag samt Zuordnungen; gibt deren Zahl zurück."""
+    if get_tag(tag_id) is None:
+        raise ValueError("Dieses Tag gibt es nicht mehr.")
+
+    return _delete_tag(tag_id)
+
+
+def set_tag_color(tag_id, color_index, farbanzahl=None):
+    """Farb-Nummer setzen.
+
+    `farbanzahl` reicht die Oberfläche durch (Länge der Palette) — die
+    Dienstschicht kennt die Palette nicht, prüft aber, dass die Nummer im
+    zulässigen Bereich liegt.
+    """
+    try:
+        nummer = int(color_index)
+
+    except (TypeError, ValueError) as fehler:
+        raise ValueError("Ungültige Farbe.") from fehler
+
+    if nummer < 0 or (farbanzahl is not None and nummer >= farbanzahl):
+        raise ValueError("Ungültige Farbe.")
+
+    if get_tag(tag_id) is None:
+        raise ValueError("Dieses Tag gibt es nicht mehr.")
+
+    _set_tag_color(tag_id, nummer)
 
 
 def tags_by_documents(document_ids):

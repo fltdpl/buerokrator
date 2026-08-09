@@ -74,7 +74,10 @@ Normalisierung liegt an einer einzigen Stelle
 hängt an `documents`; Tags liegen in eigenen Tabellen und wären für ihn
 unsichtbar. Deshalb schreibt `database/tags.py` bei jeder Zuordnungsänderung
 die Namen als Text in diese Spalte — das UPDATE löst die vorhandenen
-FTS-Trigger aus, der Index zieht von selbst nach. Geschrieben wird sie
+FTS-Trigger aus, der Index zieht von selbst nach. Das gilt für **jede**
+Änderung, auch für Umbenennen, Zusammenführen und Löschen in der
+Verwaltung: bliebe sie dort aus, fände die Suche ein Tag unter seinem alten
+Namen und unter dem neuen gar nicht. Geschrieben wird die Spalte
 ausschließlich dort; wächst `FTS_COLUMNS`, baut `create_fts` den Index neu
 (eine Virtual Table lässt sich nicht per ALTER erweitern), und
 `backfill_tags_text` trägt Bestandszeilen nach.
