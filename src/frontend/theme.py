@@ -171,6 +171,14 @@ body, .nicegui-content {{
     opacity: 0.55;
 }}
 
+/* Umschalter neben dem Namen: zurückhaltend, bis man ihn sucht. */
+.profile-switch {{
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}}
+
+.profile-switch:hover {{ opacity: 1; }}
+
 /* Trennt „wer bin ich" von „wohin gehe ich". Bewusst zurückhaltend: eine
    kräftige Linie zerschnitte die Seitenleiste in zwei Blöcke. */
 .sidebar-divider {{

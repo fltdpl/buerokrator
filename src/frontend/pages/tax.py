@@ -119,12 +119,6 @@ def render_tax_tab():
     documents = list_documents()
     years = available_tax_years(documents)
 
-    ui.label(
-        "🚧 Die Steuer-Funktion ist noch im Aufbau — die Summen und die"
-        " Absetzbarkeits-Einordnung sind eine erste Orientierung, kein"
-        " geprüftes Ergebnis."
-    ).classes("text-sm text-orange-700")
-
     if not years:
         ui.label("Noch keine archivierten Dokumente vorhanden.").classes(
             "muted"

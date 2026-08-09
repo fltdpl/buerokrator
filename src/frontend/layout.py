@@ -108,26 +108,36 @@ def render_profile_switcher():
     with ui.column().classes("w-full gap-0"):
         with ui.column().classes("profile-block gap-0"):
             ui.label("Nutzerprofil").classes("text-xs profile-role")
-            ui.label(aktiv["name"]).classes("text-sm")
 
-        if len(profile) > 1:
-            with ui.row().classes("nav-item cursor-pointer").mark("profil-wechseln"):
-                ui.icon("swap_horiz").classes("text-lg")
-                ui.label("Benutzer wechseln").classes("text-sm")
+            # Umschalter NEBEN dem Namen statt darunter: als eigene Zeile in
+            # der Flucht der Navigationspunkte las er sich wie ein siebter
+            # Menüeintrag und machte den Kopf der Leiste unruhig. Klein und
+            # direkt am Namen gehört er sichtbar zu ihm.
+            with ui.row().classes("items-center gap-2 no-wrap"):
+                ui.label(aktiv["name"]).classes("text-sm")
 
-                with ui.menu():
-                    for eintrag in profile:
-                        if eintrag["active"]:
-                            continue
+                if len(profile) > 1:
+                    with ui.row().classes(
+                        "items-center gap-1 no-wrap cursor-pointer profile-switch"
+                    ).mark("profil-wechseln"):
+                        ui.icon("swap_horiz").classes("text-sm")
+                        ui.label("wechseln").classes("text-xs")
+                        ui.tooltip("Benutzer wechseln")
 
-                        # Marker, weil eine Textsuche im Test die innere
-                        # ItemSection trifft und nicht den klickbaren Eintrag.
-                        ui.menu_item(
-                            f"Zu {eintrag['name']} wechseln",
-                            lambda _=None, kennung=eintrag["id"]: _switch_profile(
-                                kennung
-                            ),
-                        ).mark(f"profil-wechsel-{eintrag['id']}")
+                        with ui.menu():
+                            for eintrag in profile:
+                                if eintrag["active"]:
+                                    continue
+
+                                # Marker, weil eine Textsuche im Test die
+                                # innere ItemSection trifft und nicht den
+                                # klickbaren Eintrag.
+                                ui.menu_item(
+                                    f"Zu {eintrag['name']} wechseln",
+                                    lambda _=None, kennung=eintrag[
+                                        "id"
+                                    ]: _switch_profile(kennung),
+                                ).mark(f"profil-wechsel-{eintrag['id']}")
 
     ui.element("div").classes("sidebar-divider")
 
@@ -153,6 +163,11 @@ def page_layout(title):
             with ui.link(target=route).classes(f"nav-item{active}"):
                 ui.icon(icon).classes("text-lg")
                 ui.label(label).classes("text-sm")
+
+        # Trennlinie über „Beenden": es verlässt die App, statt in ihr zu
+        # navigieren — und soll deshalb nicht wie der nächste Menüpunkt
+        # aussehen.
+        ui.element("div").classes("sidebar-divider")
 
         with ui.row().classes("nav-item cursor-pointer").on("click", confirm_shutdown):
             ui.icon("power_settings_new").classes("text-lg")

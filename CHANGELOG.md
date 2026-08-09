@@ -4,6 +4,16 @@
 
 ## Unveröffentlicht
 
+- **Ruhigere Seitenleiste.** Der Umschalter für die Person steht jetzt klein
+  **neben** dem Namen statt als eigene Zeile darunter — dort las er sich wie
+  ein weiterer Menüpunkt. Über **Beenden** liegt eine Trennlinie: es verlässt
+  das Programm, statt darin zu navigieren, und soll nicht wie der nächste
+  Menüpunkt aussehen.
+- **Der Hinweis „Die Steuer-Funktion ist noch im Aufbau“ ist weg.** Die
+  Summen und die Einordnung haben sich an einem echten Jahrgang bewährt.
+  Sie bleiben eine Vorbereitung der Erklärung, keine Steuerberatung — das
+  sagt die Anleitung, dafür braucht es kein Banner auf jeder Ansicht.
+
 - **Neu: Tags an Dokumenten (erster Schritt).** Beim Prüfen lässt sich
   jedem Dokument eine beliebige Zahl von Stichwörtern anhängen — für **alle**
   Kategorien. Damit lässt sich zusammenhalten, was quer durch die Kategorien
