@@ -271,8 +271,17 @@ def filter_documents(
     to_year=None,
     issuer=None,
     filename=None,
+    tags=None,
 ):
     """Wendet die Listen-Filter an (alle optional, None = kein Filter)."""
+    if tags:
+        # Eine Abfrage für alle Zeilen statt einer je Zeile: die Zuordnungen
+        # liegen in einer eigenen Tabelle, und die Liste kann lang sein.
+        # Lazy import, weil tag_service selbst aus der Datenbankschicht liest.
+        from src.services.tag_service import document_ids_with_all_tags
+
+        erlaubt = document_ids_with_all_tags(tags)
+        documents = [row for row in documents if row["id"] in erlaubt]
     if document_type:
         documents = [row for row in documents if row["document_type"] == document_type]
 

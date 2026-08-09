@@ -26,12 +26,24 @@
   „knie“ nicht als zwei Stichwörter nebeneinander stehen — die Schreibweise,
   mit der Sie ein Tag angelegt haben, bleibt aber erhalten.
 
-  **Noch nicht in diesem Schritt:** Tags in der Trefferliste, Filtern und
-  Suchen danach, Vergabe an mehrere Dokumente auf einmal sowie Umbenennen
-  und Zusammenführen. Das kommt in den nächsten Schritten.
-
   Die Datenbank wird dafür einmalig erweitert; vorher legt die App
   automatisch eine Sicherung neben der Datenbank an.
+- **Neu: Tags an viele Dokumente auf einmal — und danach filtern.** In der
+  Dokumentenliste lässt sich eine Auswahl markieren und ihr mit
+  **＋ Vergeben** ein Stichwort anhängen oder es mit **− Entfernen** wieder
+  abnehmen. Vorhandene Tags der Dokumente bleiben dabei erhalten; ein noch
+  unbekanntes Tag entsteht mit dem Knopf. Erst damit lässt sich ein
+  gewachsener Bestand überhaupt erschließen — Dokument für Dokument wäre
+  das nicht zu schaffen.
+
+  Dazu ein **Tag-Feld in der Filterleiste**. Es erscheint nur, wenn es Tags
+  gibt, und bleibt anders als der Unterart-Filter auch bei „Kategorie: Alle“
+  stehen — quer über die Kategorien zu suchen ist der Zweck von Tags.
+  Mehrere ausgewählte Tags gelten **zusammen**: angezeigt wird, was alle
+  davon trägt.
+
+  **Noch nicht in diesem Schritt:** Tags in der Trefferliste sehen, sie im
+  Volltext mitsuchen sowie Umbenennen und Zusammenführen.
 - **Neu: Kategorie „Gesundheit".** Arztbriefe, Befunde, Bescheide der
   Krankenkasse, Reha-Unterlagen, Atteste und Impfnachweise haben jetzt einen
   eigenen Lebensbereich mit den Unterarten **Arztunterlagen / Befund**,

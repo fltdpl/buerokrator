@@ -21,7 +21,10 @@ Schreibweise, wie sie eingegeben wurde, `key` der Vergleichswert
 import re
 
 from src.database.tags import (
+    add_tag_to_documents as _add_tag_to_documents,
+    document_ids_with_all_tags as _document_ids_with_all_tags,
     list_tags as _list_tags,
+    remove_tag_from_documents as _remove_tag_from_documents,
     set_document_tags as _set_document_tags,
     tags_for_document as _tags_for_document,
 )
@@ -89,6 +92,36 @@ def set_document_tags(document_id, namen):
         eintraege.append((name, key))
 
     _set_document_tags(document_id, eintraege)
+
+
+def add_tag_to_documents(document_ids, eingabe):
+    """Ein Tag an die ausgewählten Dokumente hängen (Stapelvergabe).
+
+    Ergänzend: vorhandene Tags der Dokumente bleiben. Ein noch unbekanntes
+    Tag entsteht dabei — der Knopf in der Liste IST die ausdrückliche
+    Handlung, die es sonst in der Detailansicht braucht.
+    """
+    name = normalize_tag_name(eingabe)
+
+    return _add_tag_to_documents(list(document_ids), name, tag_key(name))
+
+
+def remove_tag_from_documents(document_ids, eingabe):
+    """Ein Tag von den ausgewählten Dokumenten nehmen.
+
+    Unbekannte Tags sind kein Fehler: die Auswahl kann Dokumente enthalten,
+    die es nie getragen haben.
+    """
+    name = normalize_tag_name(eingabe)
+
+    return _remove_tag_from_documents(list(document_ids), tag_key(name))
+
+
+def document_ids_with_all_tags(namen):
+    """IDs der Dokumente, die ALLE genannten Tags tragen."""
+    return _document_ids_with_all_tags(
+        [tag_key(name) for name in namen if str(name or "").strip()]
+    )
 
 
 def add_to_selection(auswahl, eingabe):

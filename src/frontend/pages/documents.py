@@ -20,6 +20,11 @@ from src.services.document_service import (
     set_documents_subtype,
 )
 from src.services.form_schema import subtype_config
+from src.services.tag_service import (
+    add_tag_to_documents,
+    list_tags,
+    remove_tag_from_documents,
+)
 
 COLUMNS = [
     {"name": "id", "label": "ID", "field": "id", "sortable": True, "align": "left"},
@@ -116,6 +121,8 @@ def _default_filters():
         "year_range": None,
         "issuer": "",
         "filename": "",
+        # Mehrere Tags gelten zusammen (UND) — Tags verengen die Suche.
+        "tags": [],
     }
 
 
@@ -178,6 +185,31 @@ def _bulk_actions(table, on_changed):
         types = {row.get("document_type") for row in table.selected}
         types.discard(None)
         return types
+
+    def apply_tag(name, entfernen=False):
+        """Ein Tag an die Auswahl hängen oder von ihr nehmen.
+
+        Ergänzend statt ersetzend: die Auswahl trägt in der Regel schon
+        Verschiedenes, und ein Stapelbefehl darf das nicht wegwischen.
+        """
+        try:
+            if entfernen:
+                geaendert = remove_tag_from_documents(selected_ids(), name)
+
+            else:
+                geaendert = add_tag_to_documents(selected_ids(), name)
+
+        except ValueError as fehler:
+            ui.notify(str(fehler), type="negative")
+            return
+
+        if entfernen:
+            ui.notify(f"Tag von {geaendert} Dokument(en) entfernt.")
+
+        else:
+            ui.notify(f"Tag an {geaendert} Dokument(e) vergeben.")
+
+        on_changed()
 
     def apply_subtype(subtype):
         if not subtype:
@@ -271,6 +303,25 @@ def _bulk_actions(table, on_changed):
             on_click=lambda: unify_issuer(issuer_input.value),
         ).props("dense unelevated")
 
+        # Tag vergeben/entfernen. Ein Auswahlfeld mit Freitext: vorhandene
+        # Tags stehen zur Auswahl, ein neuer Name lässt sich eintippen —
+        # der Knopf ist dann die ausdrückliche Handlung, die ein Tag anlegt.
+        tag_input = ui.select(
+            [tag["name"] for tag in list_tags()],
+            label="Tag",
+            with_input=True,
+            new_value_mode="add-unique",
+        ).props("dense").classes("w-48").mark("tag-stapel-eingabe")
+
+        ui.button(
+            "＋ Vergeben", on_click=lambda: apply_tag(tag_input.value)
+        ).props("dense unelevated").mark("tag-stapel-hinzufuegen")
+
+        ui.button(
+            "− Entfernen",
+            on_click=lambda: apply_tag(tag_input.value, entfernen=True),
+        ).props("flat dense").mark("tag-stapel-entfernen")
+
         # Kein Bestätigungsdialog: der Widerruf ist verlustfrei (Felder
         # bleiben, nur der Prüfstatus fällt) und per Prüfen umkehrbar.
         ui.button("↩ Freigabe widerrufen", on_click=revoke_selected).props(
@@ -322,6 +373,7 @@ def documents_page():
             to_year=to_year,
             issuer=filters["issuer"],
             filename=filters["filename"],
+            tags=filters["tags"],
         )
 
     @ui.refreshable
@@ -450,6 +502,23 @@ def documents_page():
                 value=filters["filename"],
                 on_change=lambda event: set_filter("filename", event.value),
             ).props("dense clearable debounce=400").classes("w-40")
+
+            # Tags: nur zeigen, wenn es welche gibt. Wer sie nicht benutzt,
+            # soll den Filter auch nicht sehen — Tags sind keine Pflicht.
+            # Anders als der Unterart-Filter bleibt er bei „Kategorie: Alle"
+            # stehen: quer über die Kategorien zu suchen IST ihr Zweck.
+            alle_tags = [tag["name"] for tag in list_tags()]
+
+            if alle_tags:
+                ui.select(
+                    alle_tags,
+                    value=filters["tags"],
+                    label="Tags",
+                    multiple=True,
+                    on_change=lambda event: set_filter("tags", event.value),
+                ).props("dense clearable use-chips").classes("w-56").mark(
+                    "tag-filter"
+                ).tooltip("Mehrere Tags gelten zusammen")
 
             if len(all_years) > 1:
                 year_range = filters["year_range"] or {

@@ -120,6 +120,114 @@ def list_tags():
     return [dict(row) for row in rows]
 
 
+def add_tag_to_documents(document_ids, name, key):
+    """Hängt EIN Tag an viele Dokumente; gibt die Zahl der neuen Zuordnungen.
+
+    Ergänzend, nicht ersetzend — anders als `set_document_tags`: aus der
+    Liste heraus soll ein Stichwort dazukommen, ohne die vorhandenen zu
+    verlieren. Schon vorhandene Zuordnungen zählen nicht mit, damit die
+    Rückmeldung „3 Dokumente" auch 3 Änderungen bedeutet.
+    """
+    if not document_ids:
+        return 0
+
+    with open_connection() as conn:
+        cursor = conn.cursor()
+        tag_id = _ensure_tag(cursor, name, key)
+
+        platzhalter = ", ".join("?" for _ in document_ids)
+        schon_da = {
+            row["document_id"]
+            for row in cursor.execute(
+                f"""
+                SELECT document_id FROM document_tags
+                WHERE tag_id = ? AND document_id IN ({platzhalter})
+                """,
+                (tag_id, *document_ids),
+            )
+        }
+
+        neu = [
+            (document_id, tag_id)
+            for document_id in document_ids
+            if document_id not in schon_da
+        ]
+
+        cursor.executemany(
+            """
+            INSERT INTO document_tags (document_id, tag_id)
+            VALUES (?, ?)
+            """,
+            neu,
+        )
+
+        conn.commit()
+
+    return len(neu)
+
+
+def remove_tag_from_documents(document_ids, key):
+    """Nimmt EIN Tag von vielen Dokumenten; gibt die Zahl der Entfernungen.
+
+    Das Tag selbst bleibt im Vokabular — Aufräumen ist eine bewusste
+    Handlung in der Verwaltung.
+    """
+    if not document_ids:
+        return 0
+
+    with open_connection() as conn:
+        cursor = conn.cursor()
+
+        row = cursor.execute("SELECT id FROM tags WHERE key = ?", (key,)).fetchone()
+
+        if row is None:
+            return 0
+
+        platzhalter = ", ".join("?" for _ in document_ids)
+        cursor.execute(
+            f"""
+            DELETE FROM document_tags
+            WHERE tag_id = ? AND document_id IN ({platzhalter})
+            """,
+            (row["id"], *document_ids),
+        )
+        entfernt = cursor.rowcount
+
+        conn.commit()
+
+    return entfernt
+
+
+def document_ids_with_all_tags(keys):
+    """IDs der Dokumente, die ALLE genannten Tags tragen (UND).
+
+    UND, nicht ODER: Tags verengen die Suche, das ist ihr Zweck. Ein
+    unbekanntes Tag hat keine Zuordnungen und liefert damit von selbst die
+    leere Menge.
+    """
+    keys = list(keys)
+
+    if not keys:
+        return set()
+
+    platzhalter = ", ".join("?" for _ in keys)
+
+    with open_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT document_tags.document_id AS id
+            FROM document_tags
+            JOIN tags ON tags.id = document_tags.tag_id
+            WHERE tags.key IN ({platzhalter})
+            GROUP BY document_tags.document_id
+            HAVING COUNT(DISTINCT tags.key) = ?
+            """,
+            (*keys, len(set(keys))),
+        ).fetchall()
+
+    return {row["id"] for row in rows}
+
+
 def delete_tags_of_document(cursor, document_id):
     """Zuordnungen eines Dokuments entfernen — im Löschpfad aufgerufen.
 
