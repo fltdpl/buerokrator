@@ -375,6 +375,14 @@ def build_table_rows(documents):
     """Anzeigezeilen der Dokumentenliste (inkl. Betrag/Aussteller-Rohwerten)."""
     rows = []
 
+    # EINE Abfrage für alle Zeilen: je Zeile nachzufragen wäre bei langen
+    # Listen der klassische N+1-Fehler. Lazy import wie beim Tag-Filter.
+    # Geliefert wird die Farb-NUMMER, nicht die Farbe — welche Palette
+    # daraus wird, entscheidet die Seite (theme.tag_color).
+    from src.services.tag_service import tags_by_documents
+
+    tags_je_dokument = tags_by_documents([row["id"] for row in documents])
+
     for row in documents:
         document = parse_document_row(row)
         data = document["data"]
@@ -407,6 +415,7 @@ def build_table_rows(documents):
                 # Nur bei einer Volltextsuche gefüllt (search_documents);
                 # die gefilterte Liste kennt keine Fundstelle.
                 "text_snippet": row.get("text_snippet"),
+                "tags": tags_je_dokument.get(document["id"], []),
             }
         )
 

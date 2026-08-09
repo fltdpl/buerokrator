@@ -8,6 +8,7 @@ from src.database.list_documents import list_documents
 from src.database.search import SNIPPET_CLOSE, SNIPPET_OPEN, search_documents
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, format_euro, page_layout
+from src.frontend.theme import tag_color
 from src.frontend.listing_order import set_listing_order
 from src.services.document_service import (
     available_years,
@@ -52,6 +53,28 @@ SNIPPET_COLUMN = {
 _SNIPPET_CELL = """
 <q-td :props="props" style="white-space: normal; max-width: 28rem;">
     <span v-html="props.row.text_snippet"></span>
+</q-td>
+"""
+
+
+# Zelle „Dokument": Bezeichnung, darunter die Tags. Bewusst KEINE eigene
+# Spalte — die Liste führt schon acht, und drei Tags je Zeile brächen sie um.
+#
+# `@click.stop` ist nicht kosmetisch: ohne das Stoppen löst der Klick
+# zusätzlich den Zeilenklick aus und öffnet die Detailansicht, statt zu
+# filtern. Das Ereignis geht über $parent an die Tabelle, wo die Seite es
+# mit `table.on("tagClick", …)` abholt.
+_ART_LABEL_CELL = """
+<q-td :props="props" style="white-space: normal;">
+    <div>{{ props.row.art_label }}</div>
+    <div v-if="props.row.tags.length" class="row items-center q-gutter-xs q-mt-xs">
+        <q-chip v-for="tag in props.row.tags" :key="tag.name"
+                dense clickable icon="circle" class="tag-chip"
+                :style="'--tag-color:' + tag.color"
+                @click.stop="() => $parent.$emit('tagClick', tag.name)">
+            {{ tag.name }}
+        </q-chip>
+    </div>
 </q-td>
 """
 
@@ -106,6 +129,12 @@ def _table_rows(documents):
                 "amount_raw": row["amount"],
                 "created_at": row["created_at"],
                 "text_snippet": _snippet_html(row["text_snippet"]),
+                # Die Farb-Nummer wird erst hier zur Farbe: die Palette
+                # gehört dem Theme, nicht der Dienstschicht.
+                "tags": [
+                    {"name": tag["name"], "color": tag_color(tag["color_index"])}
+                    for tag in row["tags"]
+                ],
             }
         )
 
@@ -411,6 +440,25 @@ def documents_page():
             pagination=25,
             selection="multiple",
         ).classes("w-full")
+
+        table.add_slot("body-cell-art_label", _ART_LABEL_CELL)
+
+        def filter_by_tag(event):
+            """Klick auf ein Tag in der Liste: danach filtern.
+
+            Ergänzend zur bestehenden Auswahl — wer zwei Tags anklickt,
+            meint beide zusammen (dieselbe UND-Regel wie im Filterfeld).
+            """
+            name = event.args
+
+            if name in filters["tags"]:
+                return
+
+            filters["tags"] = [*filters["tags"], name]
+            filter_bar.refresh()
+            results.refresh()
+
+        table.on("tagClick", filter_by_tag)
 
         if show_snippets:
             table.add_slot("body-cell-text_snippet", _SNIPPET_CELL)

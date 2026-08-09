@@ -26,6 +26,7 @@ from src.database.tags import (
     list_tags as _list_tags,
     remove_tag_from_documents as _remove_tag_from_documents,
     set_document_tags as _set_document_tags,
+    tags_by_documents as _tags_by_documents,
     tags_for_document as _tags_for_document,
 )
 
@@ -115,6 +116,11 @@ def remove_tag_from_documents(document_ids, eingabe):
     name = normalize_tag_name(eingabe)
 
     return _remove_tag_from_documents(list(document_ids), tag_key(name))
+
+
+def tags_by_documents(document_ids):
+    """{document_id: [Tag, …]} für viele Dokumente in einer Abfrage."""
+    return _tags_by_documents(document_ids)
 
 
 def document_ids_with_all_tags(namen):

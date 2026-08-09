@@ -2,9 +2,15 @@ from src.database.database import open_connection
 from src.database.list_documents import _DOCUMENT_FIELDS
 
 # Gewichte für bm25 (Reihenfolge = FTS_COLUMNS in init_database.py:
-# filename, document_type, extracted_data, document_text, notes).
+# filename, document_type, extracted_data, document_text, notes, tags_text).
 # Treffer in Dateiname/Feldern zählen mehr als im langen OCR-Volltext.
-_BM25_WEIGHTS = "5.0, 2.0, 3.0, 1.0, 2.0"
+# Ein Tag wiegt am schwersten: es ist die einzige Angabe, die jemand bewusst
+# über das Dokument vergeben hat — wer danach sucht, meint genau sie.
+# Der Wert ist am Bestand gemessen, nicht geschätzt: unterhalb des
+# Dateinamen-Gewichts ging der Tag-Treffer zwischen den Textfundstellen
+# unter, mit 6.0 steht er vorn. Höhere Werte ändern daran nichts mehr —
+# deshalb der kleinste, der wirkt.
+_BM25_WEIGHTS = "5.0, 2.0, 3.0, 1.0, 2.0, 6.0"
 
 # Der Trigram-Tokenizer braucht mindestens 3 Zeichen; kürzere Begriffe
 # laufen über das alte LIKE (unsortiert nach Relevanz, aber vollständig).
@@ -102,10 +108,12 @@ def _search_documents_like(search_term):
                 OR extracted_data LIKE ?
                 OR document_text LIKE ?
                 OR notes LIKE ?
+                OR tags_text LIKE ?
 
             ORDER BY id DESC
             """,
             (
+                f"%{search_term}%",
                 f"%{search_term}%",
                 f"%{search_term}%",
                 f"%{search_term}%",

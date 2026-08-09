@@ -10,6 +10,32 @@ from datetime import datetime
 from src.database.database import open_connection
 
 
+def _sync_tags_text(cursor, document_ids):
+    """Schreibt die abgeleitete Spalte `tags_text` der genannten Dokumente.
+
+    Sie ist der einzige Weg, auf dem Tags in die Volltextsuche kommen: der
+    FTS-Index hängt an `documents`, und dessen Trigger feuern bei einem
+    UPDATE dieser Zeile — die Suche zieht damit von selbst nach.
+    """
+    for document_id in document_ids:
+        cursor.execute(
+            """
+            UPDATE documents
+            SET tags_text = COALESCE(
+                (
+                    SELECT group_concat(tags.name, ' ')
+                    FROM document_tags
+                    JOIN tags ON tags.id = document_tags.tag_id
+                    WHERE document_tags.document_id = ?
+                ),
+                ''
+            )
+            WHERE id = ?
+            """,
+            (document_id, document_id),
+        )
+
+
 def _ensure_tag(cursor, name, key):
     """Gibt die ID des Tags zurück und legt es an, falls es fehlt.
 
@@ -79,6 +105,8 @@ def set_document_tags(document_id, eintraege):
             """,
             [(document_id, tag_id) for tag_id in tag_ids],
         )
+
+        _sync_tags_text(cursor, [document_id])
 
         conn.commit()
 
@@ -161,6 +189,8 @@ def add_tag_to_documents(document_ids, name, key):
             neu,
         )
 
+        _sync_tags_text(cursor, [document_id for document_id, _ in neu])
+
         conn.commit()
 
     return len(neu)
@@ -193,9 +223,46 @@ def remove_tag_from_documents(document_ids, key):
         )
         entfernt = cursor.rowcount
 
+        _sync_tags_text(cursor, document_ids)
+
         conn.commit()
 
     return entfernt
+
+
+def tags_by_documents(document_ids):
+    """{document_id: [Tag, …]} für viele Dokumente in EINER Abfrage.
+
+    Für die Trefferliste: eine Abfrage je Zeile wäre bei langen Listen der
+    klassische N+1-Fehler.
+    """
+    document_ids = list(document_ids)
+
+    if not document_ids:
+        return {}
+
+    platzhalter = ", ".join("?" for _ in document_ids)
+
+    with open_connection() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT document_tags.document_id, tags.name, tags.color_index
+            FROM document_tags
+            JOIN tags ON tags.id = document_tags.tag_id
+            WHERE document_tags.document_id IN ({platzhalter})
+            ORDER BY tags.key
+            """,
+            document_ids,
+        ).fetchall()
+
+    gruppen = {}
+
+    for row in rows:
+        gruppen.setdefault(row["document_id"], []).append(
+            {"name": row["name"], "color_index": row["color_index"]}
+        )
+
+    return gruppen
 
 
 def document_ids_with_all_tags(keys):

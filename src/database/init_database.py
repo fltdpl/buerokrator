@@ -10,7 +10,7 @@ from src.database.database import open_connection
 # Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
 # erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
 # bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 
 DOCUMENT_COLUMNS = {
@@ -34,6 +34,11 @@ DOCUMENT_COLUMNS = {
     # krankheitskosten, NULL = keiner). Vom Nutzer beim Prüfen gesetzt,
     # nie vom LLM; Grundlage der Belegsummen-Positionen im ELSTER-Mapping.
     "tax_purpose": "TEXT",
+    # Abgeleitet aus den Tag-Zuordnungen, damit die Volltextsuche sie
+    # findet: der FTS-Index hängt an `documents`, die Zuordnungen liegen in
+    # eigenen Tabellen und wären für ihn sonst unsichtbar. Geschrieben wird
+    # die Spalte ausschließlich von src/database/tags.py.
+    "tags_text": "TEXT",
 }
 
 REQUIRED_EXISTING_COLUMNS = {
@@ -96,7 +101,54 @@ def create_indexes(cursor):
 
 # Spalten, die die Volltextsuche indexiert (Reihenfolge = FTS-Spaltenindex,
 # relevant für die bm25-Gewichte in search.py).
-FTS_COLUMNS = ["filename", "document_type", "extracted_data", "document_text", "notes"]
+FTS_COLUMNS = [
+    "filename",
+    "document_type",
+    "extracted_data",
+    "document_text",
+    "notes",
+    # Immer HINTEN anhängen: die Reihenfolge bestimmt den Spaltenindex der
+    # Fundstelle (search._SNIPPET_COLUMN) und die Zuordnung der
+    # bm25-Gewichte. Eine Einfügung in der Mitte verschöbe beides still.
+    "tags_text",
+]
+
+
+def _fts_columns_match(cursor):
+    """Stimmt die Spaltenliste der vorhandenen FTS-Tabelle noch?
+
+    Wächst FTS_COLUMNS, muss der Index neu gebaut werden — eine
+    Virtual Table lässt sich nicht per ALTER erweitern, und ein stehen
+    gelassener alter Index fände die neue Spalte nie.
+    """
+    vorhanden = [row["name"] for row in cursor.execute("PRAGMA table_info(documents_fts)")]
+
+    return vorhanden == FTS_COLUMNS
+
+
+def backfill_tags_text(cursor):
+    """Trägt `tags_text` für Bestandszeilen nach.
+
+    Ohne das fände die Suche Tags, die vor der Erweiterung vergeben wurden,
+    nie — und niemand käme darauf, warum ausgerechnet die alten fehlen.
+    Dokumente ohne Tags bekommen '' statt NULL, damit der Nachtrag nicht bei
+    jedem Start erneut über den ganzen Bestand läuft.
+    """
+    cursor.execute(
+        """
+        UPDATE documents
+        SET tags_text = COALESCE(
+            (
+                SELECT group_concat(tags.name, ' ')
+                FROM document_tags
+                JOIN tags ON tags.id = document_tags.tag_id
+                WHERE document_tags.document_id = documents.id
+            ),
+            ''
+        )
+        WHERE tags_text IS NULL
+        """
+    )
 
 
 def create_fts(cursor):
@@ -116,6 +168,12 @@ def create_fts(cursor):
         ).fetchone()
         is not None
     )
+
+    # Gewachsene Spaltenliste: neu bauen. Der Neuaufbau ist billig, weil die
+    # Tabelle External Content ist — sie liest alles aus `documents` zurück.
+    if fts_exists and not _fts_columns_match(cursor):
+        cursor.execute("DROP TABLE documents_fts")
+        fts_exists = False
 
     columns = ", ".join(FTS_COLUMNS)
 
@@ -340,8 +398,11 @@ def init_database():
 
         migrate_documents_table(cursor)
         create_indexes(cursor)
-        create_fts(cursor)
         create_tag_tables(cursor)
+        # Vor create_fts: der Index liest tags_text aus `documents`, die
+        # Spalte muss also schon gefüllt sein, wenn er (neu) gebaut wird.
+        backfill_tags_text(cursor)
+        create_fts(cursor)
 
         cursor.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 

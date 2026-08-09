@@ -42,8 +42,23 @@
   Mehrere ausgewählte Tags gelten **zusammen**: angezeigt wird, was alle
   davon trägt.
 
-  **Noch nicht in diesem Schritt:** Tags in der Trefferliste sehen, sie im
-  Volltext mitsuchen sowie Umbenennen und Zusammenführen.
+- **Neu: Tags in der Trefferliste — und in der Suche.** Die Dokumentenliste
+  zeigt die Tags jetzt klein unter dem Dokumentnamen, mit ihrem farbigen
+  Punkt. Keine neue Spalte: die Liste ist ohnehin breit genug.
+
+  **Ein Klick auf ein Tag filtert danach.** Ein zweiter Klick auf ein
+  anderes engt weiter ein — angezeigt wird, was beide trägt. Die Zeile
+  darunter öffnet sich dabei nicht.
+
+  Außerdem findet das **Volltextfeld** die Tags jetzt mit: „knie“ eintippen
+  genügt, es braucht keine besondere Schreibweise. Treffer im Tag stehen
+  dabei **vor** bloßen Textfundstellen — ein Tag ist die einzige Angabe, die
+  Sie bewusst über ein Dokument vergeben haben.
+
+  Bereits vergebene Tags werden dabei einmalig nachgetragen; die Datenbank
+  wird erneut erweitert und vorher wieder gesichert.
+
+  **Noch nicht in diesem Schritt:** Tags umbenennen und zusammenführen.
 - **Neu: Kategorie „Gesundheit".** Arztbriefe, Befunde, Bescheide der
   Krankenkasse, Reha-Unterlagen, Atteste und Impfnachweise haben jetzt einen
   eigenen Lebensbereich mit den Unterarten **Arztunterlagen / Befund**,

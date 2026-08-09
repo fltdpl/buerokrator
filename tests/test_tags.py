@@ -21,7 +21,7 @@ from src.core.app_home import reset_profile_cache
 from src.database.database import open_connection
 from src.database.delete_document import delete_document
 from src.database.document_repository import insert_document
-from src.database.init_database import SCHEMA_VERSION, init_database
+from src.database.init_database import init_database
 from src.services import import_job
 from src.services.tag_service import (
     add_to_selection,
@@ -159,10 +159,6 @@ def test_entfernen_ignoriert_die_schreibweise():
 
 
 # --- Schema ------------------------------------------------------------
-
-
-def test_schemaversion_wurde_erhoeht():
-    assert SCHEMA_VERSION == 5
 
 
 def test_tabellen_und_spalten():

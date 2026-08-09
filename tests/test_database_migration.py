@@ -18,6 +18,9 @@ EXPECTED_DOCUMENT_COLUMNS = {
     "content_hash",
     "tax_relevant",
     "tax_purpose",
+    # Abgeleitet aus den Tag-Zuordnungen, damit die Volltextsuche sie
+    # findet (Schema v6).
+    "tags_text",
 }
 
 

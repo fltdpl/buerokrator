@@ -70,6 +70,19 @@ Aufräumen ist eine bewusste Handlung, kein Nebeneffekt des Speicherns.
 Normalisierung liegt an einer einzigen Stelle
 (`services/tag_service`); die Persistenz normalisiert nichts.
 
+**`documents.tags_text` ist abgeleitet, nicht gepflegt.** Der FTS-Index
+hängt an `documents`; Tags liegen in eigenen Tabellen und wären für ihn
+unsichtbar. Deshalb schreibt `database/tags.py` bei jeder Zuordnungsänderung
+die Namen als Text in diese Spalte — das UPDATE löst die vorhandenen
+FTS-Trigger aus, der Index zieht von selbst nach. Geschrieben wird sie
+ausschließlich dort; wächst `FTS_COLUMNS`, baut `create_fts` den Index neu
+(eine Virtual Table lässt sich nicht per ALTER erweitern), und
+`backfill_tags_text` trägt Bestandszeilen nach.
+
+**Neue Indexspalten immer HINTEN anhängen.** Die Reihenfolge bestimmt den
+Spaltenindex der Fundstelle (`search._SNIPPET_COLUMN`) und die Zuordnung
+der bm25-Gewichte; eine Einfügung in der Mitte verschöbe beides still.
+
 ## Migration
 
 Automatisch beim ersten Zugriff (`database.get_connection` →
