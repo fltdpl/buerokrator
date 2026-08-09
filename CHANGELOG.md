@@ -4,6 +4,24 @@
 
 ## Unveröffentlicht
 
+## v0.3.0 — 09.08.2026
+
+- **Neu: Bestand aus einer älteren Version zieht auf Knopfdruck um.** Seit
+  der Einführung mehrerer Personen liegen die Unterlagen in einem eigenen
+  Ordner je Person. Wer von Version 0.2.x kommt, hat sie noch eine Ebene
+  höher liegen — die App hätte sie dort nicht gefunden und ein leeres
+  Archiv gezeigt, obwohl nichts verloren war.
+
+  Beim Start meldet sie das jetzt und bietet den Umzug an: **Datenbank und
+  Archiv werden kopiert**, danach prüft die App, ob jedes Dokument am neuen
+  Ort wirklich liegt, und erst dann schaltet sie um. **Die Originale bleiben
+  als Sicherung liegen — gelöscht wird nichts**, und schlägt etwas fehl,
+  bleibt alles, wie es war. Wer die App aus dem Quellcode betreibt, kann
+  denselben Umzug weiterhin mit `python -m tools.port_to_profiles` auslösen.
+
+  Während ein Stapel-Import läuft, ist der Umzug gesperrt — sonst schriebe
+  der Rest des Stapels in einen Bestand, der gerade wegzieht.
+
 - **Ruhigere Seitenleiste.** Der Umschalter für die Person steht jetzt klein
   **neben** dem Namen statt als eigene Zeile darunter — dort las er sich wie
   ein weiterer Menüpunkt. Über **Beenden** liegt eine Trennlinie: es verlässt

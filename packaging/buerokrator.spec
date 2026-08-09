@@ -24,15 +24,19 @@ a = Analysis(
     ],
     hiddenimports=[
         # Seiten werden nur per Import-Nebenwirkung registriert — sicherstellen,
-        # dass die Analyse sie mitnimmt.
+        # dass die Analyse sie mitnimmt. Deckungsgleich mit den Importen in
+        # `src/frontend/main.py`: dort steht, was eine Route registriert.
+        # (`pages.tax` und `pages.income` stehen bewusst NICHT hier — sie
+        # liefern nur Inhalt für die Reiter von `pages.analyse`.)
+        "src.frontend.pages.analyse",
         "src.frontend.pages.dashboard",
         "src.frontend.pages.document_detail",
         "src.frontend.pages.documents",
         "src.frontend.pages.help_page",
         "src.frontend.pages.import_page",
+        "src.frontend.pages.migration_page",
         "src.frontend.pages.settings",
         "src.frontend.pages.setup_page",
-        "src.frontend.pages.tax",
         "src.frontend.pages.trash",
     ],
     excludes=[

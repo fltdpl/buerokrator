@@ -46,8 +46,16 @@ Profil (`profiles/<kennung>/`) — je Person:
 - `database/`, `archive/`, `inbox/`, `exports/`, `trash/`, `backups/`
 
 Ein Bestand aus der Zeit vor ADR 015 (alles direkt in der Basis) wird
-einmalig mit `python -m tools.port_to_profiles` nachgeholt — bei laufender
-App verweigert das Werkzeug.
+einmalig umgezogen. Die **App erkennt ihn beim Start** an der Datenbank am
+alten Ort und leitet auf `/umzug`; die Logik steht in
+`services/profile_port.py` und ist während eines laufenden Stapel-Imports
+gesperrt. Aus dem Quellcode geht derselbe Umzug mit
+`python -m tools.port_to_profiles` — dieses Werkzeug verweigert bei
+laufender App (eigener Prozess, es prüft den belegten Port).
+
+Ohne diese Erkennung ist der Fall **still**: die App legt im Profil eine
+leere Datenbank an und meldet „0 Dokumente", während der Bestand unberührt
+eine Ebene höher liegt.
 
 ## Qualität
 

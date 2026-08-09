@@ -9,9 +9,8 @@ entsteht erst, wenn es etwas zu verwalten gibt — eine zweite Person oder
 einen vergebenen Namen. Wer die App frisch installiert, sieht davon nichts.
 
 Den einmaligen Umzug eines gewachsenen Bestands aus der alten, profillosen
-Struktur macht `tools/port_to_profiles.py`. Er gehört nicht in die App: er
-läuft genau einmal je Installation und fasst dabei jede Zeile der Datenbank
-an.
+Struktur macht `services/profile_port.py` — angeboten in der App und als
+Werkzeug `tools/port_to_profiles.py`.
 """
 
 from pathlib import Path
@@ -265,7 +264,7 @@ def remove_profile(profile_id: str) -> Path:
             "Das geöffnete Profil lässt sich nicht entfernen. Erst wechseln."
         )
 
-    _verweigere_bei_hintergrund_job("Profil entfernen")
+    verweigere_bei_hintergrund_job("Profil entfernen")
 
     _schreibe_profiles_datei(
         daten["active"],
@@ -276,7 +275,7 @@ def remove_profile(profile_id: str) -> Path:
     return _profiles_root() / profile_id
 
 
-def _verweigere_bei_hintergrund_job(vorhaben: str) -> None:
+def verweigere_bei_hintergrund_job(vorhaben: str) -> None:
     """Sperre für alles, was den aktiven Bestand unter den Füßen wegzieht.
 
     Der Stapel-Import löst seine Pfade je Dokument neu auf und liefe nach
@@ -306,7 +305,7 @@ def activate_profile(profile_id: str) -> None:
     if profile_id == daten["active"]:
         return
 
-    _verweigere_bei_hintergrund_job("Profilwechsel")
+    verweigere_bei_hintergrund_job("Profilwechsel")
 
     _schreibe_profiles_datei(profile_id, daten["profiles"])
     reset_profile_cache()

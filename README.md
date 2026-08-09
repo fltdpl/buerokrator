@@ -1,6 +1,6 @@
 # Buerokrator
 
-Version 0.2.1 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
+Version 0.3.0 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
 
 Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
 Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
@@ -30,7 +30,17 @@ Daten verlassen den Rechner — auch keine Web-Fonts.
   Formulare (Lohnsteuerbescheinigung, SV-Meldung, Entgeltnachweis,
   Bauspar-Jahresauszug) liest zusätzlich ein deterministischer Regelparser
 - Automatische Umbenennung und Archivierung nach `archive/<Jahr>/<Kategorie>/`
-- Mehrere Personen je Installation, mit vollständig getrennten Beständen
+- Elf Lebensbereiche als Kategorien — darunter Arbeit, Wohnen, Versicherung,
+  Vorsorge, Ausbildung und Gesundheit — jeweils mit eigenen Unterarten
+- **Tags**: frei vergebene Stichwörter quer zu den Kategorien, damit
+  zusammenbleibt, was zu einem Vorgang gehört (Befund, Rechnung und
+  Krankmeldung derselben Behandlung). Flach, ohne Systematik: ein Wort, ein
+  Farbpunkt. Vergabe einzeln oder für eine ganze Auswahl, Filter in der
+  Liste, Treffer in der Volltextsuche, Verwaltung mit Umbenennen und
+  Zusammenführen
+- Mehrere Personen je Installation, mit vollständig getrennten Beständen;
+  ein Bestand aus einer älteren Version zieht auf Knopfdruck um (kopierend,
+  mit Gegenprobe — die Originale bleiben als Sicherung liegen)
 - Prüf-Workflow in der App (Formular neben PDF-/OCR-Ansicht,
   Strg+Enter = Speichern & Freigeben & weiter)
 - Hinweis auf inhaltliche Dubletten: derselbe Beleg ein zweites Mal
@@ -82,8 +92,8 @@ selbst baubar, siehe *Entwicklung*) — installiert ohne root für den
 aktuellen Benutzer und legt einen Menüeintrag an:
 
 ```bash
-tar xzf buerokrator-0.2.1-linux-x86_64.tar.gz
-cd buerokrator-0.2.1-linux-x86_64
+tar xzf buerokrator-0.3.0-linux-x86_64.tar.gz
+cd buerokrator-0.3.0-linux-x86_64
 ./install.sh
 ```
 

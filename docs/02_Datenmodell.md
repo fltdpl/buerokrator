@@ -90,7 +90,7 @@ der bm25-Gewichte; eine Einfügung in der Mitte verschöbe beides still.
 
 Automatisch beim ersten Zugriff (`database.get_connection` →
 `init_database`, ALTER TABLE für fehlende Spalten) und versioniert:
-`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 4).
+`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 6).
 Bestands-DBs mit älterem Stand bekommen vor der Migration automatisch ein
 Backup neben der DB; bei jeder Schemaänderung SCHEMA_VERSION erhöhen.
 

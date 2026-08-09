@@ -1,4 +1,4 @@
-"""Einmaliger Umzug eines profillosen Bestands (tools/port_to_profiles).
+"""Einmaliger Umzug eines profillosen Bestands (services/profile_port).
 
 Schwerpunkt sind die Abbruchpfade: der Umzug fasst echte Dokumente an, und
 `archive_path` steht absolut in der Datenbank. Ein halber Umzug wäre
@@ -12,9 +12,14 @@ import pytest
 import yaml
 
 from src.core.app_home import get_app_home, reset_profile_cache
+from src.services import profile_port
+from src.services.profile_port import (
+    LEGACY_DIR,
+    enable_profiles,
+    legacy_bestand_gefunden,
+    profiles_enabled,
+)
 from src.services.profile_service import active_profile, list_profiles
-from tools import port_to_profiles
-from tools.port_to_profiles import LEGACY_DIR, enable_profiles, profiles_enabled
 
 # Vor der conftest-Fixture festhalten (sie leitet aliases_path um).
 from src.organizer.issuer_normalizer import aliases_path as _echter_aliases_path
@@ -26,16 +31,6 @@ def sauberer_profil_cache():
     reset_profile_cache()
     yield
     reset_profile_cache()
-
-
-@pytest.fixture(autouse=True)
-def keine_portpruefung(monkeypatch):
-    """Der Port-Check gehört dem Werkzeug, nicht jedem Testfall.
-
-    Sonst hinge die halbe Datei daran, ob auf diesem Rechner gerade eine
-    App läuft. Ein eigener Test prüft die Sperre.
-    """
-    monkeypatch.setattr(port_to_profiles, "_verweigere_bei_laufender_app", lambda: None)
 
 
 @pytest.fixture
@@ -277,7 +272,7 @@ def test_absoluter_pfad_in_den_einstellungen_verhindert_den_umzug(installation):
 def test_fehlende_datei_bricht_ab_und_laesst_alles_stehen(installation, monkeypatch):
     # Gegenprobe simulieren: eine Archivdatei verschwindet zwischen Kopie
     # und Prüfung. Danach muss die Installation unverändert dastehen.
-    echte_pruefung = port_to_profiles._pruefe_bestand
+    echte_pruefung = profile_port._pruefe_bestand
 
     def kaputt(db_path, erwartete_zeilen):
         for pfad in _pfade_in_db(db_path):
@@ -286,7 +281,7 @@ def test_fehlende_datei_bricht_ab_und_laesst_alles_stehen(installation, monkeypa
 
         return echte_pruefung(db_path, erwartete_zeilen)
 
-    monkeypatch.setattr(port_to_profiles, "_pruefe_bestand", kaputt)
+    monkeypatch.setattr(profile_port,"_pruefe_bestand", kaputt)
 
     with pytest.raises(RuntimeError, match="nicht am neuen Ort"):
         enable_profiles()
@@ -308,13 +303,13 @@ def test_datenbank_wird_ueber_die_sqlite_api_kopiert(installation, monkeypatch):
     # Eine reine Dateikopie verlöre im WAL-Modus die zuletzt importierten
     # Dokumente — derselbe Fehler steckte schon einmal im Backup.
     gerufen = []
-    echt = port_to_profiles._copy_database
+    echt = profile_port._copy_database
 
     def merke(source, target):
         gerufen.append(source)
         return echt(source, target)
 
-    monkeypatch.setattr(port_to_profiles, "_copy_database", merke)
+    monkeypatch.setattr(profile_port,"_copy_database", merke)
     enable_profiles()
 
     assert len(gerufen) == 1
@@ -329,23 +324,78 @@ def test_feste_pfade_decken_sich_mit_ihren_definitionen(installation):
     # Profil. Genau diese relativen Namen zieht das Werkzeug um.
     heim = get_app_home()
 
-    assert str(_echter_trash_dir().relative_to(heim)) == port_to_profiles.FIXED_ITEMS[0]
+    assert str(_echter_trash_dir().relative_to(heim)) == profile_port.FIXED_ITEMS[0]
     assert (
-        str(_echter_aliases_path().relative_to(heim))
-        == port_to_profiles.FIXED_ITEMS[1]
+        str(_echter_aliases_path().relative_to(heim)) == profile_port.FIXED_ITEMS[1]
     )
 
 
-def test_laufende_app_verhindert_den_umzug(installation, monkeypatch):
-    """Die App könnte gerade importieren — dann zöge der Umzug ihr den
-    Bestand weg. Die Job-Sperre der App greift hier nicht: sie ist
-    prozesslokal, das Werkzeug läuft in einem eigenen Prozess."""
-    def belegt():
-        raise RuntimeError("Auf 127.0.0.1:8081 läuft etwas")
+def test_laufender_import_verhindert_den_umzug(installation, monkeypatch):
+    """Der Stapel-Import löst seine Pfade je Dokument neu auf — ein Umzug
+    mitten im Lauf zöge ihm den Bestand weg. Dieselbe Sperre, die schon den
+    Profilwechsel schützt."""
+    from src.services import background_jobs
 
-    monkeypatch.setattr(port_to_profiles, "_verweigere_bei_laufender_app", belegt)
+    monkeypatch.setattr(
+        background_jobs,
+        "describe_running_job",
+        lambda: "Stapel-Import läuft (3 von 12)",
+    )
 
-    with pytest.raises(RuntimeError, match="läuft etwas"):
+    with pytest.raises(RuntimeError, match="Stapel-Import"):
         enable_profiles()
 
     assert not (installation / "profiles").exists()
+
+
+def test_werkzeug_reicht_seine_eigene_sperre_herein(installation):
+    """Das CLI-Werkzeug läuft in einem eigenen Prozess und kann von einem
+    laufenden Import nichts wissen — es prüft stattdessen den belegten Port
+    und gibt diese Prüfung als `vorpruefung` mit."""
+    def belegt():
+        raise RuntimeError("Auf 127.0.0.1:8081 läuft etwas")
+
+    with pytest.raises(RuntimeError, match="läuft etwas"):
+        enable_profiles(vorpruefung=belegt)
+
+    assert not (installation / "profiles").exists()
+
+
+# --------------------------------------------------------------- Erkennung
+#
+# Ohne sie ist der Fall still: die App legt im Profil eine leere Datenbank an
+# und meldet „0 Dokumente", während der Bestand eine Ebene höher liegt.
+
+
+def test_altbestand_wird_erkannt(installation):
+    assert legacy_bestand_gefunden() is True
+
+
+def test_nach_dem_umzug_ist_nichts_mehr_zu_tun(installation):
+    enable_profiles()
+
+    assert legacy_bestand_gefunden() is False
+
+
+def test_frische_installation_gilt_nicht_als_altbestand(tmp_path, monkeypatch):
+    """Kein Bestand, keine Datenbank — hier gehört der Einrichtungsassistent
+    hin, nicht der Umzug."""
+    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "settings.yaml").write_text(
+        yaml.safe_dump({"database": {"path": "./database/buerokrator.db"}}),
+        encoding="utf-8",
+    )
+
+    assert legacy_bestand_gefunden() is False
+
+
+def test_bestand_im_profil_gilt_nicht_als_altbestand(installation):
+    """Eine Einzelperson hat regulär keine `profiles.yaml`. Entscheidend ist
+    deshalb der ORT der Datenbank, nicht die Verwaltungsdatei."""
+    neu = installation / "profiles" / "1" / "database"
+    neu.parent.mkdir(parents=True)
+    (installation / "database").rename(neu)
+
+    assert not (installation / "profiles.yaml").exists()
+    assert legacy_bestand_gefunden() is False

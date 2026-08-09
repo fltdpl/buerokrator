@@ -19,10 +19,40 @@ _WORKFLOW = """
    rechts das PDF bzw. der erkannte Text. Korrigiere die Felder und gib das
    Dokument frei. Rote Felder sind Pflichtfelder, „nicht erkannt" markiert
    Lücken (blockiert nichts).
-3. **Steuer** — Unter *Steuer* siehst du je Jahr die Summen nach Kategorie,
-   getrennt nach geprüft/ungeprüft, mit CSV-Export.
+3. **Auswerten** — Unter *Analyse* liegen zwei Reiter: „Steuer" mit den
+   Werten je ELSTER-Anlage (nur aus geprüften Dokumenten, mit
+   Beleg-Herleitung und CSV-Export) und „Einkommen" mit dem
+   Jahresverlauf.
 4. **Sichern** — Unter *Einstellungen → Backup* schreibst du auf Knopfdruck
    Datenbank und Archiv als ZIP-Datei an den konfigurierten Ort.
+"""
+
+_TAGS = """
+### Tags: was quer zu den Kategorien gehört
+
+Jedes Dokument bekommt genau **eine** Kategorie — der Befund gehört zu
+Gesundheit, die Rechnung dazu zu Rechnungen. Was beide verbindet, tragen
+**Tags**: frei vergebene Stichwörter wie „Umzug 2026", „Autokauf" oder
+„Heizungstausch".
+
+- **Vergeben** beim Prüfen über **＋ Tag**, oder in der Dokumentenliste für
+  eine ganze Auswahl auf einmal.
+- **Wiederfinden**: ein Klick auf ein Tag in der Liste filtert danach, ein
+  zweites Tag engt weiter ein. Die Volltextsuche findet Tags ebenfalls.
+- **Aufräumen** unter *Einstellungen → Tags*: umbenennen, zusammenführen
+  („Umzug 2026" und „Umzug-2026"), Farbe ändern, löschen.
+
+Keine Systematik nötig: Groß- und Kleinschreibung wird beim Vergleich
+ignoriert, und Dokumente ohne Tags bleiben, wie sie sind.
+"""
+
+_PROFILE = """
+### Mehrere Personen
+
+Unter *Einstellungen → Profile* lässt sich eine zweite Person aufnehmen. Jede
+bekommt einen **vollständig getrennten Bestand** — eigene Dokumente, eigenes
+Archiv, eigene Steuersummen. Die Einstellungen gelten für alle gemeinsam.
+Wessen Unterlagen gerade offen sind, steht in der Seitenleiste.
 """
 
 _SHORTCUTS = """
@@ -59,5 +89,13 @@ def help_page():
         ui.label("Anleitung").classes("text-3xl page-title")
 
         with card("w-full"):
-            for block in (_INTRO, _WORKFLOW, _SHORTCUTS, _TRASH, _REQUIREMENTS):
+            for block in (
+                _INTRO,
+                _WORKFLOW,
+                _TAGS,
+                _PROFILE,
+                _SHORTCUTS,
+                _TRASH,
+                _REQUIREMENTS,
+            ):
                 ui.markdown(block)

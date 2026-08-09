@@ -9,6 +9,7 @@ from src.core.document_types import (
 )
 from src.frontend.layout import card, page_layout
 from src.frontend.theme import ACCENTS, DARK_ACTIVE, INK_MUTED
+from src.services.profile_port import legacy_bestand_gefunden
 from src.services.profile_service import list_profiles
 from src.services.setup_service import needs_setup
 from src.services.stats_service import get_dashboard_data
@@ -49,6 +50,13 @@ def _render_active_profile():
 
 @ui.page("/")
 def dashboard_page():
+    # Bestand aus der Zeit vor den Profilen → Umzug anbieten. VOR der
+    # Setup-Prüfung: die sieht nur die (fehlende) Datenbank im Profil und
+    # hielte einen gewachsenen Bestand für eine frische Installation.
+    if legacy_bestand_gefunden():
+        ui.navigate.to("/umzug")
+        return
+
     # Frische Instanz → Einrichtungsassistent. Prüfung VOR dem ersten
     # DB-Zugriff: der würde die (leere) DB anlegen und den Check kippen.
     if needs_setup():

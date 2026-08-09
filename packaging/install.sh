@@ -27,6 +27,13 @@ ln -sf "${OPT}/buerokrator" "${BIN}/buerokrator"
 cp uninstall.sh "${OPT}/uninstall.sh"
 chmod +x "${OPT}/uninstall.sh"
 
+# Aus demselben Grund die Versionsangabe: nach dem Löschen des entpackten
+# Verzeichnisses ließe sich sonst nirgends mehr ablesen, welcher Stand
+# installiert ist.
+if [ -f VERSION ]; then
+    cp VERSION "${OPT}/VERSION"
+fi
+
 # Icon für den Menüeintrag. Der Menüeintrag bekommt einen ABSOLUTEN
 # Icon-Pfad ins Installationsverzeichnis — der Theme-Lookup über
 # ~/.local/share/icons zeigte je nach Desktop nur ein generisches Symbol
