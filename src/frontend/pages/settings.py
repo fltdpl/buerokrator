@@ -2,7 +2,7 @@ from nicegui import run, ui
 
 from src.core.config import load_config, save_config
 from src.database.reset_database import reset_database_and_archive
-from src.frontend.layout import card, page_layout
+from src.frontend.layout import card, page_layout, umzug_noetig
 from src.frontend.pages.trash import render_trash
 from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED, TAG_COLORS, tag_color
 from src.services.tag_service import (
@@ -39,6 +39,10 @@ def _backup_target(config):
 
 @ui.page("/einstellungen")
 def settings_page():
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     config = load_config()
 
     with page_layout("Einstellungen"):

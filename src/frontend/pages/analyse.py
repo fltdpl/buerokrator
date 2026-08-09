@@ -6,13 +6,17 @@ Render-Funktionen aus pages/tax.py und pages/income.py.
 
 from nicegui import ui
 
-from src.frontend.layout import page_layout
+from src.frontend.layout import page_layout, umzug_noetig
 from src.frontend.pages.income import render_income_tab
 from src.frontend.pages.tax import render_tax_tab
 
 
 @ui.page("/analyse")
 def analyse_page():
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     with page_layout("Analyse"):
         ui.label("📊 Analyse").classes("text-3xl page-title")
 

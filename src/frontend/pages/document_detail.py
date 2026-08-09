@@ -18,7 +18,7 @@ from src.database.list_documents import (
 from src.frontend.listing_order import adjacent_id, get_listing_order
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
-from src.frontend.layout import card, page_layout
+from src.frontend.layout import card, page_layout, umzug_noetig
 from src.frontend.theme import tag_color
 from src.services.document_service import (
     move_document_to_trash,
@@ -286,6 +286,10 @@ def _render_type_selects(state, on_type_change, on_subtype_change):
 
 @ui.page("/dokumente/{document_id}")
 def document_detail_page(document_id: int):
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     row = get_document(document_id)
 
     if row is None:

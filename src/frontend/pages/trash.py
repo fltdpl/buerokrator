@@ -1,6 +1,6 @@
 from nicegui import ui
 
-from src.frontend.layout import card, page_layout
+from src.frontend.layout import card, page_layout, umzug_noetig
 from src.services.trash_service import empty_trash, list_trash, restore_from_trash
 
 
@@ -81,6 +81,10 @@ def render_trash():
 
 @ui.page("/papierkorb")
 def trash_page():
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     with page_layout("Papierkorb"):
         ui.label("🗑 Papierkorb").classes("text-3xl page-title")
         render_trash()

@@ -7,7 +7,7 @@ from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import SNIPPET_CLOSE, SNIPPET_OPEN, search_documents
 from src.database.statistics import get_verification_statistics
-from src.frontend.layout import card, format_euro, page_layout
+from src.frontend.layout import card, format_euro, page_layout, umzug_noetig
 from src.frontend.theme import tag_color
 from src.frontend.listing_order import set_listing_order
 from src.services.document_service import (
@@ -368,6 +368,10 @@ def _bulk_actions(table, on_changed):
 
 @ui.page("/dokumente")
 def documents_page():
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     filters = _FILTER_STATE
 
     all_years = available_years(list_documents())

@@ -292,11 +292,41 @@ def test_fehlende_datei_bricht_ab_und_laesst_alles_stehen(installation, monkeypa
     assert (installation / "database" / "buerokrator.db").exists()
 
 
-def test_reste_eines_abgebrochenen_umzugs_werden_gemeldet(installation):
-    (installation / "profiles").mkdir()
+def test_leeres_profilgeruest_verhindert_den_umzug_nicht(installation):
+    """Der Fall aus dem Paket-Smoke-Test: solange der Altbestand nicht
+    umgezogen ist, legt jede Seite, die die Datenbank oeffnet, im Profil eine
+    leere an. Ein Klick auf „Dokumente" vor dem Umzug genuegte — danach
+    lehnte der Umzug ab und verlangte, etwas zu loeschen, das die App selbst
+    angelegt hatte."""
+    geruest = installation / "profiles" / "1" / "database"
+    geruest.mkdir(parents=True)
+    sqlite3.connect(geruest / "buerokrator.db").close()
 
-    with pytest.raises(RuntimeError, match="existiert bereits"):
+    bericht = enable_profiles()
+
+    assert bericht["geprueft"] == 3
+    assert profiles_enabled() is True
+    # Auch das Geruest ist beiseitegeraeumt, nicht geloescht.
+    assert (installation / LEGACY_DIR / "profiles-leer").exists()
+
+
+def test_geruest_mit_dokumenten_bleibt_ein_abbruch(installation):
+    """Die Unterscheidung traegt die Datenbank: liegen darin Dokumente, ist
+    es der Rest eines abgebrochenen Umzugs — und dann waere Weitermachen
+    gefaehrlich."""
+    rest = installation / "profiles" / "1" / "database"
+    rest.mkdir(parents=True)
+    conn = sqlite3.connect(rest / "buerokrator.db")
+    conn.execute("CREATE TABLE documents (id INTEGER PRIMARY KEY, archive_path TEXT)")
+    conn.execute("INSERT INTO documents (archive_path) VALUES ('/irgendwo/x.pdf')")
+    conn.commit()
+    conn.close()
+
+    with pytest.raises(RuntimeError, match="enthält bereits Dokumente"):
         enable_profiles()
+
+    assert profiles_enabled() is False
+    assert (rest / "buerokrator.db").exists()
 
 
 def test_datenbank_wird_ueber_die_sqlite_api_kopiert(installation, monkeypatch):

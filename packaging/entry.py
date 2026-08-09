@@ -10,17 +10,23 @@ import sys
 
 multiprocessing.freeze_support()
 
-from src.core.app_home import get_app_home  # noqa: E402
+from src.core.app_home import get_base_home  # noqa: E402
 
 
 def _redirect_output_to_logfile() -> None:
-    """stdout/stderr des Bundles in eine Logdatei im App-Home umleiten.
+    """stdout/stderr des Bundles in eine Logdatei in der Basis umleiten.
 
     Über den Menüeintrag gestartet gibt es keine Konsole — Startmeldungen
     und vor allem unbehandelte Abstürze wären sonst unsichtbar. Pro Start
     überschrieben (nur der letzte Lauf ist für die Diagnose interessant).
+
+    **Basis, nicht Profil** (ADR 015, so auch dokumentiert in `docs/07`):
+    hier stehen Startfehler, die vor jeder Profilfrage auftreten. Der
+    Profilpfad legte zudem bei JEDEM Start ein Profilverzeichnis an — bei
+    einem noch nicht umgezogenen Altbestand entstand so ein leeres Gerüst,
+    bevor der Nutzer den Umzug überhaupt sehen konnte.
     """
-    log_dir = get_app_home() / "logs"
+    log_dir = get_base_home() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
     stream = open(log_dir / "console.log", "w", buffering=1, encoding="utf-8")

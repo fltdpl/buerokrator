@@ -6,7 +6,7 @@ from src.core.config import load_config
 from src.core.document_types import DOCUMENT_TYPE_LABELS
 from src.core.logger import logger
 from src.database.list_documents import get_next_unverified_id
-from src.frontend.layout import card, page_layout
+from src.frontend.layout import card, page_layout, umzug_noetig
 from src.processor.batch_import import (
     find_inbox_documents,
     import_inbox_documents,
@@ -113,6 +113,10 @@ def _render_result(result, on_reset):
 
 @ui.page("/import")
 def import_page():
+    # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
+    if umzug_noetig():
+        return
+
     with page_layout("Import"):
         ui.label("Dokument importieren").classes("text-3xl page-title")
 

@@ -20,6 +20,26 @@ NAV_ITEMS = [
 ]
 
 
+def umzug_noetig() -> bool:
+    """Weiche für JEDE Seite: ein Altbestand gehört zuerst umgezogen.
+
+    Bewusst nicht nur auf dem Dashboard. Jede Seite, die die Datenbank
+    öffnet, legt sonst im (noch leeren) Profil eine an — danach lehnte der
+    Umzug ab, weil `profiles/` bereits existiert, und der Nutzer las eine
+    Aufforderung, etwas zu löschen, das die App selbst angelegt hatte.
+    Gefunden im Smoke-Test des fertigen Pakets: ein Klick auf „Dokumente"
+    vor dem Umzug genügte.
+    """
+    from src.services.profile_port import legacy_bestand_gefunden
+
+    if not legacy_bestand_gefunden():
+        return False
+
+    ui.navigate.to("/umzug")
+
+    return True
+
+
 def format_euro(amount):
     return f"{amount:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 

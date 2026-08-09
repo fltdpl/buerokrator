@@ -278,6 +278,59 @@ def _zeilenzahl(db_path: Path) -> int:
         conn.close()
 
 
+def _raeume_leeres_geruest(profiles_root: Path, basis: Path) -> None:
+    """Ein leeres `profiles/` beiseiteräumen — oder abbrechen, wenn Daten
+    darin liegen.
+
+    Das Verzeichnis entsteht auch ohne Umzug: solange der Altbestand nicht
+    umgezogen ist, legt jede Seite, die die Datenbank öffnet, im Profil eine
+    leere an. Ein blanker Abbruch wäre hier falsch — er verlangte vom
+    Nutzer, etwas zu löschen, das die App selbst angelegt hat.
+
+    Die Unterscheidung trägt die Datenbank: **ohne Datenbank kein Bestand.**
+    Liegt eine darin, ist es der Rest eines abgebrochenen Umzugs, und dann
+    bleibt der Abbruch richtig — dort könnten Dokumente stehen.
+
+    Gelöscht wird auch hier nichts: das Gerüst wandert zum Altbestand.
+    """
+    datenbanken = [p for p in profiles_root.rglob("*.db") if p.is_file()]
+
+    if datenbanken and any(_zeilenzahl_oder_none(p) for p in datenbanken):
+        raise RuntimeError(
+            f"{profiles_root} enthält bereits Dokumente — Rest eines "
+            "abgebrochenen Umzugs? Bitte prüfen und beiseiteräumen."
+        )
+
+    ziel = basis / LEGACY_DIR / "profiles-leer"
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+
+    if ziel.exists():
+        shutil.rmtree(profiles_root)
+
+    else:
+        shutil.move(str(profiles_root), str(ziel))
+
+    logger.info("Leeres Profilgerüst beiseitegeräumt: %s", ziel)
+
+
+def _zeilenzahl_oder_none(db_path: Path) -> int:
+    """Dokumentzahl einer Datenbank; 0, wenn es die Tabelle nicht gibt."""
+    try:
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+
+    except sqlite3.Error:
+        return 0
+
+    try:
+        return conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
+
+    except sqlite3.Error:
+        return 0
+
+    finally:
+        conn.close()
+
+
 def _lege_profil_an(profile_id: str, name: str) -> Path:
     verzeichnis = _profiles_root() / profile_id
     verzeichnis.mkdir(parents=True, exist_ok=True)
@@ -312,10 +365,7 @@ def enable_profiles(erster_name=None, zweiter_name=None, vorpruefung=None) -> di
     profiles_root = _profiles_root()
 
     if profiles_root.exists():
-        raise RuntimeError(
-            f"{profiles_root} existiert bereits — Rest eines abgebrochenen "
-            "Umzugs? Bitte prüfen und entfernen."
-        )
+        _raeume_leeres_geruest(profiles_root, basis)
 
     erstes = profiles_root / FIRST_ID
     umgezogen = []

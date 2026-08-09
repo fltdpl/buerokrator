@@ -153,6 +153,22 @@ async def test_nach_dem_umzug_gibt_es_die_seite_nicht_mehr(altbestand, user: Use
 
 
 @pytest.mark.asyncio
+async def test_jede_seite_fuehrt_zum_umzug_zurueck(altbestand, user: User):
+    """Nicht nur das Dashboard. Jede Seite, die die Datenbank oeffnet, legt
+    sonst im leeren Profil eine an — danach lehnte der Umzug ab und verlangte
+    vom Nutzer, etwas zu loeschen, das die App selbst angelegt hatte.
+    Gefunden im Smoke-Test des fertigen Pakets."""
+    for route in ("/dokumente", "/import", "/analyse", "/einstellungen",
+                  "/papierkorb"):
+        await user.open(route)
+        await user.should_see("Umzug jetzt starten")
+
+    # Der eigentliche Beweis: es ist kein Profil entstanden, der Umzug
+    # laeuft also noch.
+    assert not (altbestand / "profiles").exists()
+
+
+@pytest.mark.asyncio
 async def test_frische_installation_sieht_den_umzug_nie(
     frische_installation, user: User
 ):

@@ -7,7 +7,7 @@ from src.core.document_types import (
     PENSION,
     TAX,
 )
-from src.frontend.layout import card, page_layout
+from src.frontend.layout import card, page_layout, umzug_noetig
 from src.frontend.theme import ACCENTS, DARK_ACTIVE, INK_MUTED
 from src.services.profile_port import legacy_bestand_gefunden
 from src.services.profile_service import list_profiles
@@ -53,8 +53,7 @@ def dashboard_page():
     # Bestand aus der Zeit vor den Profilen → Umzug anbieten. VOR der
     # Setup-Prüfung: die sieht nur die (fehlende) Datenbank im Profil und
     # hielte einen gewachsenen Bestand für eine frische Installation.
-    if legacy_bestand_gefunden():
-        ui.navigate.to("/umzug")
+    if umzug_noetig():
         return
 
     # Frische Instanz → Einrichtungsassistent. Prüfung VOR dem ersten
