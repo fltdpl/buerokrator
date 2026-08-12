@@ -99,7 +99,8 @@ def test_restore_backup_replaces_db_and_archive(tmp_path):
 
     result = restore_backup(zip_path, db_path=db, archive_dir=archive)
 
-    assert result == {"database": True, "archive_files": 1}
+    assert result["database"] is True
+    assert result["archive_files"] == 1
 
     restored = sqlite3.connect(db)
     assert [row[0] for row in restored.execute("SELECT filename FROM documents")] == [
@@ -236,3 +237,100 @@ def test_snapshot_bleibt_im_zielordner_und_wird_aufgeraeumt(tmp_path):
     create_backup(db, tmp_path / "archive", target, "fertig.zip")
 
     assert [p.name for p in target.iterdir()] == ["fertig.zip"]
+
+
+# ------------------------------------- Archivpfade nach der Wiederherstellung
+
+
+def _backup_mit_archivpfaden(tmp_path, pfade):
+    """Sicherung, deren DB absolute Pfade eines FREMDEN Ortes trägt."""
+    quelle = tmp_path / "quelle"
+    db = quelle / "database" / "buerokrator.db"
+    db.parent.mkdir(parents=True)
+
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "CREATE TABLE documents (id INTEGER PRIMARY KEY, archive_path TEXT)"
+    )
+    conn.executemany(
+        "INSERT INTO documents (archive_path) VALUES (?)", [(p,) for p in pfade]
+    )
+    conn.commit()
+    conn.close()
+
+    archiv = quelle / "archive"
+    (archiv / "2024" / "Wohnen").mkdir(parents=True)
+    (archiv / "2024" / "Wohnen" / "miete.pdf").write_bytes(b"PDF")
+
+    return create_backup(db, archiv, tmp_path / "backups", "fremd.zip")
+
+
+def test_restore_bindet_archivpfade_an_das_neue_archiv(tmp_path):
+    """Regression: eine Sicherung, an anderem Ort eingespielt, war unbrauchbar.
+
+    Die Archivdateien landeten am neuen Ort, `archive_path` trug aber weiter
+    den Pfad von der Sicherungszeit. Die Folge war still: alle Werte in der
+    Detailansicht richtig, nur das PDF "nicht gefunden".
+    """
+    from src.services.backup_service import restore_backup
+
+    zip_path = _backup_mit_archivpfaden(
+        tmp_path, ["/ganz/woanders/archive/2024/Wohnen/miete.pdf"]
+    )
+
+    ziel = tmp_path / "ziel"
+    db = ziel / "database" / "buerokrator.db"
+    archiv = ziel / "archive"
+
+    result = restore_backup(zip_path, db_path=db, archive_dir=archiv)
+
+    assert result["archive_pfade_repariert"] == 1
+
+    conn = sqlite3.connect(db)
+    pfade = [row[0] for row in conn.execute("SELECT archive_path FROM documents")]
+    conn.close()
+
+    assert pfade == [str(archiv / "2024" / "Wohnen" / "miete.pdf")]
+
+
+def test_restore_legt_keine_zweite_sicherung_an(tmp_path):
+    """Der alte Stand liegt schon als pre_restore beiseite — das genügt."""
+    from src.services.backup_service import restore_backup
+
+    zip_path = _backup_mit_archivpfaden(
+        tmp_path, ["/ganz/woanders/archive/2024/Wohnen/miete.pdf"]
+    )
+
+    ziel = tmp_path / "ziel"
+    db = ziel / "database" / "buerokrator.db"
+
+    restore_backup(zip_path, db_path=db, archive_dir=ziel / "archive")
+
+    assert list(db.parent.glob("pre_pfadreparatur_*.db")) == []
+
+
+def test_restore_gelingt_auch_wenn_die_pfadbindung_scheitert(tmp_path, caplog):
+    """Die Nachbesserung darf eine Wiederherstellung nie zu Fall bringen.
+
+    Die Dateien liegen zu diesem Zeitpunkt schon am Ziel; ein Abbruch ließe
+    den Nutzer mit halb ausgepacktem Bestand zurück. Hier fehlt der
+    gesicherten Datenbank die Spalte archive_path.
+    """
+    import logging
+
+    from src.services.backup_service import restore_backup
+
+    zip_path = _make_backup(tmp_path)
+
+    ziel = tmp_path / "ziel"
+
+    with caplog.at_level(logging.WARNING):
+        result = restore_backup(
+            zip_path,
+            db_path=ziel / "database" / "buerokrator.db",
+            archive_dir=ziel / "archive",
+        )
+
+    assert result["database"] is True
+    assert result["archive_pfade_repariert"] == 0
+    assert "Archivpfade" in caplog.text

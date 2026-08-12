@@ -153,3 +153,21 @@ def resolve_path(value: "str | Path") -> Path:
         return path
 
     return get_app_home() / path
+
+
+def resolve_archive_path(value) -> "Path | None":
+    """`archive_path` einer Dokumentzeile auflösen — leer bleibt leer.
+
+    Ältere Importe haben relative Pfade hinterlassen. Sie sind gegen das
+    App-Home gemeint, lösten roh ausgewertet aber gegen das
+    Arbeitsverzeichnis auf: die Existenzprüfung war damit zufällig, je
+    nachdem, wo der Prozess gerade stand.
+
+    Der Leerwert braucht die eigene Behandlung: `resolve_path("")` ergäbe das
+    App-Home selbst — ein Verzeichnis, das existiert, sodass `exists()`
+    fälschlich eine vorhandene Datei meldete.
+    """
+    if not value:
+        return None
+
+    return resolve_path(value)

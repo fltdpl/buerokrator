@@ -96,6 +96,22 @@ Zu sichern:
 `trash/` enthält gelöschte Original-Dokumente (Papierkorb) — bei Bedarf
 mitsichern, gelegentlich manuell leeren.
 
+### Wiederherstellung an einem anderen Ort
+
+`archive_path` steht **absolut** in der Datenbank. Wird eine Sicherung
+anderswo eingespielt (frische Installation, zweiter Rechner), liegen die
+Dateien richtig, aber jede Zeile zeigt auf den Ort von der Sicherungszeit —
+still, mit „PDF-Datei nicht gefunden“ in der Detailansicht, während alle
+übrigen Werte stimmen. `restore_backup` bindet die Dateien deshalb nach dem
+Auspacken selbst neu an (`services/archive_repair.py`, über die letzten drei
+Pfadsegmente `<jahr>/<kategorie>/<datei>`).
+
+Für Bestände, die den Fehler schon tragen: **Einstellungen → Datenbank →
+Archivpfade**, oder `python -m tools.repair_archive_paths` (ohne Argument
+Trockenlauf, mit `--schreiben` wird geschrieben; vorher entsteht eine
+Sicherung `pre_pfadreparatur_….db`). Findet sich eine Datei nicht, bleibt
+die Zeile unverändert — **geraten wird nie**.
+
 ## Relevante Entscheidungen
 
 - [002 Ollama](decisions/002_ollama.md)

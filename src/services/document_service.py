@@ -11,6 +11,7 @@ from pathlib import Path
 from src.classifier.document_classifier import classify
 from src.classifier.document_extractor import extract_document
 from src.classifier.ollama_availability import is_ollama_available
+from src.core.app_home import resolve_archive_path
 from src.core.document_display import (
     get_document_art_label,
     get_document_display_name,
@@ -39,10 +40,14 @@ def parse_document_row(row):
     except Exception:
         data = {}
 
+    archive_path = resolve_archive_path(row["archive_path"])
+
     return {
         "id": row["id"],
         "filename": row["filename"],
-        "archive_path": row["archive_path"],
+        # Aufgelöst, nicht roh: ältere Importe haben relative Pfade
+        # hinterlassen, die sonst gegen das Arbeitsverzeichnis auflösen.
+        "archive_path": str(archive_path) if archive_path else "",
         "document_type": row["document_type"],
         "data": data,
         "verified": bool(row["verified"]),
@@ -75,7 +80,10 @@ def move_document_to_trash(document_id, trash_dir=None):
     if row is None:
         return None
 
-    trashed_path = move_to_trash(row["archive_path"], trash_dir=trash_dir)
+    archive_path = resolve_archive_path(row["archive_path"])
+    trashed_path = (
+        move_to_trash(archive_path, trash_dir=trash_dir) if archive_path else None
+    )
 
     delete_document(document_id)
 

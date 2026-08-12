@@ -16,6 +16,7 @@ from pathlib import Path
 
 from src.core.config import load_config
 from src.core.logger import logger
+from src.services.archive_repair import repariere_archivpfade
 
 
 def _default_backup_name(now):
@@ -153,7 +154,16 @@ def restore_backup(zip_path, db_path, archive_dir, now=None):
     Sicherheitsprinzip: NICHTS wird gelöscht. Der aktuelle Stand wird
     beiseitegelegt (DB als pre_restore_<ts>.db neben der DB, Archivordner
     als <archiv>_vor_wiederherstellung_<ts>) und erst dann aus der ZIP
-    extrahiert. Gibt Plain Data zurück: {"database": bool, "archive_files": int}.
+    extrahiert.
+
+    ⚠️ **Danach müssen die Archivpfade neu gebunden werden.** `archive_path`
+    steht absolut in der Datenbank; wird eine Sicherung an einem ANDEREN Ort
+    eingespielt (frische Installation, zweiter Rechner), liegen die Dateien
+    zwar richtig, aber jede Zeile zeigt auf den Ort von der Sicherungszeit.
+    Der Fehler war still — alle Werte richtig, nur das PDF "nicht gefunden".
+
+    Gibt Plain Data zurück: {"database": bool, "archive_files": int,
+    "archive_pfade_repariert": int, "archive_pfade_ungeloest": int}.
     """
     zip_path = Path(zip_path)
     db_path = Path(db_path)
@@ -217,13 +227,40 @@ def restore_backup(zip_path, db_path, archive_dir, now=None):
             with backup.open(member) as source, open(target_file, "wb") as target:
                 shutil.copyfileobj(source, target)
 
+    # Pfade an das Archiv HIER binden. Ohne Sicherung: der alte Stand liegt
+    # als pre_restore bereits beiseite. Die Basis ist das Elternverzeichnis
+    # des Archivs — dagegen sind die alten relativen Einträge gemeint.
+    #
+    # Ein Fehler dabei darf die Wiederherstellung NICHT scheitern lassen: die
+    # Dateien liegen dann bereits am Ziel, und ein Abbruch hier ließe den
+    # Nutzer mit halb ausgepacktem Bestand zurück. Die Bindung ist über
+    # "Archivpfade reparieren" jederzeit nachholbar.
+    try:
+        pfade = repariere_archivpfade(
+            db_path, archive_dir, basis=archive_dir.parent, sichern=False
+        )
+
+    except (RuntimeError, sqlite3.Error) as error:
+        logger.warning(
+            "Archivpfade nach der Wiederherstellung nicht gebunden (%s) — "
+            "über 'Archivpfade reparieren' nachholbar.",
+            error,
+        )
+        pfade = {"repariert": 0, "ungeloest": 0}
+
     logger.info(
         f"Backup wiederhergestellt: {zip_path} "
         f"({len(archive_members)} Archivdateien); alter Stand beiseitegelegt "
-        f"(pre_restore_{timestamp})"
+        f"(pre_restore_{timestamp}); {pfade['repariert']} Archivpfade neu "
+        f"gebunden, {pfade['ungeloest']} ungelöst"
     )
 
-    return {"database": True, "archive_files": len(archive_members)}
+    return {
+        "database": True,
+        "archive_files": len(archive_members),
+        "archive_pfade_repariert": pfade["repariert"],
+        "archive_pfade_ungeloest": pfade["ungeloest"],
+    }
 
 
 def run_restore(zip_path):

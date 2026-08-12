@@ -4,6 +4,31 @@
 
 ## Unveröffentlicht
 
+- **Behoben: Nach einer Wiederherstellung blieb das PDF „nicht gefunden“.**
+  Jedes Dokument merkt sich, wo seine Datei liegt. Wurde eine Sicherung an
+  einem **anderen Ort** eingespielt — etwa in eine frisch installierte App —,
+  lagen die Dokumente danach zwar richtig im Archiv, aber die gemerkten
+  Orte zeigten noch dorthin, wo der Bestand zur Sicherungszeit lag. Die
+  Folge war still: in der Detailansicht stimmten alle Werte, nur das PDF
+  fehlte mit der Meldung „PDF-Datei nicht gefunden“. Neu importierte
+  Dokumente waren nie betroffen — deshalb fiel es erst spät auf.
+
+  **Die Wiederherstellung bindet die Dateien jetzt selbst neu an**, und für
+  Bestände, die den Fehler schon haben, gibt es
+  **Einstellungen → Datenbank → Archivpfade**: dort steht, wie viele
+  Dokumente ihre Datei nicht finden, und ein Knopf bindet sie neu. Vorher
+  entsteht eine Sicherung der Datenbank; geändert wird nur, wo die Datei
+  wirklich gefunden wurde — **geraten wird nie**. Aus dem Quellcode geht
+  dasselbe mit `python -m tools.repair_archive_paths`.
+
+- **Behoben: ältere Dokumente mit unvollständig gespeichertem Ort.** Aus
+  früheren Programmversionen stammen Einträge, deren Ort nur relativ
+  vermerkt ist. Sie wurden je nach Startart der App gefunden oder eben
+  nicht. Jetzt werden sie immer gegen den Bestand der aktiven Person
+  aufgelöst — das betrifft Anzeige, Download, Dateigröße und Papierkorb.
+
+- Die Meldung „PDF-Datei nicht gefunden“ nennt jetzt den nächsten Schritt.
+
 ## v0.3.0 — 09.08.2026
 
 - **Neu: Bestand aus einer älteren Version zieht auf Knopfdruck um.** Seit

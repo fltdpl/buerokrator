@@ -22,6 +22,7 @@ from src.services.profile_service import (
     remove_profile,
     rename_profile,
 )
+from src.services.archive_repair import run_check, run_repair
 from src.services.backup_service import list_backups, run_backup, run_restore
 from src.services.dependency_service import collect_dependency_status
 from src.services.log_service import LOG_LEVELS, read_log_tail
@@ -78,6 +79,7 @@ def settings_page():
                 _render_backup(config)
 
             with ui.tab_panel(tab_database):
+                _render_archivpfade()
                 _render_database_danger_zone()
 
             with ui.tab_panel(tab_log):
@@ -662,10 +664,21 @@ def _render_restore(config):
                 )
                 return
 
+            ungeloest = result.get("archive_pfade_ungeloest", 0)
+            hinweis = (
+                f" {ungeloest} Dokument(e) finden ihre Datei nicht — siehe "
+                "Datenbank → Archivpfade."
+                if ungeloest
+                else ""
+            )
+
             ui.notify(
                 f"Backup wiederhergestellt ({result['archive_files']} "
-                "Archivdateien). Seite neu laden, um den Stand zu sehen.",
+                f"Archivdateien, {result.get('archive_pfade_repariert', 0)} "
+                f"Archivpfade neu gebunden).{hinweis} Seite neu laden, um "
+                "den Stand zu sehen.",
                 type="positive",
+                timeout=10000,
             )
 
         with ui.row().classes("gap-2 items-center"):
@@ -685,6 +698,90 @@ def _render_restore(config):
         ).classes("text-sm muted")
 
         restore_area()
+
+
+@ui.refreshable
+def _render_archivpfade():
+    """Zeigt, ob Dokumente auf nicht vorhandene Dateien zeigen — und heilt es.
+
+    Der Fall entsteht, wenn der Bestand den Ort wechselt (Wiederherstellung
+    an einer frischen Installation, zweiter Rechner): die Dateien liegen
+    richtig, `archive_path` trägt aber noch den alten Ort. Ohne diese Fläche
+    ist das für Paketnutzer nicht behebbar — sie haben kein `tools/`.
+    """
+    try:
+        befund = run_check()
+
+    except Exception as error:
+        with card("w-full gap-2"):
+            ui.label("Archivpfade").classes("text-xl page-title")
+            ui.label(f"Prüfung nicht möglich: {error}").classes("muted")
+
+        return
+
+    with card("w-full gap-3"):
+        ui.label("Archivpfade").classes("text-xl page-title")
+        ui.label(
+            "Jedes Dokument merkt sich, wo seine Datei liegt. Nach einer "
+            "Wiederherstellung an einem anderen Ort zeigen diese Angaben ins "
+            "Leere — die Detailansicht meldet dann „PDF-Datei nicht "
+            "gefunden“, obwohl die Datei im Archiv liegt."
+        ).classes("text-sm muted")
+
+        offen = befund["reparierbar"] + befund["ungeloest"] + befund["kollisionen"]
+
+        if not offen:
+            ui.label("Alle Dokumente finden ihre Datei.").classes(
+                "text-sm"
+            ).mark("archivpfade-befund")
+
+            return
+
+        ui.label(
+            f"{befund['reparierbar']} von {befund['gesamt']} Dokumenten "
+            "zeigen auf eine Datei, die woanders liegt — sie lassen sich "
+            "neu binden."
+        ).mark("archivpfade-befund")
+
+        if befund["ungeloest"]:
+            ui.label(
+                f"{befund['ungeloest']} Dokument(e) haben im Archiv keine "
+                "passende Datei. Sie bleiben unverändert; hier hilft nur "
+                "eine Sicherung."
+            ).classes("text-sm").style(f"color: {DANGER}")
+
+        if befund["kollisionen"]:
+            ui.label(
+                f"{befund['kollisionen']} Dokument(e) würden auf dieselbe "
+                "Datei zeigen. Sie bleiben unverändert."
+            ).classes("text-sm").style(f"color: {DANGER}")
+
+        async def reparieren():
+            try:
+                bericht = await run.io_bound(run_repair)
+
+            except Exception as error:
+                ui.notify(f"Reparatur fehlgeschlagen: {error}", type="negative")
+                return
+
+            ui.notify(
+                f"{bericht['repariert']} Archivpfade repariert, "
+                f"{bericht['ungeloest']} ungelöst. Sicherung: "
+                f"{bericht['sicherung'] or 'nicht nötig'}",
+                type="positive",
+                timeout=10000,
+            )
+            _render_archivpfade.refresh()
+
+        ui.button("🔗 Archivpfade reparieren", on_click=reparieren).props(
+            "color=primary unelevated no-caps"
+        ).mark("archivpfade-reparieren")
+
+        ui.label(
+            "Vor dem Schreiben entsteht eine Sicherung der Datenbank "
+            "(pre_pfadreparatur_…). Geändert wird nur, wo die Datei "
+            "tatsächlich gefunden wurde — geraten wird nie."
+        ).classes("text-xs muted")
 
 
 def _render_database_danger_zone():

@@ -122,6 +122,7 @@ python -m src.frontend.main         # App auf http://localhost:8081
 python -m tools.tax_check <jahr>          # Steuerwerte gegen die eigene Erklärung
 python -m tools.evaluate --limit 40       # Qualitätsmessung (braucht Ollama)
 python -m tools.port_to_profiles          # einmalig: Altbestand in die Profilstruktur
+python -m tools.repair_archive_paths      # Archivpfade prüfen (--schreiben repariert)
 bash packaging/build_linux.sh       # Release-Tarball nach dist/
 ```
 

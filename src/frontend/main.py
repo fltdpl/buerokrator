@@ -13,7 +13,7 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from src.core.app_home import get_base_home
+from src.core.app_home import get_base_home, resolve_archive_path
 
 # NiceGUI legt sein Storage-Verzeichnis standardmäßig relativ zur cwd an.
 # Vor dem ersten nicegui-Import ins Basisverzeichnis umleiten (Packaging:
@@ -66,10 +66,17 @@ def serve_pdf(document_id: int):
     if row is None:
         raise HTTPException(status_code=404, detail="Dokument nicht gefunden")
 
-    path = Path(row["archive_path"])
+    path = resolve_archive_path(row["archive_path"])
 
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="PDF-Datei nicht gefunden")
+    if path is None or not path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "PDF-Datei nicht gefunden. Liegt der Bestand seit einer "
+                "Wiederherstellung an einem anderen Ort, hilft "
+                "Einstellungen → Archivpfade reparieren."
+            ),
+        )
 
     return FileResponse(path, media_type="application/pdf")
 

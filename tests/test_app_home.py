@@ -148,3 +148,45 @@ def test_first_run_copies_template_config(tmp_path, monkeypatch):
     # Pfade gegen das Standardprofil aufgelöst.
     assert config["paths"]["archive"] == str(_standardprofil(home) / "archive")
     assert "supported_document_types" in config
+
+
+# --------------------------------------------------- Archivpfade auflösen
+
+
+def test_resolve_archive_path_macht_relative_pfade_absolut(tmp_path, monkeypatch):
+    """Ältere Importe hinterließen relative Pfade in archive_path.
+
+    Roh ausgewertet lösen sie gegen das ARBEITSVERZEICHNIS auf — die
+    Existenzprüfung war damit zufällig, je nachdem, wo der Prozess stand.
+    Gemeint sind sie gegen das App-Home.
+    """
+    from src.core.app_home import resolve_archive_path
+
+    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
+
+    aufgeloest = resolve_archive_path("archive/2024/Wohnen/miete.pdf")
+
+    assert aufgeloest.is_absolute()
+    assert aufgeloest == (
+        tmp_path / "profiles" / "1" / "archive" / "2024" / "Wohnen" / "miete.pdf"
+    )
+
+
+def test_resolve_archive_path_laesst_absolute_pfade_stehen(tmp_path, monkeypatch):
+    from src.core.app_home import resolve_archive_path
+
+    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
+    absolut = tmp_path / "anderswo" / "miete.pdf"
+
+    assert resolve_archive_path(str(absolut)) == absolut
+
+
+def test_resolve_archive_path_leer_bleibt_none(tmp_path, monkeypatch):
+    """Ein leerer Wert darf NIE zum App-Home werden — das Verzeichnis
+    existiert, und exists() meldete dann fälschlich eine vorhandene Datei."""
+    from src.core.app_home import resolve_archive_path
+
+    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
+
+    assert resolve_archive_path("") is None
+    assert resolve_archive_path(None) is None
