@@ -44,6 +44,33 @@ def format_euro(amount):
     return f"{amount:,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def gekuerzt(element, text, zusatz=""):
+    """Kürzt ein Element per CSS und hängt den vollen Text als Tooltip an.
+
+    Für Dateinamen: sie tragen Datum, Aussteller und Betreff und werden
+    dadurch lang. Gekürzt wird bewusst per CSS und nicht im Text — im Markup
+    bleibt der volle Name (Suchen, Kopieren, Vorlesen), und wie viel sichtbar
+    ist, entscheidet die Fensterbreite statt einer geratenen Zeichenzahl.
+
+    `min-w-0` gehört zwingend dazu: ohne das ignoriert ein Flex-Kind seine
+    Kürzung und drückt stattdessen den Container auf — genau der Überlauf,
+    der behoben werden soll.
+
+    Der Tooltip ist der native `title` des Browsers, kein Quasar-Tooltip: er
+    kostet kein zusätzliches Element und erscheint dezent. Das
+    Anführungszeichen muss escaped werden, weil NiceGUI den props-String
+    selbst zerlegt.
+
+    ⚠️ `text` darf None sein — `filename` ist in der Datenbank nullable, und
+    ein fehlender Name hätte sonst die ganze Seite zum Absturz gebracht statt
+    nur die eine Zeile leer zu lassen.
+    """
+    klassen = f"truncate min-w-0 {zusatz}".strip()
+    sicher = str(text or "").replace('"', "&quot;")
+
+    return element.classes(klassen).props(f'title="{sicher}"')
+
+
 def _current_path():
     try:
         return ui.context.client.page.path

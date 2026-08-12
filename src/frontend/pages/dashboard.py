@@ -7,7 +7,7 @@ from src.core.document_types import (
     PENSION,
     TAX,
 )
-from src.frontend.layout import card, page_layout, umzug_noetig
+from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
 from src.frontend.theme import ACCENTS, DARK_ACTIVE, INK_MUTED
 from src.services.profile_port import legacy_bestand_gefunden
 from src.services.profile_service import list_profiles
@@ -115,8 +115,15 @@ def dashboard_page():
                 document_type = row["document_type"]
                 type_label = DOCUMENT_TYPE_LABELS.get(document_type, document_type)
 
-                with ui.row().classes("gap-2 items-center"):
-                    ui.label(type_label).classes("text-sm w-32").style(
+                # Ungekürzt lief der Dateiname über den Rand der Karte
+                # hinaus. `flex-nowrap` hält Typ und Name in einer Zeile,
+                # `shrink-0` schützt das Typ-Label vorm Zusammenquetschen.
+                with ui.row().classes("gap-2 items-center w-full flex-nowrap"):
+                    ui.label(type_label).classes("text-sm w-32 shrink-0").style(
                         f"color: {INK_MUTED}"
                     )
-                    ui.link(filename, f"/dokumente/{document_id}")
+                    gekuerzt(
+                        ui.link(filename, f"/dokumente/{document_id}"),
+                        filename,
+                        "flex-1",
+                    )

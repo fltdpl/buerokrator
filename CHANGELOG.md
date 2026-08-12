@@ -4,6 +4,19 @@
 
 ## Unveröffentlicht
 
+- **Behoben: lange Dateinamen liefen auf dem Dashboard über den Rand.** In
+  „Zuletzt archiviert“ steht der Dateiname, und der trägt Datum, Aussteller
+  und Betreff — bei ausführlichen Betreffs schob er sich aus der Karte
+  heraus. Jetzt endet er mit „…“ am Rand; **der volle Name erscheint, wenn
+  der Mauszeiger darauf steht**. Wie viel sichtbar ist, richtet sich nach der
+  Fensterbreite, nicht nach einer festen Zeichenzahl.
+
+- **Neu: der Dateiname steht jetzt auch in der Detailansicht** — klein und
+  gedämpft neben dem Umschalter PDF ⇄ OCR-Text, also direkt bei dem
+  Dokument, das er benennt. Auch hier zeigt der Mauszeiger den vollen Namen;
+  **ein Klick legt ihn in die Zwischenablage**, praktisch beim Suchen der
+  Datei im Dateimanager.
+
 - **Behoben: Nach einer Wiederherstellung blieb das PDF „nicht gefunden“.**
   Jedes Dokument merkt sich, wo seine Datei liegt. Wurde eine Sicherung an
   einem **anderen Ort** eingespielt — etwa in eine frisch installierte App —,

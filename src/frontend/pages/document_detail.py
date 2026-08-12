@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from nicegui import run, ui
@@ -18,8 +19,8 @@ from src.database.list_documents import (
 from src.frontend.listing_order import adjacent_id, get_listing_order
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
-from src.frontend.layout import card, page_layout, umzug_noetig
-from src.frontend.theme import tag_color
+from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
+from src.frontend.theme import INK_MUTED, tag_color
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
@@ -119,13 +120,40 @@ def _meta_row(document_id, type_label, status_text, *, downloadable, verified, a
         _meta_button("🗑 Löschen", actions["delete"], color="negative")
 
 
-def _source_panel(document_id, document_text):
+def _kopiere_dateinamen(filename):
+    """Legt den Dateinamen in die Zwischenablage.
+
+    Wer die Datei im Dateimanager sucht, will genau diesen String. Der Name
+    wird über json.dumps eingebettet: er stammt aus dem Bestand und darf das
+    umgebende JavaScript nicht zerreißen.
+    """
+    ui.run_javascript(f"navigator.clipboard.writeText({json.dumps(filename)})")
+    ui.notify("Dateiname kopiert", type="positive")
+
+
+def _source_panel(document_id, document_text, filename=""):
     """Rechte Spalte: umschaltbares Panel PDF ⇄ OCR-Text.
 
     Persistent aufgebaut statt refreshable: das Bearbeiten der Formularfelder
     darf die PDF-Ansicht nicht neu laden (Scrollposition!).
+
+    Der Dateiname steht hier und nicht in der Meta-Zeile unter dem Titel: er
+    beschreibt genau das, was daneben angezeigt wird, und die Meta-Zeile
+    trägt bereits Kennzahlen, Blättern und alle Aktionen. Klein und gedämpft
+    — er ist Auskunft, keine Handlung.
     """
-    panel_toggle = ui.toggle(["PDF", "OCR-Text"], value="PDF").props("dense")
+    with ui.row().classes("w-full items-center gap-2 flex-nowrap"):
+        panel_toggle = ui.toggle(["PDF", "OCR-Text"], value="PDF").props("dense")
+
+        if filename:
+            gekuerzt(
+                ui.label(filename)
+                .classes("text-xs text-right cursor-pointer")
+                .style(f"color: {INK_MUTED}")
+                .on("click", lambda: _kopiere_dateinamen(filename)),
+                filename,
+                "flex-1",
+            )
 
     pdf_frame = (
         ui.element("iframe")
@@ -791,4 +819,8 @@ def document_detail_page(document_id: int):
 
             # Rechts: Quelle des Dokuments (PDF oder OCR-Text).
             with card("w-1/2 gap-2"):
-                _source_panel(document_id, document["document_text"])
+                _source_panel(
+                    document_id,
+                    document["document_text"],
+                    filename=document["filename"],
+                )
