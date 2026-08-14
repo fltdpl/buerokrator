@@ -313,10 +313,17 @@ def _render_type_selects(state, on_type_change, on_subtype_change):
 
 
 @ui.page("/dokumente/{document_id}")
-def document_detail_page(document_id: int):
+def document_detail_page(document_id: int, gespeichert: bool = False):
+    """`gespeichert=1` setzt der Speichern-Knopf beim Neuladen (siehe save)."""
     # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
     if umzug_noetig():
         return
+
+    if gespeichert:
+        # Direkt im Seitenaufbau genügt: NiceGUI hält die Meldung zurück, bis
+        # der Browser verbunden ist. Am echten Browser nachgemessen (ein
+        # ui.timer davor war überflüssig).
+        ui.notify("Gespeichert", type="positive")
 
     row = get_document(document_id)
 
@@ -398,8 +405,12 @@ def document_detail_page(document_id: int):
             goto_next_or_list()
 
         else:
-            # Neu laden: Umbenennung/Whitelist sollen sichtbar werden.
-            ui.navigate.to(f"/dokumente/{document_id}")
+            # Neu laden: Umbenennung/Whitelist sollen sichtbar werden. Der
+            # Parameter trägt die Bestätigung über den Seitenwechsel —
+            # ui.notify hier würde mit der alten Seite verschwinden, und
+            # seit „Speichern" nicht mehr freigibt (06.08.2026) ändert sich
+            # sonst nichts Sichtbares.
+            ui.navigate.to(f"/dokumente/{document_id}?gespeichert=1")
 
     def unverify():
         set_document_verified(document_id, 0)

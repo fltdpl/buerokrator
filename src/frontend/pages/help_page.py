@@ -24,7 +24,25 @@ _WORKFLOW = """
    Beleg-Herleitung und CSV-Export) und „Einkommen" mit dem
    Jahresverlauf.
 4. **Sichern** — Unter *Einstellungen → Backup* schreibst du auf Knopfdruck
-   Datenbank und Archiv als ZIP-Datei an den konfigurierten Ort.
+   Datenbank und Archiv als ZIP-Datei an den konfigurierten Ort. Dort liegt
+   auch die **Wiederherstellung**: sie spielt eine Sicherung zurück und legt
+   den bisherigen Stand daneben ab, statt ihn zu löschen.
+"""
+
+_ARCHIVPFADE = """
+### Wenn ein PDF „nicht gefunden" ist
+
+Jedes Dokument merkt sich, wo seine Datei liegt. Spielst du eine Sicherung an
+einem **anderen Ort** ein — etwa in eine neu installierte App —, liegen die
+Dateien zwar richtig im Archiv, aber die gemerkten Orte zeigen noch dorthin,
+wo der Bestand zur Sicherungszeit lag. In der Detailansicht stimmen dann alle
+Werte, nur die Vorschau meldet „PDF-Datei nicht gefunden".
+
+Unter *Einstellungen → Datenbank → Archivpfade* steht, wie viele Dokumente
+betroffen sind; ein Knopf bindet sie neu an. Vorher entsteht eine Sicherung
+der Datenbank, und geändert wird nur, wo die Datei tatsächlich gefunden
+wurde — geraten wird nie. Findet sich eine Datei nirgends, bleibt der Eintrag
+unangetastet und wird gemeldet.
 """
 
 _TAGS = """
@@ -96,6 +114,7 @@ def help_page():
                 _PROFILE,
                 _SHORTCUTS,
                 _TRASH,
+                _ARCHIVPFADE,
                 _REQUIREMENTS,
             ):
                 ui.markdown(block)

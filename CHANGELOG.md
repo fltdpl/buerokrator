@@ -4,6 +4,22 @@
 
 ## Unveröffentlicht
 
+- **Behoben: „💾 Speichern" gab keine Rückmeldung mehr.** Seit dem Fix, der
+  das stille Freigeben beim Speichern abgeschafft hat, änderte sich beim
+  reinen Speichern nichts Sichtbares — die Seite lud neu und sah aus wie
+  vorher. Jetzt bestätigt eine kurze Meldung **„Gespeichert"**. Beim
+  Freigeben bleibt es beim bisherigen Verhalten: dort ist der Wechsel auf
+  🟢 geprüft und das Weiterblättern die Rückmeldung.
+
+- **Behoben: Dokumente ohne Dateinamen waren auf dem Dashboard nicht
+  anklickbar.** In „Zuletzt archiviert" blieb die Zeile leer, weil der Name
+  fehlte. Jetzt steht dort ersatzweise die Dokumentnummer, und der Eintrag
+  führt wieder zum Dokument.
+
+- **Die Anleitung erklärt jetzt die Wiederherstellung** und was zu tun ist,
+  wenn ein PDF „nicht gefunden" gemeldet wird (*Einstellungen → Datenbank →
+  Archivpfade*).
+
 - **Behoben: lange Dateinamen liefen auf dem Dashboard über den Rand.** In
   „Zuletzt archiviert“ steht der Dateiname, und der trägt Datum, Aussteller
   und Betreff — bei ausführlichen Betreffs schob er sich aus der Karte

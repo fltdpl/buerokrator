@@ -514,3 +514,16 @@ async def test_suche_zeigt_die_fundstelle_im_volltext(user: User, monkeypatch):
 
     assert any(spalte["name"] == "text_snippet" for spalte in table.columns)
     assert "<mark>Heizungsanlage</mark>" in table.rows[0]["text_snippet"]
+
+
+@pytest.mark.asyncio
+async def test_anleitung_bindet_alle_abschnitte_ein(user: User):
+    """Ein Textblock kann definiert und trotzdem nicht gelistet sein.
+
+    Die Abschnitte werden in `help_page` einzeln aufgezählt; wer einen neuen
+    schreibt und das Aufzählen vergisst, merkt nichts. Geprüft wird deshalb
+    je ein Stichwort aus dem ersten und dem letzten Abschnitt.
+    """
+    await user.open("/anleitung")
+    await user.should_see("So arbeitest du damit")
+    await user.should_see("Archivpfade")

@@ -118,12 +118,16 @@ def dashboard_page():
                 # Ungekürzt lief der Dateiname über den Rand der Karte
                 # hinaus. `flex-nowrap` hält Typ und Name in einer Zeile,
                 # `shrink-0` schützt das Typ-Label vorm Zusammenquetschen.
+                # `filename` ist nullable. Ohne Ersatztext bliebe der Link
+                # leer und damit unklickbar — die Zeile führte nirgendwohin.
+                beschriftung = filename or f"#{document_id} (ohne Dateinamen)"
+
                 with ui.row().classes("gap-2 items-center w-full flex-nowrap"):
                     ui.label(type_label).classes("text-sm w-32 shrink-0").style(
                         f"color: {INK_MUTED}"
                     )
                     gekuerzt(
-                        ui.link(filename, f"/dokumente/{document_id}"),
-                        filename,
+                        ui.link(beschriftung, f"/dokumente/{document_id}"),
+                        beschriftung,
                         "flex-1",
                     )
