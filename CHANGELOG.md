@@ -4,6 +4,8 @@
 
 ## Unveröffentlicht
 
+## v0.3.1 — 14.08.2026
+
 - **Behoben: „💾 Speichern" gab keine Rückmeldung mehr.** Seit dem Fix, der
   das stille Freigeben beim Speichern abgeschafft hat, änderte sich beim
   reinen Speichern nichts Sichtbares — die Seite lud neu und sah aus wie

@@ -1,6 +1,6 @@
 # Buerokrator
 
-Version 0.3.0 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
+Version 0.3.1 — öffentliche Vorabversion ([Änderungen](CHANGELOG.md)).
 
 Buerokrator automatisiert die private Dokumentenablage und unterstützt bei der
 Vorbereitung der jährlichen Steuererklärung — **vollständig lokal, ohne Cloud**.
@@ -92,8 +92,8 @@ selbst baubar, siehe *Entwicklung*) — installiert ohne root für den
 aktuellen Benutzer und legt einen Menüeintrag an:
 
 ```bash
-tar xzf buerokrator-0.3.0-linux-x86_64.tar.gz
-cd buerokrator-0.3.0-linux-x86_64
+tar xzf buerokrator-0.3.1-linux-x86_64.tar.gz
+cd buerokrator-0.3.1-linux-x86_64
 ./install.sh
 ```
 
