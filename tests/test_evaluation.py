@@ -61,7 +61,7 @@ class TestValuesMatch:
 
     def test_issuer_containment_counts_as_match(self):
         assert values_match("Musterbau Bausparkasse", "Musterbau Bausparkasse AG")
-        assert values_match("Deutsche Wohnen Management GmbH", "Deutsche Wohnen")
+        assert values_match("Dts Leben Muster GmbH", "Dts Leben")
         # Kurze Fragmente dürfen nicht per Teilstring matchen
         assert not values_match("AG", "Musterbau Bausparkasse AG")
         assert not values_match("Bausparvertrag", "Steuerbescheinigung")

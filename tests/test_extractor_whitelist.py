@@ -6,7 +6,7 @@ def test_extract_invoice_strips_unknown_fields(monkeypatch):
         return {
             "issuer": "Musterstrom Energie AG",
             "document_date": "05.05.2026",
-            "invoice_number": "180 163 391 572",
+            "invoice_number": "100 200 300 400",
             "amount": 167.0,
             "currency": "EUR",
             "account_number": "KONTO-XXXX-0001",
