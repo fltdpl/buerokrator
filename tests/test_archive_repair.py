@@ -62,11 +62,21 @@ def test_bindet_absoluten_pfad_vom_alten_ort_neu(tmp_path):
 
     assert bericht["repariert"] == 1
     assert bericht["ungeloest"] == 0
-    assert _pfade(db) == [str(archiv / "2024" / "Wohnen" / "miete.pdf")]
+    # Geschrieben wird die SPEICHERFORM (relativ zur Basis, Schema v7). Ein
+    # absolut zurückgeschriebener Pfad nähme dem Bestand genau die
+    # Eigenschaft, die ihn den nächsten Ortswechsel überleben lässt.
+    assert _pfade(db) == [
+        str((archiv / "2024" / "Wohnen" / "miete.pdf").relative_to(tmp_path))
+    ]
 
 
-def test_macht_relativen_pfad_absolut(tmp_path):
-    """Ältere Importe hinterließen relative Pfade — sie lösen gegen die cwd auf."""
+def test_relativer_pfad_gilt_als_heil(tmp_path):
+    """Seit Schema v7 IST relativ die Speicherform — nichts zu reparieren.
+
+    Früher machte die Reparatur solche Werte absolut, weil sie sonst gegen
+    das Arbeitsverzeichnis auflösten. Heute lösen alle Leser sie gegen das
+    App-Home auf; die Zeile ist heil und darf nicht angefasst werden.
+    """
     archiv = tmp_path / "archive"
     _lege_ab(archiv, "2025", "Rechnungen", "strom.pdf")
 
@@ -76,8 +86,9 @@ def test_macht_relativen_pfad_absolut(tmp_path):
 
     bericht = repariere_archivpfade(db, archiv, basis=tmp_path)
 
-    assert bericht["repariert"] == 1
-    assert _pfade(db) == [str(archiv / "2025" / "Rechnungen" / "strom.pdf")]
+    assert bericht["in_ordnung"] == 1
+    assert bericht["repariert"] == 0
+    assert _pfade(db) == ["archive/2025/Rechnungen/strom.pdf"]
 
 
 def test_laesst_heile_pfade_unberuehrt(tmp_path):

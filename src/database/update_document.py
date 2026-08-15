@@ -1,5 +1,6 @@
 import json
 
+from src.core.app_home import store_archive_path
 from src.database.database import open_connection
 from src.organizer.date_utils import extract_year
 
@@ -42,7 +43,10 @@ def update_document(
             """,
             (
                 filename,
-                archive_path,
+                # Relativ zum App-Home (siehe app_home.store_archive_path) —
+                # die Relativierung sitzt an der Datenbankgrenze, damit kein
+                # Aufrufer sie vergessen kann.
+                store_archive_path(archive_path),
                 document_type,
                 json.dumps(
                     extracted_data,

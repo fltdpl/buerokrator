@@ -4,9 +4,11 @@
 
 - id — eindeutige ID, in der GUI als Route `/dokumente/<id>` und für das PDF-Serving (`/pdf/<id>`) genutzt
 - filename
-- archive_path — **absolut**; relative Werte aus älteren Beständen hat
-  `tools/port_to_profiles` umgeschrieben (sie lösten gegen das
-  Arbeitsverzeichnis auf und waren damit vom Startort abhängig)
+- archive_path — **relativ zum App-Home** (`archive/<jahr>/<kategorie>/…`,
+  Schemastand 7, [ADR 017](decisions/017_archivpfad_relativ.md)); nur ein
+  Archiv außerhalb des App-Home steht absolut. Geschrieben über
+  `app_home.store_archive_path`, gelesen über `resolve_archive_path` —
+  **nie roh**, sonst löst der Wert gegen das Arbeitsverzeichnis auf
 - document_type
 - extracted_data — JSON, Felder je Typ/Subtyp (siehe unten)
 - created_at
@@ -90,7 +92,7 @@ der bm25-Gewichte; eine Einfügung in der Mitte verschöbe beides still.
 
 Automatisch beim ersten Zugriff (`database.get_connection` →
 `init_database`, ALTER TABLE für fehlende Spalten) und versioniert:
-`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 6).
+`SCHEMA_VERSION` in `init_database.py` (`PRAGMA user_version`, aktuell 7).
 Bestands-DBs mit älterem Stand bekommen vor der Migration automatisch ein
 Backup neben der DB; bei jeder Schemaänderung SCHEMA_VERSION erhöhen.
 

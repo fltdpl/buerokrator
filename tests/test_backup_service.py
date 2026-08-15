@@ -1,5 +1,6 @@
 import sqlite3
 import zipfile
+from pathlib import Path
 
 from src.services.backup_service import create_backup
 
@@ -290,7 +291,10 @@ def test_restore_bindet_archivpfade_an_das_neue_archiv(tmp_path):
     pfade = [row[0] for row in conn.execute("SELECT archive_path FROM documents")]
     conn.close()
 
-    assert pfade == [str(archiv / "2024" / "Wohnen" / "miete.pdf")]
+    # Speicherform seit Schema v7: relativ zur Basis (dem Elternverzeichnis
+    # des Archivs) — so übersteht der wiederhergestellte Bestand auch den
+    # nächsten Ortswechsel, ohne erneut gebunden werden zu müssen.
+    assert pfade == [str(Path("archive") / "2024" / "Wohnen" / "miete.pdf")]
 
 
 def test_restore_legt_keine_zweite_sicherung_an(tmp_path):

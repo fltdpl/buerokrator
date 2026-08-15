@@ -180,6 +180,13 @@ def _rewrite_archive_paths(
     weil der Prozess zufällig im alten Basisverzeichnis lief. Hier werden sie
     erst gegen die alte Basis absolut gemacht und dann wie alle anderen
     umgesetzt; danach ist **kein** Pfad mehr relativ.
+
+    Das bleibt so, obwohl der Bestand seit Schema v7 relativ gespeichert
+    wird: der Umzug arbeitet an einer 0.2.x-Datenbank (Schemastand 3, noch
+    ohne Profile), deren Pfade durchweg absolut sind, und die Gegenprobe
+    unten braucht sie eindeutig. In die Speicherform bringt sie der nächste
+    Start — `init_database.relativize_archive_paths` läuft vor dem ersten
+    Lesezugriff.
     """
     altes_praefix = f"{alt}/"
     neues_praefix = f"{neu}/"

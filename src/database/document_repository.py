@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from src.core.app_home import resolve_archive_path, store_archive_path
 from src.core.amount_utils import enforce_amount_signs
 from src.core.document_fields import whitelist_fields
 from src.database.database import open_connection
@@ -45,7 +46,9 @@ def insert_document(
             """,
             (
                 filename,
-                archive_path,
+                # Relativ zum App-Home, damit der Bestand einen Ortswechsel
+                # überlebt (siehe app_home.store_archive_path).
+                store_archive_path(archive_path),
                 document_type,
                 json.dumps(
                     extracted_data,
@@ -84,8 +87,13 @@ def save_document(
         whitelist_fields(document_type, extracted_data)
     )
 
+    # Auflösen, bevor umbenannt wird: seit der Bestand relativ gespeichert
+    # wird, kann hier auch ein relativer Wert ankommen (eine rohe DB-Zeile
+    # statt der aufgelösten aus parse_document_row). rename_document prüft
+    # per exists() und gäbe einen relativen Pfad sonst unverändert zurück —
+    # die Umbenennung fiele still aus.
     new_path = rename_document(
-        archive_path,
+        resolve_archive_path(archive_path) or archive_path,
         document_type,
         extracted_data,
     )

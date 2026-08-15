@@ -5,7 +5,11 @@ from io import StringIO
 from src.database.export_csv import export_documents_csv
 
 
-def test_export_documents_csv_uses_named_columns():
+def test_export_documents_csv_uses_named_columns(tmp_path, monkeypatch):
+    # Eigenes App-Home: der Export löst den (seit Schema v7 relativen)
+    # Archivpfad auf, und das darf nicht am echten Bestand hängen.
+    monkeypatch.setenv("BUEROKRATOR_HOME", str(tmp_path))
+
     rows = [
         {
             "id": 7,
@@ -42,9 +46,16 @@ def test_export_documents_csv_uses_named_columns():
         "invoice_number",
         "policy_number",
     ]
+    # Aufgelöst, nicht roh: in einer Tabelle, die der Nutzer außerhalb der
+    # App öffnet, ist nur der vollständige Pfad zu gebrauchen.
     assert parsed_rows[1] == [
         "2026-03-11_Musterversand_RE-123_42EUR.pdf",
-        "archive/2026/Rechnungen/2026-03-11_Musterversand_RE-123_42EUR.pdf",
+        str(
+            tmp_path
+            / "profiles"
+            / "1"
+            / "archive/2026/Rechnungen/2026-03-11_Musterversand_RE-123_42EUR.pdf"
+        ),
         "invoice",
         "11.03.2026",
         "Musterversand",

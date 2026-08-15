@@ -85,7 +85,13 @@ def _tags_text(document_id):
 
 
 def test_schemaversion_wurde_erhoeht():
-    assert SCHEMA_VERSION == 6
+    """Die Tag-Erweiterung brauchte v6 — spätere Stände sind erlaubt.
+
+    Ein exakter Wert stand hier zuerst; er hielt aber nicht den Zweck fest
+    (dass die FTS-Erweiterung den Stand hebt), sondern nur den Tagesstand und
+    fiel bei der nächsten, völlig unbeteiligten Migration.
+    """
+    assert SCHEMA_VERSION >= 6
 
 
 def test_tags_text_haengt_hinten_an_der_spaltenliste():

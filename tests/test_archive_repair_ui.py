@@ -123,9 +123,9 @@ async def test_reparatur_bindet_die_datei_neu(user: User, instanz_mit_verirrtem_
     user.find(marker="archivpfade-reparieren").click()
     await user.should_see("repariert")
 
-    erwartet = instanz_mit_verirrtem_pfad["archiv"] / "2024/Rechnungen/rechnung.pdf"
-
-    assert _pfad(instanz_mit_verirrtem_pfad["db"]) == str(erwartet)
+    # Speicherform seit Schema v7: relativ zum App-Home, damit der Bestand
+    # den nächsten Ortswechsel ohne Reparatur übersteht.
+    assert _pfad(instanz_mit_verirrtem_pfad["db"]) == "archive/2024/Rechnungen/rechnung.pdf"
 
 
 async def test_pdf_route_findet_datei_hinter_relativem_pfad(

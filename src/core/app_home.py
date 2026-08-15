@@ -171,3 +171,34 @@ def resolve_archive_path(value) -> "Path | None":
         return None
 
     return resolve_path(value)
+
+
+def store_archive_path(value) -> str:
+    """Speicherform für `archive_path` — das Gegenstück zu resolve_archive_path.
+
+    Innerhalb des App-Home wird **relativ** gespeichert, alles andere bleibt
+    absolut. Damit wandert der Bezugspunkt mit dem Bestand: eine Sicherung,
+    an einem anderen Ort eingespielt, findet ihre Dateien ohne Reparatur —
+    genau der Fall, an dem 0.3.1 gescheitert ist.
+
+    Bezugspunkt ist das App-Home, nicht der Archiv-Root: `resolve_path` löst
+    schon so auf (alle Leser bleiben unverändert), und `config.save_config`
+    relativiert die Pfadwerte der Einstellungen nach derselben Regel.
+
+    Ein bewusst AUSSERHALB gewähltes Archiv bleibt absolut. Relativ
+    gespeichert zeigte es nach dem nächsten Ortswechsel an eine Stelle, an
+    der nie eine Datei lag.
+    """
+    if not value:
+        return ""
+
+    path = Path(value)
+
+    if not path.is_absolute():
+        return str(path)
+
+    try:
+        return str(path.relative_to(get_app_home()))
+
+    except ValueError:
+        return str(path)

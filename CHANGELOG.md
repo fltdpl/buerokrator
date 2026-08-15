@@ -4,6 +4,17 @@
 
 ## Unveröffentlicht
 
+- **Behoben: ein Ortswechsel des Bestands machte alle PDFs unauffindbar.**
+  Wurde eine Sicherung woanders eingespielt oder der Datenordner verschoben,
+  lagen die Dateien zwar richtig, aber jedes Dokument meldete „PDF-Datei
+  nicht gefunden" — weil in der Datenbank der vollständige Pfad von früher
+  stand. Er wird jetzt **ohne den festen Teil davor** gespeichert und beim
+  Öffnen frisch zusammengesetzt; damit zieht der Bestand mit, wohin er auch
+  kommt. **Bestehende Dokumente ziehen beim nächsten Start automatisch
+  nach** (die Datenbank wird davor wie üblich gesichert), es ist nichts zu
+  tun. Die Fläche *Einstellungen → Datenbank → Archivpfade* bleibt für den
+  Fall, dass Dateien wirklich anders liegen als in der Sicherung.
+
 ## v0.3.1 — 14.08.2026
 
 - **Behoben: „💾 Speichern" gab keine Rückmeldung mehr.** Seit dem Fix, der

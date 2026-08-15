@@ -3,6 +3,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from src.core.app_home import get_app_home
 from src.core.config import load_config
 from src.core.logger import logger
 from src.database.database import open_connection
@@ -10,7 +11,7 @@ from src.database.database import open_connection
 # Schemastand der DB (PRAGMA user_version). Bei jeder Schemaänderung um 1
 # erhöhen — Bestands-DBs (auch Version 0 = vor Einführung der Versionierung)
 # bekommen dann vor der Migration automatisch ein Backup neben der DB-Datei.
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 
 DOCUMENT_COLUMNS = {
@@ -148,6 +149,35 @@ def backfill_tags_text(cursor):
         )
         WHERE tags_text IS NULL
         """
+    )
+
+
+def relativize_archive_paths(cursor):
+    """Speichert `archive_path` relativ zum App-Home (Schema v7).
+
+    Bis v6 stand der Pfad absolut in der Datenbank. Damit war jeder
+    Ortswechsel des Bestands ein stiller Totalausfall: die Werte sahen
+    richtig aus, nur die Datei war "nicht gefunden" (der Fehlerfall von
+    0.3.1). Relativ gespeichert wandert der Bezugspunkt mit.
+
+    Läuft bei JEDEM Start, nicht nur beim Versionssprung — die Anweisung ist
+    idempotent (danach beginnt kein Wert mehr mit dem Präfix) und heilt
+    damit auch Zeilen, die eine ältere Fassung der Reparatur wieder absolut
+    geschrieben hat. Pfade außerhalb des App-Home bleiben unberührt: sie
+    sind ein bewusst gewählter Ort und keine Speicherform.
+
+    Bewusst als reines SQL statt einer Schleife über den Bestand — eine
+    Tabellenprüfung je Start, kein Zeilenverkehr nach Python.
+    """
+    prefix = f"{get_app_home()}{os.sep}"
+
+    cursor.execute(
+        """
+        UPDATE documents
+        SET archive_path = substr(archive_path, ?)
+        WHERE substr(archive_path, 1, ?) = ?
+        """,
+        (len(prefix) + 1, len(prefix), prefix),
     )
 
 
@@ -397,6 +427,7 @@ def init_database():
         )
 
         migrate_documents_table(cursor)
+        relativize_archive_paths(cursor)
         create_indexes(cursor)
         create_tag_tables(cursor)
         # Vor create_fts: der Index liest tags_text aus `documents`, die

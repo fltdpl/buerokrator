@@ -98,13 +98,21 @@ mitsichern, gelegentlich manuell leeren.
 
 ### Wiederherstellung an einem anderen Ort
 
-`archive_path` steht **absolut** in der Datenbank. Wird eine Sicherung
-anderswo eingespielt (frische Installation, zweiter Rechner), liegen die
-Dateien richtig, aber jede Zeile zeigt auf den Ort von der Sicherungszeit —
-still, mit „PDF-Datei nicht gefunden“ in der Detailansicht, während alle
-übrigen Werte stimmen. `restore_backup` bindet die Dateien deshalb nach dem
-Auspacken selbst neu an (`services/archive_repair.py`, über die letzten drei
-Pfadsegmente `<jahr>/<kategorie>/<datei>`).
+Seit Schemastand 7 steht `archive_path` **relativ zum App-Home**
+([ADR 017](decisions/017_archivpfad_relativ.md)) — ein Ortswechsel des
+ganzen Bestands trägt sich damit von selbst, und der Fall unten entsteht
+gar nicht erst. Bestände älterer Stände stellt der erste Start um (Backup
+neben der Datenbank inklusive).
+
+Zuvor stand der Pfad absolut, und eine anderswo eingespielte Sicherung war
+still unbrauchbar: die Dateien lagen richtig, aber jede Zeile zeigte auf den
+Ort von der Sicherungszeit — „PDF-Datei nicht gefunden“ in der
+Detailansicht, während alle übrigen Werte stimmten. `restore_backup` bindet
+die Dateien deshalb nach dem Auspacken selbst neu an
+(`services/archive_repair.py`, über die letzten drei Pfadsegmente
+`<jahr>/<kategorie>/<datei>`). Das bleibt nötig für alles, was der
+Bezugspunkt nicht heilt — eine Sicherung, deren Dateien anders liegen als
+zur Sicherungszeit.
 
 Für Bestände, die den Fehler schon tragen: **Einstellungen → Datenbank →
 Archivpfade**, oder `python -m tools.repair_archive_paths` (ohne Argument

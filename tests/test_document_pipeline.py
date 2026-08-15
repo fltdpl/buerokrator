@@ -2,7 +2,7 @@ import importlib
 import json
 from pathlib import Path
 
-from src.core.app_home import get_app_home
+from src.core.app_home import get_app_home, resolve_archive_path
 from src.core.document_types import ARCHIVE_CATEGORY_LABELS
 
 
@@ -118,8 +118,17 @@ def test_process_archives_invoice_and_stores_document_metadata(
 
     row = documents[0]
     assert row["filename"] == "2026-03-11_Musterversand_RE-123_42EUR.pdf"
-    # Archivpfad ist jetzt App-Home-verankert (absolut), nicht cwd-relativ.
+    # Archivpfad steht seit Schema v7 RELATIV zum App-Home in der Datenbank —
+    # nur so übersteht der Bestand einen Ortswechsel (Wiederherstellung an
+    # anderem Ort, Umzug, künftig Windows).
     assert row["archive_path"] == str(
+        Path("archive")
+        / "2026"
+        / "Rechnungen"
+        / "2026-03-11_Musterversand_RE-123_42EUR.pdf"
+    )
+    # ... und zeigt aufgelöst auf die wirklich abgelegte Datei.
+    assert resolve_archive_path(row["archive_path"]) == (
         get_app_home()
         / "archive"
         / "2026"
@@ -131,7 +140,7 @@ def test_process_archives_invoice_and_stores_document_metadata(
     assert row["verified"] == 0
     assert row["document_text"] == document_text
 
-    archived_file = Path(row["archive_path"])
+    archived_file = resolve_archive_path(row["archive_path"])
     assert archived_file.exists()
     assert archived_file.read_bytes() == original_pdf_bytes
 

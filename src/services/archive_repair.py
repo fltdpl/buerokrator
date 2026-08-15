@@ -1,11 +1,15 @@
 """Archivpfade wieder an das aktuelle Archiv binden.
 
-`archive_path` steht absolut in der Datenbank. Solange Bestand und
-Installation an ihrem Platz bleiben, trägt das — sobald der Bestand aber
-den Ort wechselt, zeigt jede Zeile ins Leere: die Detailansicht meldet
+Seit Schema v7 steht `archive_path` relativ zum App-Home und übersteht einen
+Ortswechsel von selbst. Diese Fläche bleibt trotzdem nötig: für Bestände aus
+älteren Fassungen, die noch absolute Pfade tragen, und für alles, was der
+Umzug nicht heilt — eine Sicherung, deren Dateien anders liegen als zur
+Sicherungszeit. Zeigt eine Zeile ins Leere, meldet die Detailansicht
 "PDF-Datei nicht gefunden", während alle übrigen Werte richtig aussehen.
-Genau das passiert beim Wiederherstellen einer Sicherung an einem anderen
-Ort (frische Installation, zweiter Rechner, künftig Windows).
+
+**Repariert wird in die Speicherform**, also relativ (siehe `_speicherform`).
+Ein absolut zurückgeschriebener Pfad nähme dem Bestand genau die
+Eigenschaft, die ihn den nächsten Ortswechsel überleben lässt.
 
 Die Bindung läuft über die **Struktur unterhalb des Archivs**, nicht über
 den alten Präfix: `archive_document` legt jede Datei als
@@ -51,27 +55,56 @@ def _kandidat(pfad, archiv):
     return archiv.joinpath(*teile)
 
 
+def _aufgeloest(pfad, basis):
+    """Der gespeicherte Wert als absoluter Pfad — relativ gilt gegen die Basis.
+
+    Dieselbe Auflösung wie `app_home.resolve_archive_path`, nur gegen die
+    übergebene Basis statt gegen das globale App-Home.
+    """
+    gespeichert = Path(pfad)
+
+    if gespeichert.is_absolute():
+        return gespeichert
+
+    return basis / gespeichert
+
+
 def _neuer_pfad(pfad, archiv, basis):
     """Der Pfad, unter dem die Datei tatsächlich liegt — None, wenn nirgends.
 
     Zuerst das aktuelle Archiv: es ist die verlässliche Bindung. Erst danach
-    der gespeicherte Wert, gegen die Basis aufgelöst — das rettet die alten
-    relativen Einträge, die gegen das Arbeitsverzeichnis aufliefen.
+    der gespeicherte Wert, gegen die Basis aufgelöst.
     """
     kandidat = _kandidat(pfad, archiv)
 
     if kandidat is not None and kandidat.exists():
         return kandidat
 
-    gespeichert = Path(pfad)
-
-    if not gespeichert.is_absolute():
-        gespeichert = basis / gespeichert
+    gespeichert = _aufgeloest(pfad, basis)
 
     if gespeichert.exists():
         return gespeichert
 
     return None
+
+
+def _speicherform(pfad, basis):
+    """Wie der Pfad in der Spalte stehen soll: relativ zur Basis, sonst absolut.
+
+    Dieselbe Regel wie `app_home.store_archive_path`, aber gegen die
+    ÜBERGEBENE Basis — dieses Modul arbeitet bewusst an einer beliebigen
+    Datenbankdatei (Trockenlauf, Wiederherstellung, fremdes Profil) und darf
+    nicht am globalen App-Home hängen.
+
+    Ohne das schriebe jede Reparatur die Pfade wieder absolut und nähme dem
+    Bestand genau die Eigenschaft, die ihn den nächsten Ortswechsel
+    überleben lässt.
+    """
+    try:
+        return str(Path(pfad).relative_to(basis))
+
+    except ValueError:
+        return str(pfad)
 
 
 def _lies_pfade(db_path):
@@ -120,11 +153,17 @@ def _plane(db_path, archiv, basis):
             bericht["ungeloeste_ids"].append(document_id)
             continue
 
-        if str(neu) == pfad:
+        # Zeigt der gespeicherte Wert schon auf genau diese Datei, ist die
+        # Zeile heil — gleich ob absolut oder relativ notiert. Nur die
+        # SCHREIBFORM zu vergleichen wäre falsch: ein Bestand aus einer
+        # älteren Fassung (durchweg absolute Pfade) fiele dann komplett als
+        # "repariert" an, obwohl keine einzige Datei verloren ist. Die
+        # Umstellung auf die Speicherform erledigt die Migration beim Start.
+        if _aufgeloest(pfad, basis) == neu:
             bericht["in_ordnung"] += 1
             continue
 
-        aenderungen[document_id] = str(neu)
+        aenderungen[document_id] = _speicherform(neu, basis)
 
     # Kollisionen fliegen komplett raus: welche der beiden Zeilen die Datei
     # meint, ist von hier aus nicht entscheidbar.

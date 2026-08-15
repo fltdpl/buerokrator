@@ -2,6 +2,8 @@ import csv
 import json
 from io import StringIO
 
+from src.core.app_home import resolve_archive_path
+
 
 def export_documents_csv(rows):
     output = StringIO()
@@ -22,7 +24,11 @@ def export_documents_csv(rows):
 
     for row in rows:
         filename = row["filename"]
-        archive_path = row["archive_path"]
+        # Aufgelöst, nicht roh: in der Datenbank steht der Pfad seit Schema v7
+        # relativ. In einer Tabelle, die der Nutzer außerhalb der App öffnet,
+        # ist nur der vollständige Pfad zu gebrauchen.
+        aufgeloest = resolve_archive_path(row["archive_path"])
+        archive_path = str(aufgeloest) if aufgeloest else ""
         document_type = row["document_type"]
 
         try:
