@@ -123,6 +123,7 @@ python -m tools.tax_check <jahr>          # Steuerwerte gegen die eigene Erklär
 python -m tools.evaluate --limit 40       # Qualitätsmessung (braucht Ollama)
 python -m tools.port_to_profiles          # einmalig: Altbestand in die Profilstruktur
 python -m tools.repair_archive_paths      # Archivpfade prüfen (--schreiben repariert)
+python -m tools.scan_tarball --db <db>    # Release-Paket auf Echtdaten prüfen
 bash packaging/build_linux.sh       # Release-Tarball nach dist/
 ```
 

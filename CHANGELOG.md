@@ -4,6 +4,10 @@
 
 ## Unveröffentlicht
 
+- Intern: `tools/scan_tarball.py` prüft ein fertiges Release-Paket gegen die
+  Feldwerte des eigenen Bestands, bevor es hochgeladen wird (Schritt 5 des
+  Release-Ablaufs).
+
 - **Behoben: ein Ortswechsel des Bestands machte alle PDFs unauffindbar.**
   Wurde eine Sicherung woanders eingespielt oder der Datenordner verschoben,
   lagen die Dateien zwar richtig, aber jedes Dokument meldete „PDF-Datei

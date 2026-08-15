@@ -74,7 +74,20 @@ eine Ebene höher liegt.
 4. E2E-Smoke: Tarball in ein frisches `HOME` entpacken, `install.sh`,
    starten, HTTP-Antwort prüfen, mit `uninstall.sh` wieder aufräumen.
 5. Tarball vor dem Upload auf Echtdaten prüfen — Release-Pakete bündeln
-   `src/classifier/prompts/*` mit: `tar xzOf <t>.tar.gz | grep -a <marker>`.
+   `src/classifier/prompts/*` mit, ein Echtname dort landet in **jedem**
+   veröffentlichten Binary (so geschehen in 0.1.0 und 0.2.0):
+   ```bash
+   python -m tools.scan_tarball --db <installierte-db>
+   ```
+   Vergleicht die Feldwerte des Bestands gegen **jede** Datei im Paket
+   (roh über die Bytes, auch in `base_library.zip`), meldet **nur
+   maskiert** und liefert Exitcode 1, sobald etwas gefunden wurde.
+   `--db` auf die **installierte** Datenbank zeigen lassen — im Repo greift
+   sonst der Entwickler-Modus mit seinem kleineren Bestand. Jeder Treffer
+   wird von Hand eingeordnet: ein Wert in vielen Dokumenten ist meist
+   Erkennungsvokabular im Prompt, einer in wenigen eher privat. Eine
+   Ausnahmeliste gibt es bewusst nicht — sie müsste die Echtwerte
+   enthalten.
 6. GitHub-Release anlegen, CHANGELOG-Abschnitt als Notes:
    `gh release create vX.Y.Z --verify-tag --notes "…" <tarball>`.
 
