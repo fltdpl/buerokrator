@@ -77,6 +77,25 @@ TAG_COLORS = (
 )
 
 
+# Sinnbild je Dokumenttyp (Material Icons, lokal gebündelt). Bewusst OHNE
+# eigene Farbe je Kategorie: die Palette hat fünf Akzente, elf bunte Icons
+# würden Konfetti — dieselbe Begründung wie beim Tag-Punkt oben. Das Icon
+# trägt die Wiedererkennung, die Zahl die Aussage.
+DOCUMENT_TYPE_ICONS = {
+    "invoice": "receipt_long",
+    "tax": "account_balance",
+    "insurance": "shield",
+    "pension": "savings",
+    "bank": "account_balance_wallet",
+    "housing": "home",
+    "employment": "work",
+    "legal": "gavel",
+    "education": "school",
+    "health": "medical_services",
+    "unknown": "help_outline",
+}
+
+
 def tag_color(color_index):
     """Farbe zur gespeicherten laufenden Nummer.
 
@@ -136,6 +155,15 @@ body, .nicegui-content {{
     border: 1px solid {BORDER};
     border-radius: 8px;
     box-shadow: 0 1px 15px 1px rgba(18, 58, 71, 0.06);
+}}
+
+/* Karte, die irgendwohin führt (Dashboard-Kacheln). `cursor-pointer` allein
+   sieht man erst, wenn der Zeiger schon darauf steht — die Kachel soll aber
+   von sich aus als Weg zu erkennen sein. Deshalb ein Rahmen im Akzentton
+   beim Überfahren; die Fläche bleibt ruhig. */
+.paper-card.klickbar:hover {{
+    border-color: {DARK_ACTIVE};
+    box-shadow: 0 2px 18px 1px rgba(18, 58, 71, 0.12);
 }}
 
 /* Seitenleiste: dunkler Grund, helle Schrift, aktiver Eintrag abgesetzt. */

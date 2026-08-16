@@ -228,6 +228,10 @@ def page_layout(title):
 
 @contextmanager
 def card(classes=""):
-    """Inhaltskarte im Stil der Vorlage."""
-    with ui.column().classes(f"paper-card p-4 gap-2 {classes}"):
-        yield
+    """Inhaltskarte im Stil der Vorlage.
+
+    Gibt die Karte heraus (`with card(...) as karte:`), damit ein Aufrufer
+    sie klickbar machen kann. Ohne `as` bleibt alles wie bisher.
+    """
+    with ui.column().classes(f"paper-card p-4 gap-2 {classes}") as element:
+        yield element

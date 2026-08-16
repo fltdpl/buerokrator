@@ -2,28 +2,71 @@ from nicegui import ui
 
 from src.core.document_types import (
     DOCUMENT_TYPE_LABELS,
-    INSURANCE,
-    INVOICE,
-    PENSION,
-    TAX,
+    DOCUMENT_TYPES,
 )
+from src.core.size_utils import format_bytes
 from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
-from src.frontend.theme import ACCENTS, DARK_ACTIVE, INK_MUTED
+from src.frontend.theme import (
+    ACCENTS,
+    DARK_ACTIVE,
+    DOCUMENT_TYPE_ICONS,
+    INK_MUTED,
+)
 from src.services.profile_port import legacy_bestand_gefunden
 from src.services.profile_service import list_profiles
 from src.services.setup_service import needs_setup
 from src.services.stats_service import get_dashboard_data
 
 
-def _metric(label, value, icon, accent="primary"):
-    """Kennzahl-Karte: farbiges Icon links, Zahl und Bezeichnung rechts."""
-    with card("flex-grow"):
-        with ui.row().classes("items-center gap-4 no-wrap"):
-            ui.icon(icon).classes("text-4xl").style(f"color: {ACCENTS[accent]}")
+def _anzahl_text(anzahl):
+    """`1 Dokument`, sonst `N Dokumente`.
 
-            with ui.column().classes("gap-0"):
-                ui.label(str(value)).classes("text-3xl font-light leading-none")
-                ui.label(label).classes("text-sm").style(f"color: {INK_MUTED}")
+    Die Einzahl kostet eine Zeile und fällt sofort auf, wenn sie fehlt —
+    „1 Dokumente" liest sich wie ein Fehler in der Anwendung. Bei Null ist
+    die Mehrzahl richtig („0 Dokumente").
+    """
+    return f"{anzahl} Dokument" if anzahl == 1 else f"{anzahl} Dokumente"
+
+
+def _kategorie_kachel(document_type, anzahl):
+    """Eine Kategorie: Sinnbild, Name, Anzahl — und der Weg in die Liste.
+
+    Der NAME steht oben und groß, die Anzahl klein darunter: gesucht wird
+    nach der Kategorie, gelesen wird die Zahl erst danach. Elf Zahlen, die
+    nirgendwohin führen, wären ohnehin Dekoration statt Bedienung.
+
+    Die NULL ist der Sonderfall: sie führt nirgendwohin und wird deshalb
+    gedämpft und nicht klickbar dargestellt — klickbar sähe sie aus wie ein
+    Weg und endete in einer leeren Liste.
+
+    Alle Icons tragen denselben Akzent (siehe theme.DOCUMENT_TYPE_ICONS).
+    """
+    leer = not anzahl
+    zusatz = "" if leer else "cursor-pointer klickbar"
+
+    with card(f"grow {zusatz}") as kachel:
+        kachel.mark(f"kachel-{document_type}")
+
+        if not leer:
+            kachel.on(
+                "click",
+                lambda: ui.navigate.to(f"/dokumente?typ={document_type}"),
+            )
+
+        with ui.row().classes("items-center gap-3"):
+            ui.icon(DOCUMENT_TYPE_ICONS.get(document_type, "description")).classes(
+                "text-3xl"
+            ).style(f"color: {INK_MUTED if leer else ACCENTS['primary']}")
+
+            with ui.column().classes("gap-1"):
+                ui.label(
+                    DOCUMENT_TYPE_LABELS.get(document_type, document_type)
+                ).classes("text-xl font-light leading-none").style(
+                    f"color: {INK_MUTED}" if leer else ""
+                )
+                ui.label(_anzahl_text(anzahl)).classes("text-sm").style(
+                    f"color: {INK_MUTED}"
+                )
 
 
 def _render_active_profile():
@@ -67,17 +110,25 @@ def dashboard_page():
 
     with page_layout("Dashboard"):
         ui.label("Dashboard").classes("text-3xl page-title")
-        ui.label(f"{stats['total']} Dokumente archiviert").classes("muted")
+        # Gesamtzahl und Archivgröße in EINER Zeile: eine eigene Kachel
+        # „Dokumente" stünde neben derselben Zahl im Untertitel, und die
+        # Größe gehört nicht zwischen die Kategorien — sie zählt Bytes,
+        # nicht Dokumente.
+        ui.label(
+            f"{stats['total']} Dokumente archiviert"
+            f" · {format_bytes(stats['archive_size'])} im Archiv"
+        ).classes("muted")
 
         _render_active_profile()
 
-        # Übernimmt auch die Zahlen der alten Analyse-Seite (entfällt).
-        with ui.row().classes("gap-4 w-full no-wrap"):
-            _metric("Dokumente", stats["total"], "folder", "primary")
-            _metric("Rechnungen", counts.get(INVOICE, 0), "receipt_long", "warning")
-            _metric("Versicherungen", counts.get(INSURANCE, 0), "shield", "info")
-            _metric("Vorsorge", counts.get(PENSION, 0), "savings", "success")
-            _metric("Steuern", counts.get(TAX, 0), "account_balance", "danger")
+        # Alle elf Kategorien, feste Reihenfolge. Sortiert nach Menge
+        # wanderten die Kacheln bei jedem Import — man müsste sie jedes Mal
+        # neu suchen. Kein `no-wrap`: elf Kacheln müssen umbrechen dürfen.
+        with ui.grid().classes(
+            "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 w-full"
+        ):
+            for document_type in DOCUMENT_TYPES:
+                _kategorie_kachel(document_type, counts.get(document_type, 0))
 
         # Aufgaben: die beiden Dinge, die tatsächlich Arbeit bedeuten —
         # Inbox importieren und ungeprüfte Dokumente durchsehen.

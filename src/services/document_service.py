@@ -21,6 +21,7 @@ from src.database.list_documents import get_document
 from src.database.replace_document_analysis import replace_document_analysis
 from src.core.document_fields import whitelist_fields
 from src.core.document_types import EMPLOYMENT
+from src.core.size_utils import format_bytes
 from src.database.set_document_subtype import set_document_subtype
 from src.database.set_document_type import set_document_type
 from src.database.set_document_verified import mark_document_unverified
@@ -360,13 +361,7 @@ def _format_file_size(path):
     except OSError:
         return "-"
 
-    if size < 1024:
-        return f"{size} B"
-
-    if size < 1024 * 1024:
-        return f"{size / 1024:.0f} KB"
-
-    return f"{size / 1024 / 1024:.1f} MB"
+    return format_bytes(size)
 
 
 def _format_created_at(created_at):

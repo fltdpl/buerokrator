@@ -4,6 +4,19 @@
 
 ## Unveröffentlicht
 
+- **Neu: das Dashboard zeigt alle elf Kategorien — und jede führt in die
+  Liste.** Bisher standen dort vier davon; welche, war historisch gewachsen,
+  und ausgerechnet die größte Gruppe fehlte. Jetzt hat jede Kategorie ihre
+  Kachel, in fester Reihenfolge (sortiert nach Menge wanderten sie bei jedem
+  Import), und **ein Klick öffnet die Dokumentenliste auf diese Kategorie
+  gefiltert**. Auf der Kachel steht der Name der Kategorie oben und groß, die
+  Menge klein darunter („41 Dokumente"). Kategorien ohne Dokumente stehen
+  gedämpft da und sind nicht anklickbar — sie führen ja nirgendwohin.
+
+- **Neu: die Archivgröße steht neben der Dokumentzahl** („… Dokumente
+  archiviert · 5,7 MB im Archiv"). Gezählt wird nur der Archivordner des
+  geöffneten Profils, nicht Datenbank, Sicherungen oder Papierkorb.
+
 - Intern: `tools/scan_tarball.py` prüft ein fertiges Release-Paket gegen die
   Feldwerte des eigenen Bestands, bevor es hochgeladen wird (Schritt 5 des
   Release-Ablaufs).

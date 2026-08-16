@@ -2,7 +2,11 @@ import html
 
 from nicegui import ui
 
-from src.core.document_types import DOCUMENT_TYPES, DOCUMENT_TYPE_LABELS
+from src.core.document_types import (
+    DOCUMENT_TYPE_LABELS,
+    DOCUMENT_TYPE_SET,
+    DOCUMENT_TYPES,
+)
 from src.database.export_csv import export_documents_csv
 from src.database.list_documents import list_documents
 from src.database.search import SNIPPET_CLOSE, SNIPPET_OPEN, search_documents
@@ -367,10 +371,27 @@ def _bulk_actions(table, on_changed):
 
 
 @ui.page("/dokumente")
-def documents_page():
+def documents_page(typ: str = None):
+    """`?typ=<schluessel>` öffnet die Liste auf eine Kategorie gefiltert.
+
+    So kommen die Dashboard-Kacheln hierher. Ausgewertet wird der Parameter
+    HIER, in der Seite selbst — `_FILTER_STATE` von außen zu beschreiben
+    hieße, dass zwei Seiten sich denselben Zustand teilen, ohne dass eine
+    von der anderen wüsste.
+
+    Der Parameter setzt die übrigen Filter zurück: die Kachel verspricht
+    ALLE Dokumente ihrer Kategorie, und ein stehengebliebener Suchbegriff
+    zeigte weniger, ohne dass jemand sähe, warum. Ein unbekannter Wert führt
+    auf „Alle" statt in eine leere Liste — die sähe aus wie ein leerer
+    Bestand.
+    """
     # Altbestand zuerst umziehen (siehe layout.umzug_noetig).
     if umzug_noetig():
         return
+
+    if typ is not None:
+        _FILTER_STATE.update(_default_filters())
+        _FILTER_STATE["type"] = typ if typ in DOCUMENT_TYPE_SET else "Alle"
 
     filters = _FILTER_STATE
 
