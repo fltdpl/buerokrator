@@ -47,9 +47,13 @@ document_date:
 Ausstellungsdatum im Format DD.MM.YYYY falls erkennbar
 
 subject:
-Kurze Angabe, WORUM es geht — die eigentliche Aussage des Dokuments
-(z. B. "Befund Kniegelenk", "Kostenübernahme Physiotherapie",
-"Impfung Tetanus"). Kein Name der Person, keine Versichertennummer.
+Kurze Angabe, WORUM es geht — die eigentliche Aussage des Dokuments.
+HÖCHSTENS VIER WÖRTER. Kein ganzer Satz.
+Aufbau: Dokumentart plus Gegenstand, beides WÖRTLICH aus dem Dokument
+(Muster: "Befund <Körperteil aus dem Text>",
+"Kostenübernahme <Leistung aus dem Text>", "Impfung <Impfstoff aus dem Text>").
+Steht der Gegenstand nicht im Dokument, nenne nur die Dokumentart.
+Kein Name der Person, keine Versichertennummer.
 
 Dokument:
 

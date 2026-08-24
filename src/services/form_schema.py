@@ -319,7 +319,7 @@ def form_fields(document_type, subtype=None):
 
     if document_type == HEALTH:
         # Wie Ausbildung: ein Satz für alle Unterarten, der Betreff trägt die
-        # Aussage ("Befund Knie", "Impfung Tetanus").
+        # Aussage ("Befund <Koerperteil>", "Impfung <Impfstoff>").
         return [
             _text("issuer", "Praxis / Klinik / Kasse", required=True),
             _text("document_date", "Datum", required=True),

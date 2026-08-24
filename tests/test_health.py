@@ -14,6 +14,7 @@ Deshalb steht neben jedem Positivfall eine Gegenprobe. Alle Namen, Beträge
 und Nummern sind erfunden.
 """
 
+import re
 from pathlib import Path
 
 import yaml
@@ -402,3 +403,55 @@ def test_klassifikationsprompt_nennt_die_beiden_grenzen():
     # Grenze 1 und 2 muessen dem Modell ausdruecklich gesagt werden.
     assert "Arztrechnung" in prompt
     assert "Beitr" in prompt and "insurance" in prompt
+
+
+def _subject_abschnitt(prompt):
+    """Der Abschnitt zwischen 'subject:' und der naechsten Leerzeile-Marke."""
+
+    zeilen = prompt.splitlines()
+    start = zeilen.index("subject:")
+    rest = zeilen[start + 1 :]
+    ende = rest.index("Dokument:") if "Dokument:" in rest else len(rest)
+
+    return "\n".join(rest[:ende]).strip()
+
+
+def test_betreff_beispiele_bieten_nichts_zum_abschreiben():
+    """Beispielwerte im subject-Abschnitt muessen Platzhalter tragen.
+
+    Gemessen am Bestand: mit fertig ausformulierten Beispielen uebernahm das
+    Modell den Beispielwert woertlich, auch wenn der genannte Gegenstand im
+    Dokument gar nicht vorkam. Dieselbe Falle wie bei Few-Shot (ADR 013).
+    Geprueft wird deshalb der ZWECK — kein Beispiel ohne Platzhalter —,
+    nicht ein bestimmter Wortlaut: so haelt der Test auch, wenn spaeter ein
+    weiteres Beispiel dazukommt.
+    """
+
+    prompt = (REPO / "src" / "classifier" / "prompts" / "extract_health.txt").read_text(
+        encoding="utf-8"
+    )
+    abschnitt = _subject_abschnitt(prompt)
+
+    beispiele = re.findall(r'"([^"]+)"', abschnitt)
+    assert beispiele, "Der subject-Abschnitt zeigt gar kein Muster mehr"
+
+    ohne_platzhalter = [b for b in beispiele if "<" not in b]
+    assert not ohne_platzhalter, (
+        "Fertig abschreibbare Beispielwerte im subject-Abschnitt: "
+        f"{ohne_platzhalter}"
+    )
+
+
+def test_betreff_ist_in_der_laenge_begrenzt():
+    """Der Betreff geht in den Dateinamen — ohne Vorgabe wird er zum Satz.
+
+    Ohne Beispiele haelt das Modell die Form nicht mehr von selbst: gemessen
+    wurden Betreffs bis zu vierzehn Woertern.
+    """
+
+    prompt = (REPO / "src" / "classifier" / "prompts" / "extract_health.txt").read_text(
+        encoding="utf-8"
+    )
+    abschnitt = _subject_abschnitt(prompt)
+
+    assert "VIER WÖRTER" in abschnitt

@@ -4,6 +4,17 @@
 
 ## Unveröffentlicht
 
+- **Behoben: bei Gesundheitsdokumenten stand oft ein erfundener Betreff.**
+  Der Extraktions-Prompt nannte fertige Beispiel-Betreffs, und das Modell
+  übernahm sie wörtlich — auch wenn der genannte Gegenstand im Dokument gar
+  nicht vorkam. Die Beispiele zeigen jetzt nur noch die Form und tragen
+  Platzhalter statt fertiger Werte; außerdem ist der Betreff auf vier Wörter
+  begrenzt, damit er als Bestandteil des Dateinamens kurz bleibt. Neue
+  Importe profitieren sofort. Schon archivierte Dokumente zieht „Erneut
+  prüfen" nach — **das ersetzt allerdings alle erkannten Werte und widerruft
+  die Freigabe**, lohnt also nur dort, wo der Betreff noch nicht von Hand
+  berichtigt wurde.
+
 - **Neu: das Dashboard zeigt alle elf Kategorien — und jede führt in die
   Liste.** Bisher standen dort vier davon; welche, war historisch gewachsen,
   und ausgerechnet die größte Gruppe fehlte. Jetzt hat jede Kategorie ihre
