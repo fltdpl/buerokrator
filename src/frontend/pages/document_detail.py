@@ -48,6 +48,11 @@ from src.services.form_schema import (
     subtype_config,
 )
 
+# Hoehe beider Quellansichten (PDF und OCR-Text). Bewusst eine Konstante:
+# die beiden Ansichten tauschen sich am selben Platz aus, und schon einmal
+# war nur eine von beiden angepasst.
+QUELLE_HOEHE = "75vh"
+
 
 def _amount_input_value(amount):
     if amount is None or amount == "":
@@ -159,14 +164,17 @@ def _source_panel(document_id, document_text, filename=""):
         ui.element("iframe")
         .props(f'src="/pdf/{document_id}" type="application/pdf"')
         .classes("w-full")
-        .style("height: 75vh; border: none;")
+        .style(f"height: {QUELLE_HOEHE}; border: none;")
     )
 
+    # Die Hoehe muss ueber `input-style` an das innere <textarea>: Quasar
+    # setzt `.q-textarea .q-field__control` auf `height: auto`, sodass eine
+    # Hoehe am Wrapper wirkungslos bleibt und das Feld auf seine wenigen
+    # Standardzeilen zusammenfaellt.
     text_area = (
         ui.textarea(value=document_text or "Kein Dokumentinhalt gespeichert.")
-        .props("readonly outlined")
+        .props(f'readonly outlined input-style="height:{QUELLE_HOEHE}"')
         .classes("w-full")
-        .style("height: 75vh;")
     )
     text_area.set_visibility(False)
 

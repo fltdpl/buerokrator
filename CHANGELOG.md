@@ -4,6 +4,12 @@
 
 ## Unveröffentlicht
 
+- **Behoben: der erkannte Text war nur wenige Zeilen hoch.** In der
+  Dokumentansicht zeigte der Umschalter „OCR-Text“ den Inhalt in einem
+  schmalen Fenster, durch das man sich bei jedem längeren Dokument
+  hindurchscrollen musste — unabhängig davon, wie viel Text erkannt worden
+  war. Die Textansicht ist jetzt so hoch wie die PDF-Ansicht daneben.
+
 - **Neu: Aufräumen unter Einstellungen → Backup.** Jede Sicherung ist eine
   Vollkopie, und jede Wiederherstellung legt den bisherigen Stand daneben,
   statt ihn zu löschen — weggeräumt hat das bisher niemand. Die neue Fläche
