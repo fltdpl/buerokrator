@@ -1,7 +1,11 @@
+import os
 import sqlite3
 import zipfile
 from pathlib import Path
 
+import pytest
+
+from src.core.exceptions import BuerokratorError
 from src.services.backup_service import create_backup
 
 
@@ -338,3 +342,264 @@ def test_restore_gelingt_auch_wenn_die_pfadbindung_scheitert(tmp_path, caplog):
     assert result["database"] is True
     assert result["archive_pfade_repariert"] == 0
     assert "Archivpfade" in caplog.text
+
+
+# ------------------------------------------------ Konfiguration des Profils
+
+
+def _config_ordner(tmp_path, inhalt="Musterfirma GmbH: Musterfirma\n"):
+    ordner = tmp_path / "config"
+    ordner.mkdir()
+    (ordner / "aussteller_aliase.yaml").write_text(inhalt, encoding="utf-8")
+
+    return ordner
+
+
+def test_backup_enthaelt_die_profil_konfiguration(tmp_path):
+    """Die Aussteller-Aliase sind Handarbeit von Monaten und stehen in keiner
+    Datenbank — ohne sie ist der wiederhergestellte Bestand unvollständig."""
+    from src.services.backup_service import create_backup
+
+    zip_path = create_backup(
+        db_path=tmp_path / "fehlt.db",
+        archive_dir=tmp_path / "kein_archiv",
+        config_dir=_config_ordner(tmp_path),
+        target_dir=tmp_path / "backups",
+        backup_name="b.zip",
+    )
+
+    with zipfile.ZipFile(zip_path) as archive:
+        assert "config/aussteller_aliase.yaml" in archive.namelist()
+
+
+def test_backup_ohne_konfiguration_bleibt_gueltig(tmp_path):
+    """Ein frisches System hat noch keine Aliasdatei."""
+    from src.services.backup_service import create_backup
+
+    zip_path = create_backup(
+        db_path=tmp_path / "fehlt.db",
+        archive_dir=tmp_path / "kein_archiv",
+        config_dir=tmp_path / "kein_config",
+        target_dir=tmp_path / "backups",
+        backup_name="b.zip",
+    )
+
+    with zipfile.ZipFile(zip_path) as archive:
+        assert archive.namelist() == []
+
+
+def test_restore_spielt_die_konfiguration_zurueck(tmp_path):
+    from src.services.backup_service import create_backup, restore_backup
+
+    quelle = tmp_path / "quelle"
+    quelle.mkdir()
+    db = quelle / "buerokrator.db"
+    _make_database(db, "erste.pdf")
+
+    zip_path = create_backup(
+        db_path=db,
+        archive_dir=quelle / "archive",
+        config_dir=_config_ordner(quelle, "Alt AG: Alt\n"),
+        target_dir=tmp_path / "backups",
+        backup_name="b.zip",
+    )
+
+    ziel = tmp_path / "ziel"
+    ziel.mkdir()
+
+    restore_backup(
+        zip_path,
+        db_path=ziel / "buerokrator.db",
+        archive_dir=ziel / "archive",
+        config_dir=ziel / "config",
+    )
+
+    assert (ziel / "config" / "aussteller_aliase.yaml").read_text(
+        encoding="utf-8"
+    ) == "Alt AG: Alt\n"
+
+
+def test_restore_legt_die_bisherige_konfiguration_beiseite(tmp_path):
+    """Nichts wird gelöscht — auch hier nicht."""
+    from src.services.backup_service import create_backup, restore_backup
+
+    quelle = tmp_path / "quelle"
+    quelle.mkdir()
+    db = quelle / "buerokrator.db"
+    _make_database(db, "erste.pdf")
+
+    zip_path = create_backup(
+        db_path=db,
+        archive_dir=quelle / "archive",
+        config_dir=_config_ordner(quelle, "Aus der Sicherung: X\n"),
+        target_dir=tmp_path / "backups",
+        backup_name="b.zip",
+    )
+
+    ziel = tmp_path / "ziel"
+    ziel.mkdir()
+    _config_ordner(ziel, "Von heute: Y\n")
+
+    restore_backup(
+        zip_path,
+        db_path=ziel / "buerokrator.db",
+        archive_dir=ziel / "archive",
+        config_dir=ziel / "config",
+    )
+
+    beiseite = list(ziel.glob("config_vor_wiederherstellung_*"))
+
+    assert len(beiseite) == 1
+    assert (beiseite[0] / "aussteller_aliase.yaml").read_text(
+        encoding="utf-8"
+    ) == "Von heute: Y\n"
+
+
+def test_alte_sicherung_ohne_config_laesst_die_aliase_stehen(tmp_path):
+    """Sicherungen aus früheren Fassungen bleiben gültig — und dürfen die
+    gepflegte Aliasdatei nicht wegräumen, nur weil sie keine mitbringen."""
+    from src.services.backup_service import create_backup, restore_backup
+
+    quelle = tmp_path / "quelle"
+    quelle.mkdir()
+    db = quelle / "buerokrator.db"
+    _make_database(db, "erste.pdf")
+
+    zip_path = create_backup(
+        db_path=db,
+        archive_dir=quelle / "archive",
+        target_dir=tmp_path / "backups",
+        backup_name="alt.zip",
+    )
+
+    ziel = tmp_path / "ziel"
+    ziel.mkdir()
+    _config_ordner(ziel, "Gepflegt: Z\n")
+
+    restore_backup(
+        zip_path,
+        db_path=ziel / "buerokrator.db",
+        archive_dir=ziel / "archive",
+        config_dir=ziel / "config",
+    )
+
+    assert (ziel / "config" / "aussteller_aliase.yaml").read_text(
+        encoding="utf-8"
+    ) == "Gepflegt: Z\n"
+    assert not list(ziel.glob("config_vor_wiederherstellung_*"))
+
+
+# ------------------------------------------------- Pruefung nach dem Packen
+
+
+def test_sicherung_wird_nach_dem_schreiben_geprueft(tmp_path):
+    """Eine volle Platte oder ein abbrechender Stick hinterlassen eine Datei,
+    die aussieht wie eine Sicherung. Ungeprüft fiele das erst beim
+    Wiederherstellen auf — Jahre später."""
+    from src.services.backup_service import pruefe_sicherung
+
+    zip_path = tmp_path / "b.zip"
+    name = "database/buerokrator.db"
+
+    # Zufallsbytes: sie komprimieren nicht, der Datenbereich ist dadurch so
+    # groß wie die Nutzlast und mit einem Offset sicher zu treffen. Mit gut
+    # komprimierbarem Inhalt schrumpft er auf wenige Bytes — ein Treffer
+    # daneben landet im Verzeichnisteil und bleibt folgenlos (so ist dieser
+    # Test beim ersten Anlauf durchgelaufen, ohne etwas zu prüfen).
+    nutzlast = os.urandom(5000)
+
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(name, nutzlast)
+
+    # Heil: keine Beanstandung.
+    pruefe_sicherung(zip_path, [name])
+
+    with zipfile.ZipFile(zip_path) as archive:
+        info = archive.getinfo(name)
+        datenanfang = info.header_offset + 30 + len(name)
+
+    roh = bytearray(zip_path.read_bytes())
+    roh[datenanfang + 2000] ^= 0xFF
+    zip_path.write_bytes(bytes(roh))
+
+    with pytest.raises(BuerokratorError):
+        pruefe_sicherung(zip_path, [name])
+
+
+def test_pruefung_meldet_fehlende_eintraege(tmp_path):
+    from src.services.backup_service import pruefe_sicherung
+
+    zip_path = tmp_path / "b.zip"
+
+    with zipfile.ZipFile(zip_path, "w") as archive:
+        archive.writestr("database/buerokrator.db", "x")
+
+    with pytest.raises(BuerokratorError) as fehler:
+        pruefe_sicherung(zip_path, ["database/buerokrator.db", "archive/a.pdf"])
+
+    assert "archive/a.pdf" in str(fehler.value)
+
+
+def test_create_backup_prueft_das_ergebnis(tmp_path):
+    """Die Prüfung gehört in create_backup, nicht nur in die Oberfläche —
+    sonst hat der eine Aufrufer sie und der andere nicht."""
+    import src.services.backup_service as backup_service
+
+    db = tmp_path / "buerokrator.db"
+    _make_database(db, "erste.pdf")
+
+    geprueft = []
+    backup_service.pruefe_sicherung  # existiert?
+
+    original = backup_service.pruefe_sicherung
+    backup_service.pruefe_sicherung = lambda pfad, erwartet: geprueft.append(
+        sorted(erwartet)
+    )
+
+    try:
+        backup_service.create_backup(
+            db_path=db,
+            archive_dir=tmp_path / "kein_archiv",
+            target_dir=tmp_path / "backups",
+            backup_name="b.zip",
+        )
+
+    finally:
+        backup_service.pruefe_sicherung = original
+
+    assert geprueft == [["database/buerokrator.db"]]
+
+
+def test_beschaedigte_sicherung_gilt_nicht_als_sicherung(tmp_path):
+    """Bliebe die kaputte Datei als .zip liegen, gälte sie als die jüngste
+    Sicherung — das Dashboard meldete Entwarnung für einen Datenmüllhaufen.
+    Gelöscht wird sie trotzdem nicht."""
+    import src.services.backup_service as backup_service
+    from src.services.backup_service import list_backups
+
+    db = tmp_path / "buerokrator.db"
+    _make_database(db, "erste.pdf")
+
+    original = backup_service.pruefe_sicherung
+
+    def scheitert(pfad, erwartet):
+        raise BuerokratorError("Prüfsumme falsch")
+
+    backup_service.pruefe_sicherung = scheitert
+
+    try:
+        with pytest.raises(BuerokratorError):
+            backup_service.create_backup(
+                db_path=db,
+                archive_dir=tmp_path / "kein_archiv",
+                target_dir=tmp_path / "backups",
+                backup_name="b.zip",
+            )
+
+    finally:
+        backup_service.pruefe_sicherung = original
+
+    ziel = tmp_path / "backups"
+
+    assert list_backups(ziel) == []
+    assert (ziel / "b.zip.unvollstaendig").exists()

@@ -1,8 +1,9 @@
 from nicegui import run, ui
 
 from src.core.config import load_config, save_config
+from src.core.size_utils import format_bytes
 from src.database.reset_database import reset_database_and_archive
-from src.frontend.layout import card, page_layout, umzug_noetig
+from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
 from src.frontend.pages.trash import render_trash
 from src.frontend.theme import DANGER, DARK_ACTIVE, INK_MUTED, TAG_COLORS, tag_color
 from src.services.tag_service import (
@@ -24,9 +25,12 @@ from src.services.profile_service import (
 )
 from src.services.archive_repair import run_check, run_repair
 from src.services.backup_service import (
+    aufraeum_uebersicht,
     backup_ziel,
     list_backups,
+    run_aufraeumen,
     run_backup,
+    run_papierkorb_leeren,
     run_restore,
 )
 from src.services.dependency_service import collect_dependency_status
@@ -588,9 +592,12 @@ def _render_issuer_aliases():
 
 def _render_backup(config):
     ui.label(
-        "Sichert Datenbank und Archivordner als eine ZIP-Datei am unten "
-        "genannten Ort. Das Ziel lässt sich unter Konfiguration → Pfade ändern."
+        "Sichert Datenbank, Archivordner und die Aussteller-Aliase als eine "
+        "ZIP-Datei am unten genannten Ort. Das Ziel lässt sich unter "
+        "Konfiguration → Pfade ändern."
     ).classes("muted")
+
+    _render_backup_profil()
 
     with card("w-full gap-3"):
         # Der Pfad steht weiter als Text da (kopierbar, auch wenn das Öffnen
@@ -628,6 +635,145 @@ def _render_backup(config):
         )
 
     _render_restore(config)
+    _render_aufraeumen()
+
+
+def _render_backup_profil():
+    """Wessen Bestand hier gesichert wird — nur bei mehreren Personen.
+
+    Alle Pfade sind profilaufgelöst: Sicherung und Wiederherstellung meinen
+    immer nur die geöffnete Person, und jede hat ihren eigenen
+    Sicherungsordner. Ohne diesen Satz hält man die ZIP für die des ganzen
+    Haushalts — und merkt das Gegenteil erst, wenn sie gebraucht wird.
+    """
+    profile = list_profiles()
+
+    if len(profile) < 2:
+        return
+
+    aktiv = next((p for p in profile if p["active"]), profile[0])
+
+    with ui.row().classes("items-center gap-2") as zeile:
+        zeile.mark("backup-profil")
+        ui.icon("person").style(f"color: {DARK_ACTIVE}")
+        ui.label(
+            f"Gesichert und wiederhergestellt wird der Bestand von "
+            f"{aktiv['name']}. Die anderen Personen haben ihre eigenen "
+            f"Sicherungen."
+        ).classes("text-sm").style(f"color: {INK_MUTED}")
+
+
+@ui.refreshable
+def _render_aufraeumen():
+    """Alte Sicherungen und Reste früherer Wiederherstellungen wegräumen.
+
+    Jede Sicherung ist eine Vollkopie und jede Wiederherstellung legt den
+    bisherigen Stand daneben, statt ihn zu löschen. Beides ist richtig —
+    aber ohne diese Fläche räumt es niemand je weg.
+
+    Verschoben wird in einen eigenen Papierkorb für Sicherungen, nicht in
+    den für Dokumente: der bietet seinen Inhalt zum Import in die Inbox an.
+    """
+    uebersicht = aufraeum_uebersicht()
+    kandidaten = uebersicht["kandidaten"]
+    papierkorb = uebersicht["papierkorb"]
+
+    async def aufraeumen():
+        try:
+            ergebnis = await run.io_bound(run_aufraeumen)
+
+        except Exception as error:
+            ui.notify(f"Aufräumen fehlgeschlagen: {error}", type="negative")
+            return
+
+        ui.notify(
+            f"{ergebnis['anzahl']} Eintrag/Einträge in den Papierkorb "
+            f"verschoben ({format_bytes(ergebnis['bytes'])} frei, sobald der "
+            "Papierkorb geleert ist).",
+            type="positive",
+        )
+        _render_aufraeumen.refresh()
+
+    async def endgueltig_loeschen():
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Endgültig löschen?").classes("text-lg page-title")
+            ui.label(
+                f"{papierkorb['anzahl']} Eintrag/Einträge "
+                f"({format_bytes(papierkorb['bytes'])}) werden unwiderruflich "
+                "gelöscht. Der aktuelle Bestand ist davon nicht betroffen."
+            ).classes("muted")
+
+            with ui.row().classes("justify-end w-full"):
+                ui.button("Abbrechen", on_click=lambda: dialog.submit(False)).props(
+                    "flat no-caps"
+                )
+                ui.button(
+                    "Löschen", on_click=lambda: dialog.submit(True)
+                ).props("color=negative unelevated no-caps")
+
+        if not await dialog:
+            return
+
+        ergebnis = await run.io_bound(run_papierkorb_leeren)
+        ui.notify(
+            f"Papierkorb geleert ({format_bytes(ergebnis['bytes'])} frei).",
+            type="positive",
+        )
+        _render_aufraeumen.refresh()
+
+    with card("w-full gap-3"):
+        ui.label("Aufräumen").classes("text-xl page-title")
+
+        if kandidaten:
+            gesamt = sum(eintrag["groesse"] for eintrag in kandidaten)
+            sicherungen = sum(
+                1 for eintrag in kandidaten if eintrag["art"] == "sicherung"
+            )
+            reste = len(kandidaten) - sicherungen
+
+            ui.label(
+                f"{sicherungen} ältere Sicherung(en) und {reste} Rest(e) "
+                f"früherer Wiederherstellungen können weg — zusammen "
+                f"{format_bytes(gesamt)}. Die jüngsten Sicherungen bleiben."
+            ).classes("text-sm muted")
+
+            for eintrag in kandidaten:
+                with ui.row().classes("items-center gap-2 w-full flex-nowrap"):
+                    ui.icon(
+                        "inventory_2" if eintrag["art"] == "sicherung" else "history"
+                    ).classes("text-sm").style(f"color: {INK_MUTED}")
+                    gekuerzt(
+                        ui.label(eintrag["name"]).classes("text-sm"),
+                        eintrag["name"],
+                        "flex-1",
+                    )
+                    ui.label(format_bytes(eintrag["groesse"])).classes(
+                        "text-sm shrink-0"
+                    ).style(f"color: {INK_MUTED}")
+
+            ui.button(
+                "In den Papierkorb verschieben",
+                icon="delete_sweep",
+                on_click=aufraeumen,
+            ).props("outline color=primary no-caps").mark("aufraeumen")
+
+        else:
+            ui.label(
+                "Nichts aufzuräumen — es liegen keine überzähligen "
+                "Sicherungen und keine Reste einer Wiederherstellung herum."
+            ).classes("text-sm muted").mark("aufraeumen-nichts")
+
+        if papierkorb["anzahl"]:
+            with ui.row().classes("items-center gap-2"):
+                ui.label(
+                    f"Im Papierkorb: {papierkorb['anzahl']} Eintrag/Einträge "
+                    f"({format_bytes(papierkorb['bytes'])})."
+                ).classes("text-sm muted")
+                ui.button(
+                    "Endgültig löschen",
+                    icon="delete_forever",
+                    on_click=endgueltig_loeschen,
+                ).props("flat dense no-caps color=negative").mark("papierkorb-leeren")
 
 
 def _render_restore(config):

@@ -4,6 +4,35 @@
 
 ## Unveröffentlicht
 
+- **Neu: Aufräumen unter Einstellungen → Backup.** Jede Sicherung ist eine
+  Vollkopie, und jede Wiederherstellung legt den bisherigen Stand daneben,
+  statt ihn zu löschen — weggeräumt hat das bisher niemand. Die neue Fläche
+  zeigt, was weg kann (ältere Sicherungen jenseits der jüngsten drei, Reste
+  früherer Wiederherstellungen, abgebrochene Dateien) und wie viel Platz das
+  zusammen belegt. Verschoben wird in einen eigenen Papierkorb für
+  Sicherungen — nicht in den für Dokumente, wo eine Sicherung als
+  Importvorschlag auftauchte. Endgültig gelöscht wird erst auf ausdrückliche
+  Nachfrage.
+
+- **Neu: jede Sicherung wird nach dem Schreiben geprüft.** Bisher konnte eine
+  volle Platte oder ein abgezogener Wechseldatenträger eine Datei
+  hinterlassen, die aussieht wie eine Sicherung und erst beim
+  Wiederherstellen als unbrauchbar auffällt. Jetzt wird die fertige Datei
+  zurückgelesen: Prüfsummen und Vollständigkeit. Fällt sie durch, meldet die
+  App das sofort und legt die Datei als `.unvollstaendig` beiseite — gelöscht
+  wird sie nicht, aber sie gilt nicht mehr als Sicherung.
+
+- **Neu: die Sicherung enthält auch die Aussteller-Aliase.** Sie stehen in
+  keiner Datenbank und sind Handarbeit von Monaten; bisher waren sie nach
+  einem Totalverlust weg, obwohl alle Dokumente zurückkamen. Beim
+  Wiederherstellen werden sie mit zurückgespielt, die bisherige Fassung
+  wandert wie Datenbank und Archiv unangetastet daneben. Ältere Sicherungen
+  ohne diesen Teil bleiben gültig und lassen die vorhandenen Aliase stehen.
+
+- **Neu: die Backup-Seite nennt die Person**, deren Bestand gesichert wird —
+  sobald es mehr als eine gibt. Sicherung und Wiederherstellung meinen immer
+  nur die geöffnete Person; jede hat ihren eigenen Sicherungsordner.
+
 - **Neu: „Ordner öffnen" auf der Backup-Seite.** Einstellungen → Backup nennt
   das Sicherungsziel bisher nur als Pfad; wer eine Sicherung auf einen Stick
   kopieren oder eine alte wegräumen wollte, musste ihn abtippen. Ein Knopf
@@ -13,10 +42,12 @@
 
 - **Neu: das Dashboard sagt, wann zuletzt gesichert wurde.** Unter „Aufgaben"
   steht eine Zeile „Letztes Backup vor N Tagen". Liegt die letzte Sicherung
-  mehr als zwei Wochen zurück oder gab es noch keine, wird daraus eine
+  mehr als drei Monate zurück oder gab es noch keine, wird daraus eine
   Aufgabe mit Knopf, der die Sicherung sofort anlegt; danach zieht die Zeile
-  nach. Eine frische Sicherung bleibt eine ruhige Zeile ohne Knopf — was
-  täglich mahnt, wird übersehen.
+  nach. Eine frische Sicherung bleibt eine ruhige Zeile ohne Knopf — was zu
+  oft mahnt, wird übersehen. Das Alter kommt aus dem Zeitstempel im
+  Dateinamen: eine zurückkopierte Sicherung ist damit so alt, wie sie ist,
+  und nicht so jung wie ihre Kopie.
 
 - **Behoben: bei Gesundheitsdokumenten stand oft ein erfundener Betreff.**
   Der Extraktions-Prompt nannte fertige Beispiel-Betreffs, und das Modell

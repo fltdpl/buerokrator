@@ -93,21 +93,36 @@ eine Ebene höher liegt.
 
 ## Backup
 
-Backups liegen im Profil, sichern also **eine** Person.
-Regelmäßige Sicherung (oder Backup-Knopf in den Einstellungen, der
-Datenbank + Archiv als ZIP sichert und wiederherstellen kann). Die Datenbank
-wird dabei über die SQLite-Backup-API gelesen, nicht als Datei kopiert: im
+Backups liegen im Profil, sichern also **eine** Person. Der Backup-Knopf in
+den Einstellungen packt `database/`, `archive/` und `config/` (die
+Aussteller-Aliase) als ZIP und kann sie wiederherstellen. Die Datenbank wird
+dabei über die SQLite-Backup-API gelesen, nicht als Datei kopiert: im
 WAL-Modus stehen frisch committete Dokumente in der `-wal`-Datei, solange
 eine Verbindung offen ist — eine Dateikopie hätte sie still ausgelassen.
-Zu sichern:
 
-- archive/
-- database/
-- exports/
-- config/ (enthält die Alias-Datei)
+Gesichert wird das **App-Home** (Daten der Person), nicht die Installation:
+die `settings.yaml` gehört bewusst nicht dazu, sie trägt Pfade, die am neuen
+Ort falsch wären (ADR 015). Von Hand mitzunehmen sind daher `exports/` und —
+falls gewünscht — `trash/` mit den gelöschten Originalen.
 
-`trash/` enthält gelöschte Original-Dokumente (Papierkorb) — bei Bedarf
-mitsichern, gelegentlich manuell leeren.
+Nach dem Packen liest die App die Datei zurück (Prüfsummen und
+Vollständigkeit). Fällt sie durch, wird sie als `.unvollstaendig` beiseite-
+gelegt und zählt nicht mehr als Sicherung; gelöscht wird sie nicht.
+
+⚠️ **Die Sicherung liegt standardmäßig neben dem Original** (`./backups` im
+App-Home). Gegen Plattenschaden schützt erst ein Ziel außerhalb des Rechners
+— siehe `roadmap.md`. Bis dahin ist der Zielpfad in der Konfiguration frei
+wählbar (absolute Pfade bleiben absolut).
+
+### Aufräumen
+
+Jede Sicherung ist eine Vollkopie, jede Wiederherstellung legt den bisherigen
+Stand daneben (`pre_restore_…`, `…_vor_wiederherstellung_…`). Einstellungen →
+Backup → Aufräumen bietet an, was weg kann: Sicherungen jenseits der jüngsten
+drei, Reste früherer Wiederherstellungen, abgebrochene Dateien. Sie wandern
+nach `trash/sicherungen/` — einem eigenen Papierkorb, getrennt vom
+Dokument-Papierkorb, der seinen Inhalt zum Import in die Inbox anbietet.
+Endgültig gelöscht wird nur auf Nachfrage.
 
 ### Wiederherstellung an einem anderen Ort
 

@@ -255,3 +255,56 @@ async def test_knopf_erstellt_die_sicherung_und_zieht_die_zeile_nach(user: User)
     await user.should_see("Letztes Backup heute")
 
     assert list((get_app_home() / "backups").glob("*.zip"))
+
+
+# ---------------------------------------------- Zeitpunkt aus dem Dateinamen
+
+
+def test_zeitpunkt_kommt_aus_dem_dateinamen(tmp_path):
+    """Die mtime lügt, sobald eine Sicherung kopiert wurde.
+
+    Genau das ist der Normalfall beim Auslagern: vom Stick zurückgeholt,
+    aus der Cloud geladen — die Datei ist Monate alt und trägt das Datum
+    von heute. Der Name trägt den echten Zeitpunkt.
+    """
+    from src.services.backup_service import backup_alter_tage
+
+    ziel = tmp_path / "backups"
+    ziel.mkdir()
+    kopie = ziel / "buerokrator_backup_20260701_120000.zip"
+    kopie.write_bytes(b"PK")  # mtime = jetzt
+
+    alter = backup_alter_tage(ziel, now=datetime(2026, 7, 31, 12, 0, 0))
+
+    assert alter == 30
+
+
+def test_ohne_zeitstempel_im_namen_gilt_die_mtime(tmp_path):
+    """Von Hand benannte Sicherungen („vor_dem_umzug.zip") gibt es auch."""
+    from src.services.backup_service import backup_alter_tage
+
+    ziel = tmp_path / "backups"
+    ziel.mkdir()
+    datei = ziel / "vor_dem_umzug.zip"
+    datei.write_bytes(b"PK")
+    vor_zehn_tagen = (datetime.now() - timedelta(days=10)).timestamp()
+    os.utime(datei, (vor_zehn_tagen, vor_zehn_tagen))
+
+    assert backup_alter_tage(ziel) == 10
+
+
+def test_reihenfolge_folgt_dem_zeitstempel_im_namen(tmp_path):
+    """Sonst stünde die zuletzt kopierte Datei oben statt der jüngsten."""
+    from src.services.backup_service import list_backups
+
+    ziel = tmp_path / "backups"
+    ziel.mkdir()
+
+    # Die ältere Sicherung wird als LETZTE geschrieben, hat also die neuere
+    # mtime — genau die Verwechslung, um die es geht.
+    (ziel / "buerokrator_backup_20260801_090000.zip").write_bytes(b"PK")
+    (ziel / "buerokrator_backup_20260101_090000.zip").write_bytes(b"PK")
+
+    namen = [eintrag["name"] for eintrag in list_backups(ziel)]
+
+    assert namen[0] == "buerokrator_backup_20260801_090000.zip"

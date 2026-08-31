@@ -305,4 +305,17 @@ Stand: Linux-Paket released (v0.1.0, v0.2.0, v0.2.1 als Tarball + rootloses
     
 - [x] Flankierend vor Weitergabe: `PRAGMA user_version` + Auto-Backup vor Migration ✅, Update-Weg entschieden (kein Update-Check, [012 Kein Update-Check](docs/decisions/012_kein_update_check.md)) ✅, Hardware-Erwartung im First-Run ✅ 2026-07-16
     
-- [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen
+- [ ] **Zweites Sicherungsziel außerhalb des Rechners** (Gestaltung offen).
+    Heute liegt die Sicherung neben dem Original — dieselbe Platte, derselbe
+    Ordnerbaum. Gegen Plattenschaden, versehentliches Löschen des Datenordners
+    oder einen Verschlüsselungstrojaner schützt das nicht; es ist eine
+    Versionssicherung, keine Katastrophensicherung. Gedacht als **Liste von
+    Zielen** (Wechseldatenträger, NAS-Einhängepunkt, Sync-Ordner eines
+    Cloud-Dienstes), die jede Sicherung beliefert. Drei Bedingungen aus der
+    Analyse: das Ziel muss **vorhanden sein statt angelegt zu werden** (sonst
+    landet die Sicherung im leeren Einhängepunkt auf der internen Platte und
+    sieht gelungen aus), das Ergebnis wird **je Ziel** gemeldet, und das Alter
+    im Dashboard richtet sich nach dem **ältesten** Ziel. Der Transport nach
+    außen bleibt Sache des Systems — die App geht nicht ins Netz.
+    
+- [ ] Optional: verschlüsselte Backups (age/gpg) — gegen Offline-/Einfachheits-Anspruch abwägen; wird zwingend, sobald eine Sicherung bei einem Anbieter ohne Ende-zu-Ende-Verschlüsselung landet (die ZIP enthält alle Dokumente **und** die OCR-Volltexte)
