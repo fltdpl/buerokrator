@@ -4,6 +4,8 @@
 
 ## Unveröffentlicht
 
+## v0.4.0 — 31.08.2026
+
 - **Behoben: der erkannte Text war nur wenige Zeilen hoch.** In der
   Dokumentansicht zeigte der Umschalter „OCR-Text“ den Inhalt in einem
   schmalen Fenster, durch das man sich bei jedem längeren Dokument
