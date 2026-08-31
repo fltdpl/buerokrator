@@ -1,4 +1,4 @@
-from nicegui import ui
+from nicegui import run, ui
 
 from src.core.document_types import (
     DOCUMENT_TYPE_LABELS,
@@ -11,6 +11,12 @@ from src.frontend.theme import (
     DARK_ACTIVE,
     DOCUMENT_TYPE_ICONS,
     INK_MUTED,
+)
+from src.services.backup_service import (
+    BACKUP_WARNUNG_TAGE,
+    backup_alter_tage,
+    backup_ziel,
+    run_backup,
 )
 from src.services.profile_port import legacy_bestand_gefunden
 from src.services.profile_service import list_profiles
@@ -67,6 +73,100 @@ def _kategorie_kachel(document_type, anzahl):
                 ui.label(_anzahl_text(anzahl)).classes("text-sm").style(
                     f"color: {INK_MUTED}"
                 )
+
+
+def _backup_text(alter_tage):
+    """Wie alt die letzte Sicherung ist — in Worten.
+
+    „vor 0 Tagen" läse sich wie ein Fehler in der Anwendung, „vor 1 Tage"
+    ebenso; und „keine Sicherung" ist etwas anderes als eine von heute.
+    """
+    if alter_tage is None:
+        return "Noch keine Sicherung"
+
+    if alter_tage == 0:
+        return "Letztes Backup heute"
+
+    if alter_tage == 1:
+        return "Letztes Backup vor 1 Tag"
+
+    return f"Letztes Backup vor {alter_tage} Tagen"
+
+
+@ui.refreshable
+def _render_aufgaben(stats):
+    """Was tatsächlich Arbeit bedeutet: Inbox, ungeprüfte Dokumente, Sicherung.
+
+    Das Backup steht hier als Zeile und nicht als Kachel: Kacheln zeigen
+    Zustand, Aufgaben verlangen eine Handlung. Eine FRISCHE Sicherung bleibt
+    deshalb eine ruhige Zeile ohne Knopf — täglich etwas anzumahnen, das
+    längst getan ist, macht die ganze Karte übersehbar.
+
+    Das Alter wird hier frisch gelesen (nicht aus `stats`), damit die Zeile
+    nach einem Klick auf den Knopf nachziehen kann: bliebe die Warnung
+    stehen, sähe der Knopf wirkungslos aus.
+    """
+    alter = backup_alter_tage(backup_ziel())
+    backup_faellig = alter is None or alter >= BACKUP_WARNUNG_TAGE
+    arbeit_offen = stats["unverified_count"] or stats["inbox_count"]
+
+    with card("w-full"):
+        ui.label("Aufgaben").classes("text-xl page-title")
+
+        if arbeit_offen:
+            with ui.row().classes("gap-4"):
+                if stats["unverified_count"]:
+                    first_id = stats["first_unverified_id"]
+                    ui.button(
+                        f"{stats['unverified_count']} ungeprüfte Dokumente prüfen",
+                        icon="fact_check",
+                        on_click=lambda: ui.navigate.to(f"/dokumente/{first_id}"),
+                    ).props("color=primary unelevated")
+
+                if stats["inbox_count"]:
+                    ui.button(
+                        f"{stats['inbox_count']} Datei(en) in der Inbox importieren",
+                        icon="file_upload",
+                        on_click=lambda: ui.navigate.to("/import"),
+                    ).props("outline color=primary")
+
+        # Die Entwarnung nur, wenn wirklich nichts offen ist — über einer
+        # fälligen Sicherung wäre sie schlicht falsch.
+        elif not backup_faellig:
+            with ui.row().classes("items-center gap-2"):
+                ui.icon("check_circle").style(f"color: {ACCENTS['success']}")
+                ui.label("Keine offenen Aufgaben — Inbox leer, alles geprüft.")
+
+        _render_backup_zeile(alter, backup_faellig)
+
+
+def _render_backup_zeile(alter, faellig):
+    """Die Sicherung: ruhige Zeile, bei Überfälligkeit mit Knopf."""
+
+    async def sichern():
+        try:
+            zip_path = await run.io_bound(run_backup)
+
+        except Exception as error:
+            ui.notify(f"Backup fehlgeschlagen: {error}", type="negative")
+            return
+
+        ui.notify(f"Backup erstellt: {zip_path}", type="positive")
+        _render_aufgaben.refresh()
+
+    with ui.row().classes("items-center gap-2"):
+        ui.icon("backup" if not faellig else "warning").style(
+            f"color: {INK_MUTED if not faellig else ACCENTS['warning']}"
+        )
+        ui.label(_backup_text(alter)).classes("text-sm").style(
+            f"color: {INK_MUTED if not faellig else ACCENTS['warning']}"
+        )
+
+        if faellig:
+            knopf = ui.button(
+                "Backup jetzt erstellen", icon="save", on_click=sichern
+            ).props("outline color=primary no-caps dense")
+            knopf.mark("backup-jetzt")
 
 
 def _render_active_profile():
@@ -130,32 +230,7 @@ def dashboard_page():
             for document_type in DOCUMENT_TYPES:
                 _kategorie_kachel(document_type, counts.get(document_type, 0))
 
-        # Aufgaben: die beiden Dinge, die tatsächlich Arbeit bedeuten —
-        # Inbox importieren und ungeprüfte Dokumente durchsehen.
-        with card("w-full"):
-            ui.label("Aufgaben").classes("text-xl page-title")
-
-            if stats["unverified_count"] or stats["inbox_count"]:
-                with ui.row().classes("gap-4"):
-                    if stats["unverified_count"]:
-                        first_id = stats["first_unverified_id"]
-                        ui.button(
-                            f"{stats['unverified_count']} ungeprüfte Dokumente prüfen",
-                            icon="fact_check",
-                            on_click=lambda: ui.navigate.to(f"/dokumente/{first_id}"),
-                        ).props("color=primary unelevated")
-
-                    if stats["inbox_count"]:
-                        ui.button(
-                            f"{stats['inbox_count']} Datei(en) in der Inbox importieren",
-                            icon="file_upload",
-                            on_click=lambda: ui.navigate.to("/import"),
-                        ).props("outline color=primary")
-
-            else:
-                with ui.row().classes("items-center gap-2"):
-                    ui.icon("check_circle").style(f"color: {ACCENTS['success']}")
-                    ui.label("Keine offenen Aufgaben — Inbox leer, alles geprüft.")
+        _render_aufgaben(stats)
 
         with card("w-full"):
             ui.label("Zuletzt archiviert").classes("text-xl page-title")

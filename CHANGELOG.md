@@ -4,6 +4,20 @@
 
 ## Unveröffentlicht
 
+- **Neu: „Ordner öffnen" auf der Backup-Seite.** Einstellungen → Backup nennt
+  das Sicherungsziel bisher nur als Pfad; wer eine Sicherung auf einen Stick
+  kopieren oder eine alte wegräumen wollte, musste ihn abtippen. Ein Knopf
+  daneben öffnet den Ordner jetzt direkt im Dateimanager. Gibt es ihn noch
+  nicht — vor der ersten Sicherung der Normalfall —, sagt die App das, statt
+  ihn anzulegen.
+
+- **Neu: das Dashboard sagt, wann zuletzt gesichert wurde.** Unter „Aufgaben"
+  steht eine Zeile „Letztes Backup vor N Tagen". Liegt die letzte Sicherung
+  mehr als zwei Wochen zurück oder gab es noch keine, wird daraus eine
+  Aufgabe mit Knopf, der die Sicherung sofort anlegt; danach zieht die Zeile
+  nach. Eine frische Sicherung bleibt eine ruhige Zeile ohne Knopf — was
+  täglich mahnt, wird übersehen.
+
 - **Behoben: bei Gesundheitsdokumenten stand oft ein erfundener Betreff.**
   Der Extraktions-Prompt nannte fertige Beispiel-Betreffs, und das Modell
   übernahm sie wörtlich — auch wenn der genannte Gegenstand im Dokument gar

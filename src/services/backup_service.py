@@ -18,6 +18,44 @@ from src.core.config import load_config
 from src.core.logger import logger
 from src.services.archive_repair import repariere_archivpfade
 
+# Ab wann eine Sicherung als überfällig gilt (Tage). Zwei Wochen, weil der
+# Nutzer stapelweise importiert: eine kürzere Frist mahnte auch dann, wenn
+# seit der letzten Sicherung nichts dazugekommen ist — und eine Mahnung, die
+# meistens unbegründet ist, wird weggesehen.
+BACKUP_WARNUNG_TAGE = 14
+
+
+def backup_ziel(config=None):
+    """Ordner, in dem die Sicherungen liegen (aus der Konfiguration).
+
+    Eine Stelle für alle Konsumenten: Dashboard und Einstellungen müssen
+    denselben Ort meinen, sonst zeigt die eine Fläche ein Alter, das die
+    andere nicht erklären kann. Der Wert ist nach `load_config()` bereits
+    absolut und gegen das Profil aufgelöst.
+    """
+    config = config if config is not None else load_config()
+
+    return (config.get("backup") or {}).get("target") or "./backups"
+
+
+def backup_alter_tage(target_dir, now=None):
+    """Volle Tage seit der jüngsten Sicherung — None, wenn es keine gibt.
+
+    Der Unterschied zwischen „keine" und „0 Tage" trägt die Beschriftung in
+    der Oberfläche und darf hier nicht eingeebnet werden. Angefangene Tage
+    zählen nicht mit; eine Sicherung aus der Zukunft (verstellte Uhr,
+    kopierte Datei) ergibt 0 statt eines negativen Alters.
+    """
+    backups = list_backups(target_dir)
+
+    if not backups:
+        return None
+
+    now = now or datetime.now()
+    juengste = datetime.fromtimestamp(backups[0]["mtime"])
+
+    return max((now - juengste).days, 0)
+
 
 def _default_backup_name(now):
     return f"buerokrator_backup_{now.strftime('%Y%m%d_%H%M%S')}.zip"
@@ -108,7 +146,7 @@ def run_backup():
 
     db_path = config["database"]["path"]
     archive_dir = config["paths"]["archive"]
-    target_dir = config.get("backup", {}).get("target", "./backups")
+    target_dir = backup_ziel(config)
 
     zip_path = create_backup(
         db_path=db_path,
@@ -142,6 +180,7 @@ def list_backups(target_dir):
                 "path": str(path),
                 "name": path.name,
                 "size_mb": path.stat().st_size / 1024 / 1024,
+                "mtime": path.stat().st_mtime,
             }
         )
 

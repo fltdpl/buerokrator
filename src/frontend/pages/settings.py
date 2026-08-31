@@ -23,8 +23,14 @@ from src.services.profile_service import (
     rename_profile,
 )
 from src.services.archive_repair import run_check, run_repair
-from src.services.backup_service import list_backups, run_backup, run_restore
+from src.services.backup_service import (
+    backup_ziel,
+    list_backups,
+    run_backup,
+    run_restore,
+)
 from src.services.dependency_service import collect_dependency_status
+from src.services.file_manager import oeffne_ordner
 from src.services.log_service import LOG_LEVELS, read_log_tail
 from src.organizer.issuer_normalizer import (
     ensure_aliases_file,
@@ -32,10 +38,6 @@ from src.organizer.issuer_normalizer import (
     parse_aliases_text,
 )
 from src.services.model_service import list_installed_models
-
-
-def _backup_target(config):
-    return config.get("backup", {}).get("target", "./backups")
 
 
 @ui.page("/einstellungen")
@@ -55,7 +57,7 @@ def settings_page():
             tab_aliases = ui.tab("Aliase", icon="label")
             tab_tags = ui.tab("Tags", icon="sell")
             tab_trash = ui.tab("Papierkorb", icon="delete_outline")
-            tab_backup = ui.tab("Backup", icon="save")
+            tab_backup = ui.tab("Backup", icon="save").mark("tab-backup")
             tab_database = ui.tab("Datenbank", icon="storage")
             tab_log = ui.tab("Log", icon="article")
 
@@ -322,7 +324,7 @@ def _render_config(config):
                 "Datenbank", value=config["database"]["path"]
             ).classes("w-full")
             backup_path = ui.input(
-                "Backup-Ziel", value=_backup_target(config)
+                "Backup-Ziel", value=backup_ziel(config)
             ).classes("w-full")
 
     def save():
@@ -591,7 +593,21 @@ def _render_backup(config):
     ).classes("muted")
 
     with card("w-full gap-3"):
-        ui.label(f"Backup-Ziel: {_backup_target(config)}").classes("text-sm muted")
+        # Der Pfad steht weiter als Text da (kopierbar, auch wenn das Öffnen
+        # scheitert); der Knopf daneben spart das Abtippen.
+        with ui.row().classes("items-center gap-2"):
+            ui.label(f"Backup-Ziel: {backup_ziel(config)}").classes("text-sm muted")
+
+            def ordner_zeigen():
+                try:
+                    oeffne_ordner(backup_ziel(config))
+
+                except Exception as error:
+                    ui.notify(str(error), type="negative")
+
+            ui.button(
+                "Ordner öffnen", icon="folder_open", on_click=ordner_zeigen
+            ).props("flat dense no-caps color=primary").mark("backup-ordner")
 
         def do_backup():
             try:
@@ -619,7 +635,7 @@ def _render_restore(config):
 
     @ui.refreshable
     def restore_area():
-        backups = list_backups(_backup_target(config))
+        backups = list_backups(backup_ziel(config))
 
         if not backups:
             ui.label("Keine Backups im Zielordner gefunden.").classes("muted")
