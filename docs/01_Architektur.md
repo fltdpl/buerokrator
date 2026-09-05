@@ -86,8 +86,14 @@ gleichem Betrag UND Datum. Leere Werte matchen NIE (sonst wirft ein
 unerkanntes Feld den halben Bestand zusammen), die Policennummer ist bewusst
 kein Merkmal (sie steht über Jahre auf jedem Dokument eines Vertrags). Live
 berechnet statt gespeichert, weil sich die Werte im Prüfworkflow ändern.
-Angezeigt werden Treffergrund und widersprechende Felder; der Widerspruch
-filtert NICHT — er kann ein Lesefehler in einem der Scans sein. Bekannte
+Angezeigt werden Treffergrund und die WERTE beider Seiten je Feld
+(`compare_documents`, Status `gleich` | `abweichend` | `fehlt`) — der Feldname
+allein entscheidet nichts: eine Rechnungsnummer, die sich in einer Ziffer
+unterscheidet, spricht für dieselbe Rechnung, eine völlig andere dagegen. Der
+Widerspruch filtert NICHT — er kann ein Lesefehler in einem der Scans sein.
+Die Gegenüberstellung (`pages/duplicate_compare.py`,
+`/dokumente/<a>/vergleich/<b>`) zeigt zusätzlich beide Belege als PDF
+nebeneinander. Bekannte
 Grenze: Typen ohne `amount`/`document_date` lösen die Warnung nie aus.
 
 ### Frontend (`src/frontend`, NiceGUI)

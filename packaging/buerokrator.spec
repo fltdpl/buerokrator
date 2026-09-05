@@ -32,6 +32,7 @@ a = Analysis(
         "src.frontend.pages.dashboard",
         "src.frontend.pages.document_detail",
         "src.frontend.pages.documents",
+        "src.frontend.pages.duplicate_compare",
         "src.frontend.pages.help_page",
         "src.frontend.pages.import_page",
         "src.frontend.pages.migration_page",

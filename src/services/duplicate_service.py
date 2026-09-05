@@ -145,6 +145,98 @@ def _differing_fields(data, other):
     return differences
 
 
+def _issuer_raw(data):
+    """Der Aussteller so, wie er im Dokument steht — ohne Alias-Auflösung."""
+    for field in _ISSUER_FIELDS:
+        value = data.get(field)
+
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+
+    return ""
+
+
+def _raw(field):
+    def hole(data):
+        value = data.get(field)
+
+        return "" if value is None else str(value).strip()
+
+    return hole
+
+
+# Beschriftung, Vergleichsschlüssel und Rohwert je Zeile der Gegenüberstellung.
+# Verglichen wird über den Schlüssel (Alias, Betragsformat, Datumsschreibweise),
+# ANGEZEIGT wird der Rohwert: ein normalisierter Wert stünde in der Tabelle,
+# ohne im PDF wiederzufinden zu sein — und genau dort schaut der Nutzer nach.
+_VERGLEICHSZEILEN = (
+    ("Aussteller", _issuer_key, _issuer_raw),
+    ("Betrag", _amount_key, _raw("amount")),
+    ("Datum", _date_key, _raw("document_date")),
+    ("Rechnungsnummer", _invoice_key, _raw("invoice_number")),
+)
+
+
+def _status(links_key, rechts_key, links_roh, rechts_roh):
+    """Drei Zustände statt zwei.
+
+    Ein leeres Feld als "abweichend" zu zeigen, spräche gegen die Dublette,
+    obwohl es nichts aussagt — es ist eine Lücke in der Erkennung, kein
+    Gegenbeweis (dieselbe Regel wie in `_differing_fields`).
+    """
+    if not links_roh or not rechts_roh:
+        return "fehlt"
+
+    leer = (None, "")
+
+    if links_key in leer or rechts_key in leer:
+        return "abweichend"
+
+    return "gleich" if links_key == rechts_key else "abweichend"
+
+
+def compare_documents(document_id, other_id):
+    """Feldweise Gegenüberstellung zweier Dokumente.
+
+    Liefert Plain Data, in fester Reihenfolge:
+    [{"label", "links", "rechts", "status"}] mit status
+    "gleich" | "abweichend" | "fehlt". Leer, wenn eines der beiden Dokumente
+    nicht existiert.
+
+    Zeilen, in denen BEIDE Seiten leer sind, fallen weg — sie kosten Platz
+    und sagen nichts.
+    """
+    row = get_document(document_id)
+    other = get_document(other_id)
+
+    if row is None or other is None:
+        return []
+
+    data = _data_of(row)
+    other_data = _data_of(other)
+    zeilen = []
+
+    for label, key_of, raw_of in _VERGLEICHSZEILEN:
+        links_roh = raw_of(data)
+        rechts_roh = raw_of(other_data)
+
+        if not links_roh and not rechts_roh:
+            continue
+
+        zeilen.append(
+            {
+                "label": label,
+                "links": links_roh,
+                "rechts": rechts_roh,
+                "status": _status(
+                    key_of(data), key_of(other_data), links_roh, rechts_roh
+                ),
+            }
+        )
+
+    return zeilen
+
+
 def _match_reason(data, other):
     """Begründung, warum die beiden denselben Beleg meinen — oder None.
 

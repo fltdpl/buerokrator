@@ -382,10 +382,13 @@ async def test_detail_warnt_vor_inhaltlicher_dublette(user: User):
 
 @pytest.mark.asyncio
 async def test_dublettenhinweis_nennt_das_abweichende_feld(user: User):
-    """Was widerspricht, steht neben dem Treffergrund.
+    """Was widerspricht, steht unter dem Treffergrund — mit beiden Werten.
 
     Aussteller, Betrag und Datum stimmen, die Rechnungsnummern nicht — genau
-    daran entscheidet sich am Original, ob es derselbe Beleg ist.
+    daran entscheidet sich am Original, ob es derselbe Beleg ist. Seit der
+    Gegenüberstellung steht deshalb nicht mehr nur der Feldname da: "RE-1001"
+    gegen "RE-1002" ist ein Verleser und spricht FÜR die Dublette, eine völlig
+    andere Nummer spricht dagegen.
     """
     from src.database.document_repository import insert_document
 
@@ -409,7 +412,10 @@ async def test_dublettenhinweis_nennt_das_abweichende_feld(user: User):
 
     await user.open(f"/dokumente/{zweiter}")
     await user.should_see("Mögliche Dublette")
-    await user.should_see("abweichend: Rechnungsnummer")
+    await user.should_see("Rechnungsnummer")
+    await user.should_see("RE-1001")
+    await user.should_see("RE-1002")
+    await user.should_see("abweichend")
 
 
 @pytest.mark.asyncio

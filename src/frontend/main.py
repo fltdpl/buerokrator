@@ -32,6 +32,7 @@ import src.frontend.pages.analyse  # noqa: F401
 import src.frontend.pages.dashboard  # noqa: F401
 import src.frontend.pages.document_detail  # noqa: F401
 import src.frontend.pages.documents  # noqa: F401
+import src.frontend.pages.duplicate_compare  # noqa: F401
 import src.frontend.pages.help_page  # noqa: F401
 import src.frontend.pages.import_page  # noqa: F401
 import src.frontend.pages.migration_page  # noqa: F401

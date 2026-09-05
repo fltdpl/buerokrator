@@ -20,13 +20,13 @@ from src.frontend.listing_order import adjacent_id, get_listing_order
 from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
-from src.frontend.theme import INK_MUTED, tag_color
+from src.frontend.theme import INK_MUTED, WARNING, tag_color
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
     reanalyze_document,
 )
-from src.services.duplicate_service import find_content_duplicates
+from src.services.duplicate_service import compare_documents, find_content_duplicates
 from src.services.issuer_memory import type_mismatch
 from src.services.tag_service import (
     add_to_selection,
@@ -210,17 +210,47 @@ def _duplicate_hint(document_id):
         ).classes("text-sm text-orange-700")
 
         for duplicate in duplicates:
-            with ui.row().classes("items-center gap-1 text-sm"):
+            with ui.row().classes("items-center gap-2 text-sm"):
                 ui.link(
                     f"#{duplicate['id']} {duplicate['filename']}",
                     f"/dokumente/{duplicate['id']}",
                 )
                 ui.label(f"({duplicate['reason']})").classes("text-xs muted")
+                ui.link(
+                    "nebeneinander vergleichen",
+                    f"/dokumente/{document_id}/vergleich/{duplicate['id']}",
+                ).classes("text-xs")
 
-                if duplicate["differences"]:
-                    ui.label(
-                        "— abweichend: " + ", ".join(duplicate["differences"])
-                    ).classes("text-xs text-orange-700")
+            _vergleichstabelle(compare_documents(document_id, duplicate["id"]),
+                               f"#{duplicate['id']}")
+
+
+def _vergleichstabelle(zeilen, rechte_spalte):
+    """Die Werte beider Seiten nebeneinander — nicht nur die Feldnamen.
+
+    Der Feldname allein beantwortet nichts: eine Rechnungsnummer, die sich in
+    einer Ziffer unterscheidet, ist ein OCR-Verleser und spricht FÜR die
+    Dublette; eine voellig andere spricht dagegen. Erst die Werte machen den
+    Hinweis entscheidungsreif.
+    """
+    if not zeilen:
+        return
+
+    farbe = {
+        "abweichend": WARNING,
+        "fehlt": INK_MUTED,
+        "gleich": INK_MUTED,
+    }
+
+    with ui.grid(columns=4).classes("gap-x-4 gap-y-0 text-xs pl-1"):
+        for kopf in ("", "dieses", rechte_spalte, ""):
+            ui.label(kopf).style(f"color: {INK_MUTED}")
+
+        for zeile in zeilen:
+            ui.label(zeile["label"]).style(f"color: {INK_MUTED}")
+            ui.label(zeile["links"] or "—")
+            ui.label(zeile["rechts"] or "—")
+            ui.label(zeile["status"]).style(f"color: {farbe[zeile['status']]}")
 
 
 def _memory_hint(document_id):

@@ -4,6 +4,18 @@
 
 ## Unveröffentlicht
 
+- **Neu: Dubletten lassen sich nebeneinander vergleichen.** Der Hinweis auf
+  eine mögliche Dublette nannte bisher nur die Namen der widersprechenden
+  Felder — daran entscheidet sich aber nichts: eine Rechnungsnummer, die sich
+  in einer Ziffer unterscheidet, ist ein Lesefehler und spricht für denselben
+  Beleg, eine völlig andere spricht dagegen. Jetzt stehen die Werte beider
+  Dokumente nebeneinander, samt Angabe, was übereinstimmt und wo ein Wert
+  fehlt (eine Lücke in der Erkennung zählt ausdrücklich nicht als
+  Widerspruch). Über „nebeneinander vergleichen" öffnet sich zusätzlich eine
+  Gegenüberstellung, die beide Belege als PDF nebeneinander zeigt — dort
+  entscheidet der Blick aufs Papier, und der überzählige Scan wandert mit
+  einem Knopf in den Papierkorb.
+
 - **Behoben: bei Rechnungen stand als Aussteller die Feldbeschreibung.** Die
   Erkennung übernahm gelegentlich den Beschreibungstext aus der eigenen
   Vorlage („Rechnungssteller oder Verkäufer") als Ausstellernamen — der

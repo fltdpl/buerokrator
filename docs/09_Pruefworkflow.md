@@ -37,7 +37,9 @@ Datei liegt in `trash/`.
 
 Die Hinweise stehen bewusst vor der Entscheidung — mögliche Dublette
 (`duplicate_service.py`) und unerwarteter Typ (`issuer_memory.py`); beide
-ändern nie etwas von selbst. Welche Felder erscheinen, entscheiden Typ **und**
+ändern nie etwas von selbst. Der Dubletten-Hinweis stellt die Werte beider
+Dokumente gegenüber; „nebeneinander vergleichen" öffnet beide Belege als PDF
+nebeneinander, mit Papierkorb-Knopf je Seite. Welche Felder erscheinen, entscheiden Typ **und**
 Unterart (`form_schema.py`); leere Pflichtfelder werden nur hervorgehoben und
 blockieren nichts. Gespeichert wird über `merge_form_values` →
 `whitelist_fields` (trimmen, Datum deutsch, Unterart ans Vokabular binden,
