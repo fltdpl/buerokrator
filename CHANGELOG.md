@@ -4,6 +4,17 @@
 
 ## Unveröffentlicht
 
+- **Neu: der Papierkorb sagt, warum eine Datei in ihm liegt.** Beim Import
+  wird eine Datei, die schon im Bestand ist, ohne Rückfrage in den Papierkorb
+  verschoben. Das ist sicher — erkannt wird es an der Prüfsumme, die Dateien
+  sind Byte für Byte identisch —, war aber nicht nachvollziehbar: im
+  Papierkorb sah so eine Datei aus wie ein von Hand gelöschtes Dokument, und
+  der Grund stand allein im Protokoll. Jetzt steht er an der Datei, mit Link
+  auf das bereits archivierte Original. Die Meldung nach dem Import sagt
+  außerdem, woran erkannt wurde — damit unterscheidbar bleibt, was bewiesen
+  ist (identische Datei) und was ein Verdacht ist (mögliche Dublette im
+  Prüf-Workflow).
+
 - **Neu: Dubletten lassen sich nebeneinander vergleichen.** Der Hinweis auf
   eine mögliche Dublette nannte bisher nur die Namen der widersprechenden
   Felder — daran entscheidet sich aber nichts: eine Rechnungsnummer, die sich

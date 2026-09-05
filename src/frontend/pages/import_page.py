@@ -72,11 +72,21 @@ def _render_result(result, on_reset):
             "(liegen im Papierkorb):"
         ).classes("text-amber-700")
 
+        # Woran es erkannt wurde, gehoert dazu: eine Automatik, die ohne
+        # Rueckfrage verschiebt, muss sagen, worauf sie sich stuetzt. Die
+        # Pruefsumme ist ein Beweis, keine Schaetzung — anders als die
+        # inhaltliche Dubletten-Warnung im Pruefworkflow.
+        ui.label(
+            "Erkannt an der Prüfsumme der Datei — Byte für Byte identisch, "
+            "nicht bloß ähnlich. Das archivierte Original bleibt unberührt; "
+            "die abgewiesene Datei liegt im Papierkorb und nennt dort ihre "
+            "Herkunft."
+        ).classes("text-sm muted")
+
         for entry in result["duplicates"]:
             with ui.row().classes("items-center gap-1"):
                 ui.label(
-                    f"• {entry['source_name']} ist bereits"
-                    " archiviert als"
+                    f"• {entry['source_name']} ist identisch mit"
                 ).classes("text-sm muted")
                 ui.link(
                     entry["duplicate_filename"],

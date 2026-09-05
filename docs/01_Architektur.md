@@ -191,7 +191,13 @@ sicher erkennen. Die deterministische Methode läuft dort zuerst, wo sie
 vollständig ist.
 
 Der Dubletten-Abbruch sitzt vor OCR und LLM: eine bereits archivierte Datei
-soll den Rechner nicht beschäftigen. Ist Ollama nicht erreichbar, wird als
+soll den Rechner nicht beschäftigen. Erkannt wird er über SHA256 der ganzen
+Datei (`file_hash`) — ein Beweis, keine Schätzung, deshalb verschiebt der
+Import ohne Rückfrage nach `trash/`. Nachprüfbar bleibt es trotzdem:
+`notiere_herkunft` hält neben den Dateien fest, als Dublette welchen
+Dokuments eine Datei dort liegt (`trash/.herkunft.json`, 0600, nur die ID),
+und der Papierkorb zeigt es an. Ohne diese Notiz stünde der Grund allein im
+Log, und eine abgewiesene Dublette sähe aus wie ein gelöschtes Dokument. Ist Ollama nicht erreichbar, wird als
 `unknown` archiviert statt abgebrochen. Fehlerpfade zeigt das Bild nicht —
 jede Stufe kann scheitern, die Ursache landet im Ergebnis und auf der
 Import-Seite. Weiter geht es im [Prüfworkflow](09_Pruefworkflow.md).

@@ -8,7 +8,7 @@ from src.core.file_hash import file_hash
 from src.core.logger import logger
 from src.database.document_repository import insert_document
 from src.database.find_duplicate import find_document_by_hash
-from src.organizer.trash import move_to_trash
+from src.organizer.trash import move_to_trash, notiere_herkunft
 from src.ocr.ocr_service import extract_text_from_image, extract_text_from_image_pdf
 from src.ocr.pdf_reader import extract_text as pdf_extract_text
 from src.ocr.pdf_reader import has_text
@@ -180,6 +180,13 @@ def process(file_path):
         if duplicate:
             duplicate_id, duplicate_name = duplicate
             trashed = move_to_trash(file_path)
+
+            # Warum die Datei dort liegt, stand bisher nur im Log. Der
+            # Papierkorb liest das Dateisystem, und dort steht kein Grund —
+            # eine abgewiesene Dublette sah aus wie ein geloeschtes Dokument.
+            if trashed is not None:
+                notiere_herkunft(trashed.name, duplicate_id)
+
             logger.info(
                 f"Dublette von #{duplicate_id} ({duplicate_name}),"
                 f" in den Papierkorb verschoben: {trashed}"

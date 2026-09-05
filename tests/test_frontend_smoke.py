@@ -179,6 +179,48 @@ async def test_trash_page_lists_deleted_files(user: User, tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_trash_page_nennt_die_herkunft_einer_abgewiesenen_dublette(user: User):
+    """Der Papierkorb sagt, WARUM eine Datei hier liegt.
+
+    Beim Import wird eine byte-gleiche Datei ohne Rueckfrage hierher
+    verschoben. Ohne diese Zeile sieht sie aus wie ein von Hand geloeschtes
+    Dokument, und die Automatik bleibt eine, der man glauben soll.
+    """
+    from src.database.document_repository import insert_document
+    from src.organizer.trash import notiere_herkunft
+
+    original = insert_document(
+        filename="2024-01-01_Musterversand.pdf",
+        archive_path="archive/2024/Rechnungen/2024-01-01_Musterversand.pdf",
+        document_type="invoice",
+        extracted_data={},
+    )
+
+    trash = get_app_home() / "trash"
+    trash.mkdir(parents=True, exist_ok=True)
+    (trash / "erneut_gescannt.pdf").write_text("x", encoding="utf-8")
+    notiere_herkunft("erneut_gescannt.pdf", dokument_id=original)
+
+    await user.open("/papierkorb")
+    await user.should_see("erneut_gescannt.pdf")
+    await user.should_see("Byte für Byte identisch")
+    await user.should_see(f"#{original}")
+
+
+@pytest.mark.asyncio
+async def test_trash_page_zeigt_keine_herkunft_bei_handloeschung(user: User):
+    """Von Hand geloeschte Dokumente tragen keinen Grund — dann steht dort
+    auch nichts, statt einer leeren Zeile."""
+    trash = get_app_home() / "trash"
+    trash.mkdir(parents=True, exist_ok=True)
+    (trash / "von_hand.pdf").write_text("x", encoding="utf-8")
+
+    await user.open("/papierkorb")
+    await user.should_see("von_hand.pdf")
+    await user.should_not_see("Byte für Byte identisch")
+
+
+@pytest.mark.asyncio
 async def test_setup_page_renders(user: User):
     await user.open("/einrichtung")
     await user.should_see("Einrichtung")

@@ -1,5 +1,6 @@
 from nicegui import ui
 
+from src.database.list_documents import get_document
 from src.frontend.layout import card, page_layout, umzug_noetig
 from src.services.trash_service import empty_trash, list_trash, restore_from_trash
 
@@ -12,6 +13,31 @@ def _format_size(size):
         return f"{size / 1024:.0f} KB"
 
     return f"{size / 1024 / 1024:.1f} MB"
+
+
+def _herkunft_zeile(herkunft):
+    """Warum diese Datei hier liegt — bei automatisch abgewiesenen Dubletten.
+
+    Die Verschiebung geschieht ohne Rueckfrage, und das ist richtig: gleicher
+    Hash heisst identische Bytes, da gibt es nichts zu entscheiden. Nachpruefen
+    koennen muss man es trotzdem, sonst bleibt es eine Automatik, der man
+    glauben soll. Genannt wird deshalb, WORAN es erkannt wurde.
+    """
+    if not herkunft or herkunft.get("grund") != "dublette":
+        return
+
+    dokument_id = herkunft.get("dokument_id")
+    vorhanden = get_document(dokument_id) is not None if dokument_id else False
+
+    with ui.row().classes("items-baseline gap-1"):
+        ui.label(
+            "Beim Import abgewiesen: Byte für Byte identisch mit"
+        ).classes("text-xs muted")
+
+        if vorhanden:
+            ui.link(f"#{dokument_id}", f"/dokumente/{dokument_id}").classes("text-xs")
+        else:
+            ui.label(f"#{dokument_id} (nicht mehr vorhanden)").classes("text-xs muted")
 
 
 def render_trash():
@@ -41,7 +67,9 @@ def render_trash():
 
         for entry in entries:
             with ui.row().classes("items-center gap-4 w-full"):
-                ui.label(entry["name"]).classes("flex-grow")
+                with ui.column().classes("flex-grow min-w-0 gap-0"):
+                    ui.label(entry["name"])
+                    _herkunft_zeile(entry["herkunft"])
                 ui.label(_format_size(entry["size"])).classes(
                     "text-sm muted w-20 text-right"
                 )

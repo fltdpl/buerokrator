@@ -105,6 +105,37 @@ def test_dublette_wird_ohne_ocr_und_llm_in_den_papierkorb_verschoben(
     assert (get_app_home() / "trash" / "rechnung.pdf").read_bytes() == b"inhalt"
 
 
+def test_dublette_notiert_warum_sie_im_papierkorb_liegt(tmp_path, monkeypatch):
+    """Ohne Notiz sieht die abgewiesene Datei aus wie ein geloeschtes Dokument.
+
+    Der Papierkorb liest sonst nur das Dateisystem — dort steht kein Grund,
+    und der Nutzer kann die automatische Verschiebung nicht nachpruefen.
+    """
+    _setup_project(tmp_path, monkeypatch)
+
+    inbox = get_app_home() / "inbox"
+    inbox.mkdir(parents=True)
+    original = inbox / "rechnung.pdf"
+    original.write_bytes(b"inhalt")
+
+    document_id = insert_document(
+        filename="2024-01-01_Musterversand.pdf",
+        archive_path="archive/2024/Rechnungen/2024-01-01_Musterversand.pdf",
+        document_type="invoice",
+        extracted_data={},
+        content_hash=file_hash(original),
+    )
+
+    processor.process(str(original))
+
+    from src.services.trash_service import list_trash
+
+    eintrag = next(e for e in list_trash() if e["name"] == "rechnung.pdf")
+
+    assert eintrag["herkunft"]["dokument_id"] == document_id
+    assert eintrag["herkunft"]["grund"] == "dublette"
+
+
 def test_neues_dokument_wird_mit_hash_gespeichert(tmp_path, monkeypatch):
     _setup_project(tmp_path, monkeypatch)
 
