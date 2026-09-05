@@ -4,6 +4,10 @@
 
 ## Unveröffentlicht
 
+- Release-Ablauf (`docs/07`): der E2E-Smoke braucht `BUEROKRATOR_HOME`
+  **und** ein fremdes Arbeitsverzeichnis — ein frisches `HOME` isoliert
+  nicht gegen den Entwickler-Modus, der an der cwd hängt.
+
 ## v0.4.0 — 31.08.2026
 
 - **Behoben: der erkannte Text war nur wenige Zeilen hoch.** In der

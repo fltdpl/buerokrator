@@ -71,8 +71,21 @@ eine Ebene höher liegt.
    (die Version steht nur dort; der Build liest sie von da).
 2. Committen, `git tag vX.Y.Z`, `git push && git push --tags`.
 3. `bash packaging/build_linux.sh` → `dist/buerokrator-<v>-linux-<arch>.tar.gz`.
-4. E2E-Smoke: Tarball in ein frisches `HOME` entpacken, `install.sh`,
-   starten, HTTP-Antwort prüfen, mit `uninstall.sh` wieder aufräumen.
+4. E2E-Smoke: Tarball entpacken, `install.sh`, starten, HTTP-Antwort prüfen,
+   mit `uninstall.sh` wieder aufräumen. **Ein frisches `HOME` isoliert dabei
+   nicht.** Die Basis wird in der Reihenfolge `BUEROKRATOR_HOME` → cwd im
+   Entwickler-Modus → Benutzer-Datenverzeichnis aufgelöst (siehe „Dateien:
+   zwei Wurzeln"); ein Start aus dem Repo greift also über die **cwd** zum
+   Entwicklungsbestand, so frisch das `HOME` auch sein mag. Nötig sind beide,
+   die Variable **und** ein fremdes Arbeitsverzeichnis:
+   ```bash
+   env HOME=/tmp/smoke BUEROKRATOR_HOME=/tmp/smoke/.local/share/buerokrator \
+     sh -c 'cd /tmp && /tmp/smoke/.local/bin/buerokrator'
+   ```
+   Ohne das prüft der Smoke-Test die Entwicklungsdatenbank statt des Pakets —
+   und sieht dabei aus, als liefe er sauber durch (so geschehen am
+   31.08.2026). Gegenprobe vor der Auswertung: die Instanz muss den
+   Bestand des frischen `HOME` zeigen, nicht den bekannten Entwicklungsstand.
 5. Tarball vor dem Upload auf Echtdaten prüfen — Release-Pakete bündeln
    `src/classifier/prompts/*` mit, ein Echtname dort landet in **jedem**
    veröffentlichten Binary (so geschehen in 0.1.0 und 0.2.0):
