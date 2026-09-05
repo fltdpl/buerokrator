@@ -4,6 +4,16 @@
 
 ## Unveröffentlicht
 
+- **Behoben: bei Rechnungen stand als Aussteller die Feldbeschreibung.** Die
+  Erkennung übernahm gelegentlich den Beschreibungstext aus der eigenen
+  Vorlage („Rechnungssteller oder Verkäufer") als Ausstellernamen — der
+  Unsinnswert stand dann in der Übersicht, wanderte in den Dateinamen und
+  blieb auch nach der Freigabe stehen. Die Vorlage sagt jetzt ausdrücklich,
+  dass ihre Beschreibungen nie ein Wert sind und der Name wörtlich aus dem
+  Dokument stammen muss. Findet sich keiner, bleibt das Feld leer, statt
+  gefüllt auszusehen — im Prüf-Workflow ist die Lücke damit sichtbar.
+  Betroffene Dokumente ziehen über „Erneut prüfen" nach.
+
 - Release-Ablauf (`docs/07`): der E2E-Smoke braucht `BUEROKRATOR_HOME`
   **und** ein fremdes Arbeitsverzeichnis — ein frisches `HOME` isoliert
   nicht gegen den Entwickler-Modus, der an der cwd hängt.

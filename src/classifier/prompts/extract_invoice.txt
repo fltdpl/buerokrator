@@ -3,6 +3,10 @@ Verwende keine Arrays.
 Liefere ausschließlich die Felder aus dem Schema.
 Keine zusätzlichen Felder.
 
+Übernimm nur Werte, die im Dokument stehen.
+Die Angaben hinter dem Gleichheitszeichen beschreiben das Feld —
+sie sind nie der Wert.
+
 Schema:
 
 {{
@@ -14,7 +18,10 @@ Schema:
 
 Extrahiere:
 
-- issuer = Rechnungssteller oder Verkäufer
+- issuer = Name des Rechnungsstellers oder Verkäufers
+
+Übernimm den Namen WÖRTLICH aus dem Dokument.
+Steht dort kein Name, verwende "".
 
 - document_date = Rechnungsdatum
 
