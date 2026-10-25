@@ -46,6 +46,8 @@ Beispiele:
 2450.00
 -383.16
 
+Die Angaben hinter dem Gleichheitszeichen beschreiben das Feld —
+sie sind nie der Wert.
 Wenn ein Textfeld nicht gefunden wird, verwende "".
 Wenn ein Betrag nicht im Dokument steht, verwende null.
 

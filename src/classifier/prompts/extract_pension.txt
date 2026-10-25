@@ -120,6 +120,8 @@ Dokument).
 Beträge müssen Zahlen sein. Keine Währungszeichen.
 Steht ein Betrag als 0,00 im Dokument, verwende 0.0 (nicht null).
 
+Die Angaben hinter dem Gleichheitszeichen beschreiben das Feld —
+sie sind nie der Wert.
 Wenn ein Textfeld nicht gefunden wird, verwende "".
 Wenn ein Betrag nicht gefunden wird, verwende null.
 

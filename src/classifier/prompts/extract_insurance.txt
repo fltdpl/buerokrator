@@ -76,6 +76,8 @@ Keine Anführungszeichen.
 
 Wenn kein Beitrag gefunden wird, verwende null.
 
+Die Angaben hinter dem Gleichheitszeichen beschreiben das Feld —
+sie sind nie der Wert.
 Wenn ein Wert nicht gefunden wird,
 verwende "" bzw. null.
 

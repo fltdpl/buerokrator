@@ -4,6 +4,11 @@
 
 ## Unveröffentlicht
 
+- Die Analyse-Anweisungen für Arbeit, Vorsorge, Steuer und Versicherung
+  sagen jetzt ausdrücklich, dass die Feldbeschreibungen keine Werte sind —
+  dieselbe Absicherung, die der Rechnungs-Prompt schon bekommen hat. Ein
+  Test hält das für jeden Prompt mit dieser Schreibweise fest.
+
 - **Behoben: ein abgebrochenes Update konnte die Installation löschen.**
   `install.sh` entfernte die alte Fassung, bevor die neue fertig kopiert war
   — brach das Kopieren ab (volle Platte, Strg+C), blieb gar kein Programm
