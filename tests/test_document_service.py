@@ -158,7 +158,13 @@ def test_available_years_and_parse_row():
     assert parsed["verified"] is False
 
 
-def test_build_table_rows_contains_display_fields():
+def test_build_table_rows_contains_display_fields(tmp_path, monkeypatch):
+    # build_table_rows liest die Tags aus der Datenbank — ohne Isolation die
+    # echte im Repo (Entwickler-Modus).
+    write_config(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    init_database()
+
     rows = build_table_rows(
         [make_row(1, "invoice", 2023, {"issuer": "Musterversand", "amount": 42.5}, verified=1)]
     )
@@ -206,7 +212,11 @@ def test_set_documents_subtype_changes_subtype_and_unverifies(tmp_path, monkeypa
     assert row["verified"] == 0
 
 
-def test_build_table_rows_uses_employer_as_issuer():
+def test_build_table_rows_uses_employer_as_issuer(tmp_path, monkeypatch):
+    write_config(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    init_database()
+
     # Lohnsteuer/Gehalt legen den Arbeitgeber in "employer" ab, nicht "issuer".
     rows = build_table_rows(
         [

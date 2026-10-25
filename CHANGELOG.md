@@ -4,6 +4,18 @@
 
 ## Unveröffentlicht
 
+- **Behoben: ein abgebrochenes Update konnte die Installation löschen.**
+  `install.sh` entfernte die alte Fassung, bevor die neue fertig kopiert war
+  — brach das Kopieren ab (volle Platte, Strg+C), blieb gar kein Programm
+  zurück. Jetzt wird die neue Fassung vollständig daneben angelegt und erst
+  dann gegen die alte getauscht; bei einem Abbruch bleibt die bisherige
+  Installation unverändert. Die Nutzerdaten waren davon nie betroffen.
+
+- Intern: die Test-Wache prüft den Bestand im Repo jetzt rekursiv, einmal je
+  Testlauf. Vorher sah sie nur die obersten Ordner und übersah Zugriffe tief
+  in Datenbank- oder Archivordner. Zwei Tests, die dabei unbemerkt die echte
+  Datenbank lasen, sind jetzt isoliert.
+
 - **Neu: Wohnen-Abrechnungen kennen ihren Abrechnungszeitraum.** Nebenkosten-,
   Heizkosten- und Hausgeldabrechnungen kommen oft erst Jahre nach dem
   Zeitraum, den sie abrechnen. Sie liegen — steuerlich richtig — im Jahr, in

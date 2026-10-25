@@ -1,6 +1,7 @@
 """Globale Test-Fixtures."""
 
 import logging
+import os
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,57 @@ def kein_test_fasst_den_echten_bestand_an():
         "Dieser Test hat den echten Bestand im Repo verändert "
         f"({', '.join(veraendert)}). Das App-Home muss isoliert werden — "
         "BUEROKRATOR_HOME auf tmp_path setzen oder dorthin chdir'en."
+    )
+
+
+def _signatur(pfade):
+    """mtime und Größe jeder Datei und jedes Ordners unter den Pfaden.
+
+    Rekursiv, weil ein Schreibzugriff in `profiles/1/database/` nur die mtime
+    des TIEFEREN Ordners ändert — die Prüfung oben sieht ihn nicht.
+    """
+    signatur = {}
+
+    for pfad in pfade:
+        if not pfad.exists():
+            signatur[str(pfad)] = None
+            continue
+
+        signatur[str(pfad)] = _stand(pfad)
+
+        for wurzel, ordner, dateien in os.walk(pfad):
+            for name in ordner + dateien:
+                eintrag = os.path.join(wurzel, name)
+                signatur[eintrag] = _stand(Path(eintrag))
+
+    return signatur
+
+
+def _stand(pfad):
+    stand = pfad.lstat()
+    return stand.st_mtime_ns, stand.st_size
+
+
+@pytest.fixture(autouse=True, scope="session")
+def kein_testlauf_fasst_den_echten_bestand_an():
+    """Rekursive Fassung der Wache oben, einmal je Testlauf.
+
+    Je Test wäre sie zu teuer (gemessen ~6 ms je Signatur, zweimal je Test —
+    ein Drittel mehr Laufzeit). Sie nennt deshalb nicht den Test, sondern die
+    veränderten Dateien; den Test findet man über `-x` und Eingrenzen.
+    """
+    vorher = _signatur(_WACHE)
+    yield
+    nachher = _signatur(_WACHE)
+    veraendert = sorted(
+        os.path.relpath(pfad, _REPO)
+        for pfad in vorher.keys() | nachher.keys()
+        if vorher.get(pfad) != nachher.get(pfad)
+    )
+
+    assert not veraendert, (
+        "Ein Test dieses Laufs hat den echten Bestand im Repo verändert: "
+        f"{', '.join(veraendert[:10])}. Das App-Home muss isoliert werden."
     )
 
 

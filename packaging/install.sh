@@ -15,24 +15,45 @@ BIN="${HOME}/.local/bin"
 APPS="${HOME}/.local/share/applications"
 ICONS="${HOME}/.local/share/icons/hicolor"
 
-echo "Installiere nach ${OPT} …"
-rm -rf "${OPT}"
-mkdir -p "${OPT}" "${BIN}" "${APPS}"
-cp -r buerokrator/. "${OPT}/"
+# Erst vollständig neben die alte Installation kopieren, dann tauschen.
+# Vorher wurde die alte zuerst gelöscht — ein Abbruch beim Kopieren (volle
+# Platte, Strg+C) ließ dann gar keine Installation zurück. Ein Rest von
+# einem früheren Abbruch wird verworfen, nie weiterverwendet.
+NEU="${OPT}.neu"
+ALT="${OPT}.alt"
 
-ln -sf "${OPT}/buerokrator" "${BIN}/buerokrator"
+echo "Installiere nach ${OPT} …"
+rm -rf "${NEU}" "${ALT}"
+mkdir -p "${NEU}" "${BIN}" "${APPS}"
+cp -r buerokrator/. "${NEU}/"
 
 # Der Deinstaller wandert mit in die Installation: das entpackte Tarball wird
 # üblicherweise gelöscht, und dann gäbe es keinen Weg zurück mehr.
-cp uninstall.sh "${OPT}/uninstall.sh"
-chmod +x "${OPT}/uninstall.sh"
+cp uninstall.sh "${NEU}/uninstall.sh"
+chmod +x "${NEU}/uninstall.sh"
 
 # Aus demselben Grund die Versionsangabe: nach dem Löschen des entpackten
 # Verzeichnisses ließe sich sonst nirgends mehr ablesen, welcher Stand
 # installiert ist.
 if [ -f VERSION ]; then
-    cp VERSION "${OPT}/VERSION"
+    cp VERSION "${NEU}/VERSION"
 fi
+
+if [ -d icons ]; then
+    mkdir -p "${NEU}/icons"
+    cp icons/buerokrator.svg icons/buerokrator-*.png "${NEU}/icons/"
+fi
+
+# Zwei mv im selben Verzeichnis statt Kopieren: das Fenster ohne
+# Installation schrumpft auf einen Umbenennungsschritt. Eine laufende Instanz
+# behält ihre geöffneten Dateien bis zum Beenden.
+if [ -e "${OPT}" ]; then
+    mv "${OPT}" "${ALT}"
+fi
+mv "${NEU}" "${OPT}"
+rm -rf "${ALT}"
+
+ln -sf "${OPT}/buerokrator" "${BIN}/buerokrator"
 
 # Icon für den Menüeintrag. Der Menüeintrag bekommt einen ABSOLUTEN
 # Icon-Pfad ins Installationsverzeichnis — der Theme-Lookup über
@@ -41,8 +62,6 @@ fi
 # bleiben als Zusatz für Umgebungen, die nach Namen auflösen.
 ICON_REF="buerokrator"
 if [ -d icons ]; then
-    mkdir -p "${OPT}/icons"
-    cp icons/buerokrator.svg icons/buerokrator-*.png "${OPT}/icons/"
     ICON_REF="${OPT}/icons/buerokrator-256.png"
 
     mkdir -p "${ICONS}/scalable/apps" "${ICONS}/256x256/apps" "${ICONS}/128x128/apps" "${ICONS}/64x64/apps"
