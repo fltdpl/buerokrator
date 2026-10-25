@@ -156,6 +156,8 @@ ALLOWED_FIELDS = {
         "settlement_amount",
         "household_services_amount",
         "craftsman_services_amount",
+        "period_start",
+        "period_end",
     },
     EMPLOYMENT: set().union(*EMPLOYMENT_SUBTYPE_FIELDS.values()),
     LEGAL: {"issuer", "document_date", "subject"},
@@ -235,6 +237,11 @@ HOUSING_ABRECHNUNG_FIELDS = HOUSING_BASE_FIELDS | {
     "settlement_amount",
     "household_services_amount",
     "craftsman_services_amount",
+    # Abgerechneter Zeitraum. Verschiebt bewusst NICHT das Archiv- und
+    # Steuerjahr — das richtet sich nach dem Zugang (docs/04_Steuerlogik.md);
+    # extract_year nimmt document_date vor period_start.
+    "period_start",
+    "period_end",
 }
 
 # Kanonisches Subtyp-Vokabular je Dokumenttyp (muss Prompt + GUI-Labels

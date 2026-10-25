@@ -49,6 +49,10 @@ Datum am Anfang, möglichst vollständig; der Aufbau ist **typabhängig**
 - Gehaltsabrechnung:
   `2021-01-01_bis_2021-01-31_Arbeitgeber_Gehaltsabrechnung.pdf`
   (Abrechnungszeitraum; Altbestand: `2024-03_…`)
+- Wohnen-Abrechnung (Nebenkosten, Heizkosten, Hausgeld):
+  `2024-03-14_Hausverwaltung_nebenkostenabrechnung_2021.pdf` — Datum des
+  Zugangs vorn, abgerechnetes Jahr hinten (`_2021-22` über den
+  Jahreswechsel; ohne Zeitraum entfällt der Teil)
 - Typen ohne eigenen Bauer (`unknown`, künftige Typen):
   `2026-03-11_Musterversand_unknown.pdf` über
   `build_fallback_filename` — Datum, Aussteller, Betreff, wobei der

@@ -17,7 +17,12 @@ from src.core.document_types import (
 )
 from src.organizer.category_mapper import get_archive_category, get_archive_root
 from src.core.logger import logger
-from src.organizer.date_utils import extract_year, normalize_date, normalize_month
+from src.organizer.date_utils import (
+    _year_from_value,
+    extract_year,
+    normalize_date,
+    normalize_month,
+)
 from src.organizer.issuer_normalizer import normalize_issuer
 
 
@@ -434,7 +439,36 @@ def build_housing_filename(
         extracted_data.get("document_subtype"), "Wohnen"
     )
 
+    # Das Datum vorn ist der Zugang (bestimmt Ordner und Steuerjahr), das
+    # Jahr hinten der abgerechnete Zeitraum — beides weicht oft um Jahre ab.
+    zeitraum = _abgerechnete_jahre(extracted_data)
+
+    if zeitraum:
+        return f"{document_date}_{issuer}_{document_subtype}_{zeitraum}{suffix}"
+
     return f"{document_date}_{issuer}_{document_subtype}{suffix}"
+
+
+def _abgerechnete_jahre(extracted_data):
+    """"2021" bzw. "2021-22" über den Jahreswechsel; None ohne Zeitraum."""
+    jahre = [
+        jahr
+        for jahr in (
+            _year_from_value(extracted_data.get("period_start")),
+            _year_from_value(extracted_data.get("period_end")),
+        )
+        if jahr
+    ]
+
+    if not jahre:
+        return None
+
+    start, ende = jahre[0], jahre[-1]
+
+    if ende > start:
+        return f"{start}-{ende[2:]}"
+
+    return start
 
 
 @_sanitized

@@ -113,6 +113,9 @@ Konventionen:
   (Erstattung/Guthaben negativ — genutzt von Einkommensbescheinigung und
   den Wohnen-Abrechnungen).
 - Datumsformat DD.MM.YYYY.
+- `period_start`/`period_end` beschreiben einen Zeitraum (Lohn,
+  SV-Meldung, Wohnen-Abrechnungen). Das Archivjahr kommt nur dann daraus,
+  wenn weder `tax_year` noch `document_date` gesetzt ist.
 - Subtypen werden auf ein kanonisches Vokabular normalisiert
   (`KNOWN_SUBTYPES`, `SUBTYPE_ALIASES`, Fuzzy-Match für LLM-Tippfehler).
 

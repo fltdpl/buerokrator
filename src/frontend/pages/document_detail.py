@@ -4,9 +4,11 @@ from pathlib import Path
 from nicegui import run, ui
 
 from src.core.document_display import get_document_display_name
+from src.core.document_fields import HOUSING_ABRECHNUNG_SUBTYPES
 from src.core.document_types import (
     DOCUMENT_TYPES,
     DOCUMENT_TYPE_LABELS,
+    HOUSING,
     INVOICE,
     normalize_document_type,
 )
@@ -21,6 +23,7 @@ from src.database.set_document_verified import set_document_verified
 from src.database.statistics import get_verification_statistics
 from src.frontend.layout import card, gekuerzt, page_layout, umzug_noetig
 from src.frontend.theme import INK_MUTED, WARNING, tag_color
+from src.organizer.date_utils import year_from_archive_path
 from src.services.document_service import (
     move_document_to_trash,
     parse_document_row,
@@ -312,6 +315,41 @@ def _render_field(field, data, missing, empty, on_tax_relevant_amount):
         )
 
     return element, default
+
+
+# Bewusst für alle Abrechnungen gleich, ohne die Jahre des Dokuments: es
+# erklärt die Regel, nicht den Einzelfall.
+STEUERJAHR_ERKLAERUNG = (
+    "Für die Steuer zählt, wann die Abrechnung bei dir angekommen ist – nicht, "
+    "für welches Jahr sie gilt. Eine Abrechnung für 2021, die du erst 2024 "
+    "bekommst, gehört in deine Steuererklärung 2024. Deshalb liegt sie im "
+    "Ordner 2024. Der Abrechnungszeitraum hält fest, welches Jahr sie betrifft."
+)
+
+
+def _steuerjahr_hinweis(archive_path):
+    """Steuerjahr der Abrechnung (= Archivjahr) samt Erklärung auf Klick.
+
+    Das Archivjahr ist dieselbe Quelle, die die Steuerauswertung nutzt
+    (elster_mapping._document_year) — die Zeile kann ihr nicht widersprechen.
+    """
+    with ui.dialog() as dialog, ui.card().classes("max-w-md"):
+        ui.label("Warum zählt das Datum der Abrechnung?").classes(
+            "text-base font-medium"
+        )
+        ui.label(STEUERJAHR_ERKLAERUNG).classes("text-sm")
+        ui.button("Verstanden", on_click=dialog.close).props("flat")
+
+    jahr = year_from_archive_path(archive_path)
+    text = f"Steuerjahr: {jahr} (Jahr des Zugangs)" if jahr else "Steuerjahr: Jahr des Zugangs"
+
+    with ui.row().classes("w-full items-center gap-1 text-xs -mt-2").style(
+        f"color: {INK_MUTED}"
+    ):
+        ui.label(text)
+        ui.button(icon="info_outline", on_click=dialog.open).props(
+            "flat round dense size=sm"
+        ).tooltip("Warum?").mark("steuerjahr-info")
 
 
 def _render_type_selects(state, on_type_change, on_subtype_change):
@@ -612,6 +650,13 @@ def document_detail_page(document_id: int, gespeichert: bool = False):
 
             inputs[field["key"]] = element
             initial_values[field["key"]] = default
+
+            if (
+                field["key"] == "period_end"
+                and state["document_type"] == HOUSING
+                and subtype in HOUSING_ABRECHNUNG_SUBTYPES
+            ):
+                _steuerjahr_hinweis(document["archive_path"])
 
     @ui.refreshable
     def tag_area():

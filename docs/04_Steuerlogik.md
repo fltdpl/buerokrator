@@ -203,8 +203,17 @@ Höchstbeträge rechnet ELSTER — die App liefert Belegsummen.
 **Jahreszuordnung (bewusst, kein tax_year-Feld):** § 35a-Kosten aus einer
 Abrechnung setzt der Mieter im Jahr des ZUGANGS der Abrechnung an
 (BMF-Schreiben zu § 35a) — das Dokumentdatum (Zustellung) ist also das
-richtige Steuerjahr, genau wie die App über das Archivjahr zuordnet. Der
-Abrechnungszeitraum („Betriebskosten 2024") gehört in den Betreff.
+richtige Steuerjahr, genau wie die App über das Archivjahr zuordnet.
+
+Der abgerechnete Zeitraum steht als eigenes Feldpaar
+`period_start`/`period_end` an den Abrechnungs-Subtypen — **nur zur
+Information**: er geht in den Dateinamen (`…_2021`, über den Jahreswechsel
+`…_2021-22`) und in die Anzeige, verschiebt aber weder Archiv- noch
+Steuerjahr (`extract_year` nimmt `document_date` vor `period_start`).
+Anlass: Abrechnungen für frühere Jahre kommen teils Jahre später; im Ordner
+des Zugangsjahres sind sie steuerlich richtig, ohne Zeitraum aber kaum
+wiederzufinden. Das Formular zeigt dazu „Steuerjahr: <Archivjahr> (Jahr des
+Zugangs)" mit einer kurzen, für alle Abrechnungen gleichen Erklärung.
 
 Die Abrechnungs-Subtypen speichern den Abrechnungsbetrag als
 vorzeichenbehaftetes `settlement_amount` (Nachzahlung positiv, Guthaben

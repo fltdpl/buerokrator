@@ -4,6 +4,19 @@
 
 ## Unveröffentlicht
 
+- **Neu: Wohnen-Abrechnungen kennen ihren Abrechnungszeitraum.** Nebenkosten-,
+  Heizkosten- und Hausgeldabrechnungen kommen oft erst Jahre nach dem
+  Zeitraum, den sie abrechnen. Sie liegen — steuerlich richtig — im Jahr, in
+  dem sie angekommen sind; welches Jahr sie betreffen, stand bisher aber nur
+  im Betreff, und drei Abrechnungen desselben Vermieters hießen fast gleich.
+  Jetzt gibt es dafür die Felder „Abrechnungszeitraum von/bis", und das
+  abgerechnete Jahr steht am Ende des Dateinamens (`…_2021`, über den
+  Jahreswechsel `…_2021-22`). Ordner und Steuerjahr ändern sich dadurch
+  **nicht**. Darunter zeigt das Formular das Steuerjahr samt kurzer
+  Erklärung (ⓘ), warum das Datum des Zugangs zählt. Bestandsdokumente
+  bekommen den Zeitraum, wenn er im Formular eingetragen wird; beim Speichern
+  wird die Datei umbenannt.
+
 - **Neu: der Papierkorb sagt, warum eine Datei in ihm liegt.** Beim Import
   wird eine Datei, die schon im Bestand ist, ohne Rückfrage in den Papierkorb
   verschoben. Das ist sicher — erkannt wird es an der Prüfsumme, die Dateien

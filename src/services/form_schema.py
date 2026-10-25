@@ -125,10 +125,12 @@ _TYPE_FIELDS = {
     PENSION: (_text("product_name", "Produkt"),),
 }
 
-# Wohnen: Abrechnungs-Subtypen tragen den vorzeichenbehafteten
-# Abrechnungsbetrag plus die § 35a-Summen; Mietvertrag/Mieterhöhung die
+# Wohnen: Abrechnungs-Subtypen tragen den abgerechneten Zeitraum, den
+# vorzeichenbehafteten Abrechnungsbetrag und die § 35a-Summen; Mietvertrag/Mieterhöhung die
 # monatliche Miete. Betreff für alle (z. B. "Betriebskosten 2024").
 _HOUSING_ABRECHNUNG_FORM_FIELDS = (
+    _text("period_start", "Abrechnungszeitraum von"),
+    _text("period_end", "Abrechnungszeitraum bis"),
     _amount("settlement_amount", "Abrechnungsbetrag (Nachzahlung positiv, Guthaben negativ)"),
     _amount("household_services_amount", "Haushaltsnahe Dienstleistungen (§ 35a)"),
     _amount("craftsman_services_amount", "Handwerkerleistungen (§ 35a, nur Lohnanteil)"),

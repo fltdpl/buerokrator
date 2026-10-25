@@ -9,6 +9,8 @@ Schema:
   "issuer": "",
   "document_date": "",
   "document_subtype": "",
+  "period_start": "",
+  "period_end": "",
   "amount": null,
   "settlement_amount": null,
   "household_services_amount": null,
@@ -35,6 +37,13 @@ sonstiges
   (alles andere, z. B. Mitteilungen der Verwaltung)
 
 Erfinde keinen eigenen Wert.
+
+period_start / period_end:
+Nur bei nebenkostenabrechnung, heizkostenabrechnung und
+hausgeldabrechnung: Beginn und Ende des abgerechneten Zeitraums
+(Abrechnungszeitraum) im Format DD.MM.YYYY. Das ist NICHT das
+Dokumentdatum — die Abrechnung kommt oft erst Jahre später.
+Wenn kein Zeitraum im Dokument steht, leer lassen.
 
 amount:
 Nur bei Mietverträgen und Mieterhöhungen: die monatliche Miete.
