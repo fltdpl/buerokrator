@@ -4,6 +4,8 @@
 
 ## Unveröffentlicht
 
+## v0.4.1 — 25.10.2026
+
 - Die Analyse-Anweisungen für Arbeit, Vorsorge, Steuer und Versicherung
   sagen jetzt ausdrücklich, dass die Feldbeschreibungen keine Werte sind —
   dieselbe Absicherung, die der Rechnungs-Prompt schon bekommen hat. Ein
